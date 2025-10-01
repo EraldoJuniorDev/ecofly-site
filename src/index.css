@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 120 60% 98%;
+    --foreground: 160 20% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 160 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 20% 15%;
+
+    --primary: 142 69% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 120 60% 96%;
+    --secondary-foreground: 160 20% 15%;
+
+    --muted: 120 60% 96%;
+    --muted-foreground: 160 20% 45%;
+
+    --accent: 82 84% 67%;
+    --accent-foreground: 160 20% 15%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 120 20% 88%;
+    --input: 120 20% 88%;
+    --ring: 142 69% 58%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 160 20% 8%;
+    --foreground: 120 60% 95%;
+
+    --card: 160 20% 10%;
+    --card-foreground: 120 60% 95%;
+
+    --popover: 160 20% 10%;
+    --popover-foreground: 120 60% 95%;
+
+    --primary: 142 69% 58%;
+    --primary-foreground: 160 20% 8%;
+
+    --secondary: 160 20% 15%;
+    --secondary-foreground: 120 60% 95%;
+
+    --muted: 160 20% 15%;
+    --muted-foreground: 120 20% 65%;
+
+    --accent: 82 84% 67%;
+    --accent-foreground: 160 20% 8%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 160 20% 15%;
+    --input: 160 20% 15%;
+    --ring: 142 69% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .eco-gradient {
+    background: linear-gradient(135deg, hsl(142 69% 58%) 0%, hsl(160 84% 39%) 100%);
+  }
+  
+  .eco-text-gradient {
+    background: linear-gradient(135deg, hsl(142 69% 58%) 0%, hsl(160 84% 39%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
