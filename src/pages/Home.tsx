@@ -82,6 +82,54 @@ const Home = () => {
         }
       ],
       description: "Universo em miniatura com olho central e padrões hipnóticos"
+    },
+    {
+      id: 104,
+      name: "EcoBag Lana Del Rey",
+      category: "EcoBags",
+      images: [
+        {
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/MjCgbX9iiN5zM37BGqs352/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
+          alt: "EcoBag Lana Del Rey - Vista frontal"
+        },
+        {
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/gG2HHSLCDoxm2rscH6Viv3/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
+          alt: "EcoBag Lana Del Rey - Post Instagram"
+        }
+      ],
+      description: "Inspirada na música, com cerejas delicadas e frase icônica"
+    },
+    {
+      id: 105,
+      name: "Cinzeiro Rolling Stones",
+      category: "Cinzeiros",
+      images: [
+        {
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/i3DWd6hsNsLcKNCoRgDjTf/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.27_09211f44.jpg",
+          alt: "Cinzeiro Rolling Stones - Vista superior"
+        },
+        {
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/5h5ukSGRg7QoVSxH63GBJj/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.27_09211f44.jpg",
+          alt: "Cinzeiro Rolling Stones - Vista lateral"
+        }
+      ],
+      description: "Clássico logo dos Rolling Stones em design elegante e resistente"
+    },
+    {
+      id: 106,
+      name: "EcoBag Olho Místico",
+      category: "EcoBags",
+      images: [
+        {
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/itTiUSDxUvB8WjUC4AUTMD/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_d405b426.jpg",
+          alt: "EcoBag Olho Místico - Vista frontal"
+        },
+        {
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/DNpUUgoq8zLroVotVHmDbw/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_d405b426.jpg",
+          alt: "EcoBag Olho Místico - Post Instagram"
+        }
+      ],
+      description: "Design místico com olho centralizado e elementos esotéricos"
     }
   ]
 
@@ -164,7 +212,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Products Preview - Now with Enhanced ProductCard */}
+      {/* Products Preview - Diverse Categories */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container px-4">
           <div className="text-center mb-12">
@@ -172,7 +220,7 @@ const Home = () => {
               Nossos Produtos em Destaque
             </h2>
             <p className="text-xl text-muted-foreground">
-              Cada peça conta uma história única - explore todos os ângulos
+              Explore nossa variedade de produtos sustentáveis e únicos
             </p>
           </div>
 
@@ -188,6 +236,39 @@ const Home = () => {
                 onWhatsAppClick={handleWhatsApp}
               />
             ))}
+          </div>
+
+          {/* Category Links */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <Link to="/ecobags" className="group">
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-4">🛍️</div>
+                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">EcoBags</h3>
+                  <p className="text-muted-foreground">Personalizadas e sustentáveis</p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link to="/cinzeiros" className="group">
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-4">🎨</div>
+                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">Cinzeiros</h3>
+                  <p className="text-muted-foreground">Arte funcional e criativa</p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link to="/mini-telas" className="group">
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-4">🖼️</div>
+                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">Mini Telas</h3>
+                  <p className="text-muted-foreground">Pequenas obras de arte</p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
           <div className="text-center">
