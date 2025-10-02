@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [
     react(),
   ],
-  base: "ecofly-site",
+  base: "./",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
