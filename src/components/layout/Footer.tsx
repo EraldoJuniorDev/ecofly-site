@@ -42,6 +42,9 @@ const Footer = () => {
               <Link to="/mini-telas" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Mini Telas
               </Link>
+              <Link to="/favoritos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Favoritos
+              </Link>
               <Link to="/feedback" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Feedback
               </Link>

@@ -1,17 +1,21 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, Leaf } from 'lucide-react'
+import { Menu, Leaf, Heart } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
+import { Badge } from '../ui/badge'
 import ThemeToggle from './ThemeToggle'
+import { useFavorites } from '../../hooks/useFavorites'
 
 console.log('Header component loading...')
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
+  const { favoritesCount } = useFavorites()
 
   console.log('Header rendered, current location:', location.pathname)
+  console.log('Favorites count:', favoritesCount)
 
   const menuItems = [
     { href: '/', label: 'Início' },
@@ -19,6 +23,7 @@ const Header = () => {
     { href: '/ecobags', label: 'EcoBags' },
     { href: '/cinzeiros', label: 'Cinzeiros' },
     { href: '/mini-telas', label: 'Mini Telas' },
+    { href: '/favoritos', label: 'Favoritos' },
     { href: '/feedback', label: 'Feedback' },
     { href: '/contato', label: 'Contato' }
   ]
@@ -45,24 +50,60 @@ const Header = () => {
             <Link
               key={item.href}
               to={item.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
+              className={`text-sm font-medium transition-colors hover:text-primary relative ${
                 isActive(item.href)
                   ? 'text-primary border-b-2 border-primary pb-1'
                   : 'text-muted-foreground'
               }`}
             >
               {item.label}
+              {item.href === '/favoritos' && favoritesCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-scale-in"
+                >
+                  {favoritesCount}
+                </Badge>
+              )}
             </Link>
           ))}
         </nav>
 
-        {/* Desktop Theme Toggle */}
-        <div className="hidden lg:flex items-center">
+        {/* Desktop Actions */}
+        <div className="hidden lg:flex items-center gap-2">
+          <Link to="/favoritos">
+            <Button variant="ghost" size="icon" className="relative">
+              <Heart className={`h-5 w-5 ${favoritesCount > 0 ? 'text-red-500' : ''}`} />
+              {favoritesCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-scale-in"
+                >
+                  {favoritesCount}
+                </Badge>
+              )}
+              <span className="sr-only">Favoritos ({favoritesCount})</span>
+            </Button>
+          </Link>
           <ThemeToggle />
         </div>
 
         {/* Mobile Navigation */}
         <div className="flex items-center gap-2 lg:hidden">
+          <Link to="/favoritos">
+            <Button variant="ghost" size="icon" className="relative">
+              <Heart className={`h-5 w-5 ${favoritesCount > 0 ? 'text-red-500' : ''}`} />
+              {favoritesCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-scale-in"
+                >
+                  {favoritesCount}
+                </Badge>
+              )}
+              <span className="sr-only">Favoritos ({favoritesCount})</span>
+            </Button>
+          </Link>
           <ThemeToggle />
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
@@ -85,13 +126,21 @@ const Header = () => {
                     <SheetClose asChild key={item.href}>
                       <Link
                         to={item.href}
-                        className={`text-lg font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg ${
+                        className={`text-lg font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg relative flex items-center justify-between ${
                           isActive(item.href)
                             ? 'text-primary bg-primary/10'
                             : 'text-muted-foreground hover:bg-accent'
                         }`}
                       >
-                        {item.label}
+                        <span>{item.label}</span>
+                        {item.href === '/favoritos' && favoritesCount > 0 && (
+                          <Badge 
+                            variant="destructive" 
+                            className="h-5 w-5 p-0 flex items-center justify-center text-xs"
+                          >
+                            {favoritesCount}
+                          </Badge>
+                        )}
                       </Link>
                     </SheetClose>
                   ))}

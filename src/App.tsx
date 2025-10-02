@@ -9,6 +9,7 @@ import Store from './pages/Store'
 import EcoBags from './pages/EcoBags'
 import Cinzeiros from './pages/Cinzeiros'
 import MiniTelas from './pages/MiniTelas'
+import Favorites from './pages/Favorites'
 import Feedback from './pages/Feedback'
 import Contact from './pages/Contact'
 import { Toaster } from './components/ui/sonner'
@@ -30,6 +31,7 @@ function App() {
               <Route path="/ecobags" element={<EcoBags />} />
               <Route path="/cinzeiros" element={<Cinzeiros />} />
               <Route path="/mini-telas" element={<MiniTelas />} />
+              <Route path="/favoritos" element={<Favorites />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/contato" element={<Contact />} />
             </Routes>
