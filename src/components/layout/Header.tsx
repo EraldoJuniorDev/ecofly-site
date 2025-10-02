@@ -23,7 +23,6 @@ const Header = () => {
     { href: '/ecobags', label: 'EcoBags' },
     { href: '/cinzeiros', label: 'Cinzeiros' },
     { href: '/mini-telas', label: 'Mini Telas' },
-    { href: '/favoritos', label: 'Favoritos' },
     { href: '/feedback', label: 'Feedback' },
     { href: '/contato', label: 'Contato' }
   ]
