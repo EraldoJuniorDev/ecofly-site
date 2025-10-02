@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, Leaf, Heart } from 'lucide-react'
+import MainLogo from '../../../public/favicon.ico'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
 import { Badge } from '../ui/badge'
@@ -34,8 +35,8 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full eco-gradient">
-            <Leaf className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-center w-11 h-11 rounded-full bg-green-300">
+            <img src={MainLogo} alt="ECOFLY Logo" className="w-20 h-15" />
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
