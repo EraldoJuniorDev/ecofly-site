@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { MessageCircle, Mail, Instagram } from 'lucide-react'
 import MainLogo from '../../../public/favicon.ico'
+import { WHATSAPP_LINK, INSTAGRAM_LINK, INSTAGRAM_USER }   from "../../constants";
 
 const Footer = () => {
   console.log('Footer component rendered')
@@ -46,7 +47,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold">Contato</h3>
             <div className="flex flex-col space-y-3">
               <a 
-                href="https://wa.me/558282113105" 
+                href={WHATSAPP_LINK} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -62,13 +63,13 @@ const Footer = () => {
                 <span>contato@ecofly.com.br</span>
               </a>
               <a 
-                href="https://instagram.com/__ecofly__" 
+                href={INSTAGRAM_LINK} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <Instagram className="h-4 w-4" />
-                <span>@__ecofly__</span>
+                <span>@{INSTAGRAM_USER}</span>
               </a>
             </div>
           </div>

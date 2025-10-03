@@ -6,6 +6,7 @@ import { Textarea } from '../components/ui/textarea'
 import { Label } from '../components/ui/label'
 import { MessageCircle, Mail, Instagram, MapPin, Clock, Send, Phone } from 'lucide-react'
 import { toast } from 'sonner'
+import { WHATSAPP_LINK, INSTAGRAM_LINK, INSTAGRAM_USER, WHATSAPP_NUMBER } from "../constants";
 
 const Contact = () => {
   console.log('Contact page rendered')
@@ -20,14 +21,14 @@ const Contact = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log('Contact form submitted:', formData)
-    
+
     if (!formData.name || !formData.email || !formData.message) {
       toast.error('Por favor, preencha todos os campos obrigatórios.')
       return
     }
 
     toast.success('Mensagem enviada com sucesso! Retornaremos em breve.')
-    
+
     // Reset form
     setFormData({ name: '', email: '', subject: '', message: '' })
   }
@@ -40,34 +41,45 @@ const Contact = () => {
   }
 
   const handleWhatsApp = () => {
-    const message = "Olá! Gostaria de saber mais sobre os produtos da ECOFLY."
-    const whatsappUrl = `https://wa.me/558282113105?text=${encodeURIComponent(message)}`
+    const message = "Olá! Gostaria de receber detalhes adicionais sobre os produtos da ECOFLY."
+    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
+
+const formatWhatsAppNumber = (number: string) => {
+  const countryCode = number.slice(0, 2); // 55
+  const areaCode = number.slice(2, 4);    // 82
+  const firstPart = number.slice(4, 8);   // 9821
+  const secondPart = number.slice(8);     // 3105
+  return `+${countryCode} ${areaCode} ${firstPart}-${secondPart}`;
+};
+
+// Número formatado para exibição
+const WHATSAPP_FORMATTED = formatWhatsAppNumber(WHATSAPP_NUMBER);
 
   const contactMethods = [
     {
       icon: <MessageCircle className="h-6 w-6" />,
       title: "WhatsApp",
       description: "Resposta rápida",
-      info: "+55 (82) 8211-3105",
-      action: handleWhatsApp,
-      color: "text-green-600"
+      info: WHATSAPP_FORMATTED,                     // Número formatado para exibição
+      action: () => window.open(WHATSAPP_LINK, "_blank"), // Abre o WhatsApp
+      color: "text-green-600",
     },
     {
       icon: <Mail className="h-6 w-6" />,
       title: "Email",
       description: "Para pedidos e dúvidas",
       info: "contato@ecofly.com.br",
-      action: () => window.location.href = "mailto:contato@ecofly.com.br",
+      action: () => window.location.href = "mailto:ecoflybags@gmail.com",
       color: "text-blue-600"
     },
     {
       icon: <Instagram className="h-6 w-6" />,
       title: "Instagram",
       description: "Siga nossos produtos",
-      info: "@__ecofly__",
-      action: () => window.open("https://instagram.com/__ecofly__", "_blank"),
+      info: `@${INSTAGRAM_USER}`,
+      action: () => window.open(INSTAGRAM_LINK, "_blank"),
       color: "text-pink-600"
     }
   ]
@@ -88,7 +100,7 @@ const Contact = () => {
         {/* Contact Methods */}
         <div className="lg:col-span-1 space-y-4">
           <h2 className="text-2xl font-bold mb-6">Formas de Contato</h2>
-          
+
           {contactMethods.map((method, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={method.action}>
               <CardContent className="p-6">
@@ -119,7 +131,7 @@ const Contact = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-primary mt-1" />
                 <div>
@@ -156,7 +168,7 @@ const Contact = () => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email *</Label>
                     <Input
@@ -217,10 +229,10 @@ const Contact = () => {
                   <p className="opacity-90">Produtos prontos: 2-5 dias úteis. Personalizados: 7-15 dias úteis.</p>
                 </div>
               </div>
-              
-              <Button 
+
+              <Button
                 onClick={handleWhatsApp}
-                variant="secondary" 
+                variant="secondary"
                 className="mt-4 bg-white text-primary hover:bg-white/90"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />

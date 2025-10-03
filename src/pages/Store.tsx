@@ -2,6 +2,7 @@ import React from 'react'
 import { Button } from '../components/ui/button'
 import { MessageCircle } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
+import { WHATSAPP_LINK } from "../constants";
 
 const Store = () => {
   console.log('Store page rendered with enhanced product cards')
@@ -269,8 +270,8 @@ const Store = () => {
     : products.filter(product => product.category === selectedCategory)
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Tenho interesse no produto: ${productName}. Poderia me dar mais informações?`
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`
+    const message = `Olá! Poderia me fornecer mais informações sobre os produtos da ECOFLY?`
+    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
