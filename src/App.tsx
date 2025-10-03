@@ -9,7 +9,7 @@ import Store from './pages/Store'
 import Favorites from './pages/Favorites'
 import Contact from './pages/Contact'
 import { Toaster } from './components/ui/sonner'
-import Feedback from './pages/Fedback'
+import Feedback from './pages/Feedback'
 
 console.log('App component loading...')
 

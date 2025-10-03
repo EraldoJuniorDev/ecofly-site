@@ -21,7 +21,7 @@ const Header = () => {
   const menuItems = [
     { href: '/', label: 'Início' },
     { href: '/loja', label: 'Loja' },
-    { href: '/feedback', label: 'Feeback' },
+    { href: '/feedback', label: 'Feedback' },
     { href: '/contato', label: 'Contato' }
   ]
 
