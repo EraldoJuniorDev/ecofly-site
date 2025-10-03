@@ -33,9 +33,6 @@ const Footer = () => {
               <Link to="/loja" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Loja
               </Link>
-              <Link to="/favoritos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Favoritos
-              </Link>
               <Link to="/feedback" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Feedback
               </Link>
@@ -50,7 +47,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold">Contato</h3>
             <div className="flex flex-col space-y-3">
               <a 
-                href="https://wa.me/5582982113105" 
+                href="https://wa.me/558282113105" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"

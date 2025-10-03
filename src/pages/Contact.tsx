@@ -41,7 +41,7 @@ const Contact = () => {
 
   const handleWhatsApp = () => {
     const message = "Olá! Gostaria de saber mais sobre os produtos da ECOFLY."
-    const whatsappUrl = `https://wa.me/5582982113105?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/558282113105?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
@@ -50,7 +50,7 @@ const Contact = () => {
       icon: <MessageCircle className="h-6 w-6" />,
       title: "WhatsApp",
       description: "Resposta rápida",
-      info: "+55 (82) 98211-3105",
+      info: "+55 (82) 8211-3105",
       action: handleWhatsApp,
       color: "text-green-600"
     },
