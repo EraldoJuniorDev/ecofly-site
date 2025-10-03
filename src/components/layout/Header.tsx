@@ -24,7 +24,7 @@ const Header = () => {
     { href: '/ecobags', label: 'EcoBags' },
     { href: '/cinzeiros', label: 'Cinzeiros' },
     { href: '/mini-telas', label: 'Mini Telas' },
-    { href: '/feedback', label: 'Feedback' },
+    // { href: '/feedback', label: 'Feedback' },
     { href: '/contato', label: 'Contato' }
   ]
 
@@ -35,7 +35,7 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-center w-11 h-11 rounded-full bg-green-300">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-300">
             <img src={MainLogo} alt="ECOFLY Logo" className="w-20 h-15" />
           </div>
           <div className="flex flex-col">

@@ -3,7 +3,7 @@ import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { Dialog, DialogContent, DialogTrigger } from './ui/dialog'
-import { MessageCircle, Star, Heart, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
+import { Heart, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
 import { useFavorites } from '../hooks/useFavorites'
 import { toast } from 'sonner'
 
@@ -18,7 +18,7 @@ interface ProductCardProps {
   category: string
   images: ProductImage[]
   description: string
-  onWhatsAppClick: (productName: string) => void
+  onWhatsAppClick?: (productName: string) => void
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -26,10 +26,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   name,
   category,
   images,
-  description,
-  onWhatsAppClick
+  description
 }) => {
-  console.log(`ProductCard ${id} rendered with favorites system`)
+  console.log(`ProductCard ${id} rendered with simplified design`)
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [modalImageIndex, setModalImageIndex] = useState(0)
@@ -113,7 +112,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           isHovered ? 'opacity-100' : 'opacity-0'
         }`}></div>
         
-        {/* Navigation Arrows */}
+        {/* Navigation Arrows - Only show if multiple images */}
         {images.length > 1 && (
           <>
             <button
@@ -135,7 +134,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </>
         )}
 
-        {/* Image Counter */}
+        {/* Image Counter - Only show if multiple images */}
         {images.length > 1 && (
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
             {currentImageIndex + 1}/{images.length}
@@ -168,7 +167,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     className="w-full h-full object-contain bg-black"
                   />
                   
-                  {/* Modal Navigation */}
+                  {/* Modal Navigation - Only show if multiple images */}
                   {images.length > 1 && (
                     <>
                       <button
@@ -187,7 +186,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   )}
                 </div>
 
-                {/* Modal Thumbnails */}
+                {/* Modal Thumbnails - Only show if multiple images */}
                 {images.length > 1 && (
                   <div className="p-4 border-t border-white/10">
                     <div className="flex gap-2 overflow-x-auto">
@@ -218,21 +217,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     <Badge variant="secondary" className="text-sm">
                       {category}
                     </Badge>
-                    <span className="text-sm text-white/60">
-                      {modalImageIndex + 1} de {images.length}
-                    </span>
+                    {images.length > 1 && (
+                      <span className="text-sm text-white/60">
+                        {modalImageIndex + 1} de {images.length}
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-semibold text-lg mb-2 text-white">{name}</h3>
-                  <p className="text-sm text-white/80 mb-4">{description}</p>
-                  
-                  <Button 
-                    onClick={() => onWhatsAppClick(name)}
-                    className="w-full eco-gradient text-white btn-smooth"
-                    size="lg"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Consultar no WhatsApp
-                  </Button>
+                  <p className="text-sm text-white/80">{description}</p>
                 </div>
               </div>
             </DialogContent>
@@ -253,7 +245,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </div>
 
-      {/* Thumbnail Navigation */}
+      {/* Thumbnail Navigation - Only show if multiple images */}
       {images.length > 1 && (
         <div className="p-3 border-b bg-muted/20">
           <div className="flex gap-2 overflow-x-auto">
@@ -284,42 +276,23 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <Badge variant="secondary" className="text-xs">
             {category}
           </Badge>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-3 w-3 fill-primary text-primary" />
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">(5.0)</span>
-          </div>
-        </div>
-        
-        <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-200">{name}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
-
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => onWhatsAppClick(name)}
-            className="flex-1 eco-gradient text-white btn-smooth micro-interaction"
-            size="sm"
-          >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            WhatsApp
-          </Button>
           
           <Button
             onClick={handleFavoriteToggle}
-            variant="outline"
+            variant="ghost"
             size="sm"
             className={`transition-all duration-200 ${
               isProductFavorite 
-                ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100' 
-                : 'hover:bg-gray-50'
+                ? 'text-red-500 hover:text-red-600' 
+                : 'text-muted-foreground hover:text-red-500'
             }`}
           >
             <Heart className={`w-4 h-4 ${isProductFavorite ? 'fill-current' : ''}`} />
           </Button>
         </div>
+        
+        <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-200">{name}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
       </CardContent>
     </Card>
   )

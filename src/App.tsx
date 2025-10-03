@@ -32,7 +32,7 @@ function App() {
               <Route path="/cinzeiros" element={<Cinzeiros />} />
               <Route path="/mini-telas" element={<MiniTelas />} />
               <Route path="/favoritos" element={<Favorites />} />
-              <Route path="/feedback" element={<Feedback />} />
+              {/* <Route path="/feedback" element={<Feedback />} /> */}
               <Route path="/contato" element={<Contact />} />
             </Routes>
           </main>

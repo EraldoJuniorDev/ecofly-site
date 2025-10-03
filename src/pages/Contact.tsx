@@ -41,7 +41,7 @@ const Contact = () => {
 
   const handleWhatsApp = () => {
     const message = "Olá! Gostaria de saber mais sobre os produtos da ECOFLY."
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/558298213105?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
@@ -50,7 +50,7 @@ const Contact = () => {
       icon: <MessageCircle className="h-6 w-6" />,
       title: "WhatsApp",
       description: "Resposta rápida",
-      info: "+55 (11) 99999-9999",
+      info: "+55 82 9821-3105",
       action: handleWhatsApp,
       color: "text-green-600"
     },
@@ -67,7 +67,7 @@ const Contact = () => {
       title: "Instagram",
       description: "Siga nossos produtos",
       info: "@_ecofly_",
-      action: () => window.open("https://instagram.com/_ecofly_", "_blank"),
+      action: () => window.open("https://www.instagram.com/__ecofly__/", "_blank"),
       color: "text-pink-600"
     }
   ]
