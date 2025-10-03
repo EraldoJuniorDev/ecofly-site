@@ -30,8 +30,8 @@ const Footer = () => {
               <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Início
               </Link>
-              <Link to="/loja" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Loja
+              <Link to="/catalogo" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Catálogo
               </Link>
               <Link to="/feedback" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Feedback
@@ -60,7 +60,7 @@ const Footer = () => {
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <Mail className="h-4 w-4" />
-                <span>contato@ecofly.com.br</span>
+                <span>ecoflybags@gmail.com</span>
               </a>
               <a 
                 href={INSTAGRAM_LINK} 

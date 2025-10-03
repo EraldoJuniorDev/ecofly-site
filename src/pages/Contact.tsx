@@ -62,15 +62,14 @@ const WHATSAPP_FORMATTED = formatWhatsAppNumber(WHATSAPP_NUMBER);
       icon: <MessageCircle className="h-6 w-6" />,
       title: "WhatsApp",
       description: "Resposta rápida",
-      info: WHATSAPP_FORMATTED,                     // Número formatado para exibição
-      action: () => window.open(WHATSAPP_LINK, "_blank"), // Abre o WhatsApp
+      action: () => window.open(WHATSAPP_LINK, "_blank"),
       color: "text-green-600",
     },
     {
       icon: <Mail className="h-6 w-6" />,
       title: "Email",
       description: "Para pedidos e dúvidas",
-      info: "contato@ecofly.com.br",
+      info: "ecoflybags@gmail.com",
       action: () => window.location.href = "mailto:ecoflybags@gmail.com",
       color: "text-blue-600"
     },
