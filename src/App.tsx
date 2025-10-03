@@ -6,10 +6,10 @@ import Footer from './components/layout/Footer'
 import BackToTop from './components/layout/BackToTop'
 import Home from './pages/Home'
 import Store from './pages/Store'
+import Feedback from './pages/Feedback'
 import Favorites from './pages/Favorites'
 import Contact from './pages/Contact'
 import { Toaster } from './components/ui/sonner'
-import Feedback from './pages/Feedback'
 
 console.log('App component loading...')
 
