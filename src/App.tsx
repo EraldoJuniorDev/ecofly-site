@@ -6,8 +6,8 @@ import Footer from './components/layout/Footer'
 import BackToTop from './components/layout/BackToTop'
 import Home from './pages/Home'
 import Store from './pages/Store'
-import Feedback from './pages/Feedback'
 import Favorites from './pages/Favorites'
+import Feedback from './pages/Feedback'
 import Contact from './pages/Contact'
 import { Toaster } from './components/ui/sonner'
 
@@ -25,8 +25,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/loja" element={<Store />} />
-              <Route path="/feedback" element={<Feedback />} />
               <Route path="/favoritos" element={<Favorites />} />
+              <Route path="/feedback" element={<Feedback />} />
               <Route path="/contato" element={<Contact />} />
             </Routes>
           </main>

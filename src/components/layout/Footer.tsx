@@ -1,7 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle, Mail, Instagram } from 'lucide-react'
-import MainLogo from '../../../public/favicon.ico'
+import { Leaf, MessageCircle, Mail, Instagram } from 'lucide-react'
 
 const Footer = () => {
   console.log('Footer component rendered')
@@ -13,8 +12,8 @@ const Footer = () => {
           {/* Logo e Descrição */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full eco-gradient">
-                <img src={MainLogo} alt="Ecofly Logo" className="h-15 w-15" />
+              <div className="flex items-center justify-center w-8 h-8 rounded-full eco-gradient">
+                <Leaf className="h-4 w-4 text-white" />
               </div>
               <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
             </div>
@@ -34,6 +33,9 @@ const Footer = () => {
               <Link to="/loja" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Loja
               </Link>
+              <Link to="/favoritos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Favoritos
+              </Link>
               <Link to="/feedback" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Feedback
               </Link>
@@ -48,7 +50,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold">Contato</h3>
             <div className="flex flex-col space-y-3">
               <a 
-                href="https://wa.me/558298213105" 
+                href="https://wa.me/5582982113105" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -64,7 +66,7 @@ const Footer = () => {
                 <span>contato@ecofly.com.br</span>
               </a>
               <a 
-                href="https://www.instagram.com/__ecofly__/" 
+                href="https://instagram.com/__ecofly__" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"

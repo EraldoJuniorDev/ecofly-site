@@ -4,12 +4,11 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { ArrowRight, Leaf, Recycle, Heart, Star, Sparkles } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
-import MainLogo from '../img/logo_transparent.png'
 
 const Home = () => {
   console.log('Home page rendered with minimal animations')
   
-  const heroRef = useRef<HTMLImageElement>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
   const statsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -171,7 +170,7 @@ const Home = () => {
           alt: "EcoBag Lana Del Rey - Vista frontal"
         },
         {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/MjCgbX9iiN5zM37BGqs352/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/gG2HHSLCDoxm2rscH6Viv3/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
           alt: "EcoBag Lana Del Rey - Post Instagram"
         }
       ],
@@ -212,8 +211,8 @@ const Home = () => {
   ]
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Oi! Tenho interesse em conhecer melhor os produtos da loja. Pode me passar mais informações?`
-    const whatsappUrl = `https://wa.me/558298213105?text=${encodeURIComponent(message)}`
+    const message = `Olá! Vi no site da ECOFLY o produto: ${productName}. Gostaria de mais informações!`
+    const whatsappUrl = `https://wa.me/5582982113105?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
@@ -259,10 +258,10 @@ const Home = () => {
             </div>
             
             <div className="relative animate-fade-in-right">
-              <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group bg-green-300">
+              <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group">
                 <img 
                   ref={heroRef}
-                  src={MainLogo}
+                  src="https://cdn-ai.onspace.ai/onspace/project/image/PmDAFoyvUEJHW4u7FEeqZd/logo.png"
                   alt="ECOFLY Logo"
                   className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax"
                 />
@@ -329,8 +328,8 @@ const Home = () => {
           </div>
 
           {/* Category Links */}
-          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 stagger-children">
-            <Link to="/ecobags" className="group">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 stagger-children">
+            <Link to="/loja" className="group">
               <Card className="hover-subtle glass-subtle">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-4 animate-gentle-bounce">🛍️</div>
@@ -340,7 +339,7 @@ const Home = () => {
               </Card>
             </Link>
             
-            <Link to="/cinzeiros" className="group">
+            <Link to="/loja" className="group">
               <Card className="hover-subtle glass-subtle">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-4 animate-float">🎨</div>
@@ -350,7 +349,7 @@ const Home = () => {
               </Card>
             </Link>
             
-            <Link to="/mini-telas" className="group">
+            <Link to="/loja" className="group">
               <Card className="hover-subtle glass-subtle">
                 <CardContent className="p-6 text-center">
                   <div className="text-3xl mb-4 animate-float-delayed">🖼️</div>
@@ -359,7 +358,7 @@ const Home = () => {
                 </CardContent>
               </Card>
             </Link>
-          </div> */}
+          </div>
 
           <div className="text-center animate-scale-in">
             <Button asChild size="lg" className="eco-gradient text-white btn-smooth">
