@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { ArrowRight, Leaf, Recycle, Heart, Star, Sparkles } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
+import Logo from '../img/logo_transparent.png'
 
 const Home = () => {
   console.log('Home page rendered with minimal animations')
@@ -261,9 +262,9 @@ const Home = () => {
               <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group">
                 <img 
                   ref={heroRef}
-                  src="https://cdn-ai.onspace.ai/onspace/project/image/PmDAFoyvUEJHW4u7FEeqZd/logo.png"
+                  src={Logo}
                   alt="ECOFLY Logo"
-                  className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax"
+                  className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-300"
                 />
                 
                 {/* Decorative elements */}
