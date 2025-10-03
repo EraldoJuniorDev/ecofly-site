@@ -171,7 +171,7 @@ const Home = () => {
           alt: "EcoBag Lana Del Rey - Vista frontal"
         },
         {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/gG2HHSLCDxoxm2rscH6Viv3/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/MjCgbX9iiN5zM37BGqs352/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
           alt: "EcoBag Lana Del Rey - Post Instagram"
         }
       ],
@@ -212,8 +212,8 @@ const Home = () => {
   ]
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Vi no site da ECOFLY o produto: ${productName}. Gostaria de mais informações!`
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`
+    const message = `Oi! Tenho interesse em conhecer melhor os produtos da loja. Pode me passar mais informações?`
+    const whatsappUrl = `https://wa.me/558298213105?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
@@ -329,7 +329,7 @@ const Home = () => {
           </div>
 
           {/* Category Links */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 stagger-children">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 stagger-children">
             <Link to="/ecobags" className="group">
               <Card className="hover-subtle glass-subtle">
                 <CardContent className="p-6 text-center">
@@ -359,7 +359,7 @@ const Home = () => {
                 </CardContent>
               </Card>
             </Link>
-          </div>
+          </div> */}
 
           <div className="text-center animate-scale-in">
             <Button asChild size="lg" className="eco-gradient text-white btn-smooth">

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Leaf, MessageCircle, Mail, Instagram } from 'lucide-react'
+import { MessageCircle, Mail, Instagram } from 'lucide-react'
+import MainLogo from '../../../public/favicon.ico'
 
 const Footer = () => {
   console.log('Footer component rendered')
@@ -12,8 +13,8 @@ const Footer = () => {
           {/* Logo e Descrição */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full eco-gradient">
-                <Leaf className="h-4 w-4 text-white" />
+              <div className="flex items-center justify-center w-10 h-10 rounded-full eco-gradient">
+                <img src={MainLogo} alt="Ecofly Logo" className="h-15 w-15" />
               </div>
               <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
             </div>

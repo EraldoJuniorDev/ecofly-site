@@ -33,7 +33,7 @@ const Store = () => {
           alt: "EcoBag Lana Del Rey - Vista frontal"
         },
         {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/gG2HHSLCDoxm2rscH6Viv3/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
+          url: "https://cdn-ai.onspace.ai/onspace/project/image/MjCgbX9iiN5zM37BGqs352/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
           alt: "EcoBag Lana Del Rey - Post Instagram"
         }
       ],
@@ -63,7 +63,8 @@ const Store = () => {
         {
           url: "https://cdn-ai.onspace.ai/onspace/project/image/Rk6hnQT9RkGMY7g8bsoN6k/logo.png",
           alt: "EcoBag Borboleta - Design principal"
-        }
+        },
+        
       ],
       description: "Delicada borboleta em tons suaves"
     },
@@ -261,7 +262,7 @@ const Store = () => {
     }
   ]
 
-  const categories = ["Todos", "EcoBags", "Cinzeiros", "Mini Telas", "Chaveiros"]
+  const categories = ["Todos", "EcoBags", "Cinzeiros", "Mini Telas"]
   const [selectedCategory, setSelectedCategory] = React.useState("Todos")
 
   const filteredProducts = selectedCategory === "Todos" 
@@ -269,7 +270,7 @@ const Store = () => {
     : products.filter(product => product.category === selectedCategory)
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Tenho interesse no produto: ${productName}. Poderia me dar mais informações?`
+    const message = `Oi! Tenho interesse em conhecer melhor os produtos da loja. Pode me passar mais informações?`
     const whatsappUrl = `https://wa.me/558298213105?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }

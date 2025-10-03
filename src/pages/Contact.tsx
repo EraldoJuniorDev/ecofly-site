@@ -80,7 +80,7 @@ const Contact = () => {
           Entre em Contato
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Estamos aqui para ajudar! Entre em contato conosco para tirar dúvidas, fazer pedidos ou dar sugestões.
+          Estamos aqui para ajudar! Entre em contato conosco para tirar dúvidas, fazer pedidos, relatar algum erro ou dar sugestões.
         </p>
       </div>
 
