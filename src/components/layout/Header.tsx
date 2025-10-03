@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, Leaf, Heart } from 'lucide-react'
+import { Menu, Heart } from 'lucide-react'
+import MainLogo from '../../../public/favicon.ico'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
 import { Badge } from '../ui/badge'
@@ -31,9 +32,7 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full eco-gradient">
-            <Leaf className="h-6 w-6 text-white" />
-          </div>
+            <img src={MainLogo} alt="Logo" className='w-14'/>
           <div className="flex flex-col">
             <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
             <span className="text-xs text-muted-foreground -mt-1">ecobags personalizadas</span>
@@ -112,7 +111,6 @@ const Header = () => {
               <div className="flex flex-col h-full">
                 <div className="flex items-center space-x-2 py-4">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full eco-gradient">
-                    <Leaf className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-lg font-bold eco-text-gradient">ECOFLY</span>
                 </div>
