@@ -33,21 +33,6 @@ const Footer = () => {
               <Link to="/loja" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Loja
               </Link>
-              <Link to="/ecobags" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                EcoBags
-              </Link>
-              <Link to="/cinzeiros" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Cinzeiros
-              </Link>
-              <Link to="/mini-telas" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Mini Telas
-              </Link>
-              {/* <Link to="/favoritos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Favoritos
-              </Link> */}
-              {/* <Link to="/feedback" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Feedback
-              </Link> */}
               <Link to="/contato" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Contato
               </Link>
@@ -59,7 +44,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold">Contato</h3>
             <div className="flex flex-col space-y-3">
               <a 
-                href="https://wa.me/5511999999999" 
+                href="https://wa.me/558298213105" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -75,13 +60,13 @@ const Footer = () => {
                 <span>contato@ecofly.com.br</span>
               </a>
               <a 
-                href="https://instagram.com/_ecofly_" 
+                href="https://www.instagram.com/__ecofly__/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <Instagram className="h-4 w-4" />
-                <span>@_ecofly_</span>
+                <span>@__ecofly__</span>
               </a>
             </div>
           </div>

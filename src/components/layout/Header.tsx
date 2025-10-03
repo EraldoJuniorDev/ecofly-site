@@ -21,10 +21,6 @@ const Header = () => {
   const menuItems = [
     { href: '/', label: 'Início' },
     { href: '/loja', label: 'Loja' },
-    { href: '/ecobags', label: 'EcoBags' },
-    { href: '/cinzeiros', label: 'Cinzeiros' },
-    { href: '/mini-telas', label: 'Mini Telas' },
-    // { href: '/feedback', label: 'Feedback' },
     { href: '/contato', label: 'Contato' }
   ]
 

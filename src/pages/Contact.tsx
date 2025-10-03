@@ -66,7 +66,7 @@ const Contact = () => {
       icon: <Instagram className="h-6 w-6" />,
       title: "Instagram",
       description: "Siga nossos produtos",
-      info: "@_ecofly_",
+      info: "@__ecofly__",
       action: () => window.open("https://www.instagram.com/__ecofly__/", "_blank"),
       color: "text-pink-600"
     }
