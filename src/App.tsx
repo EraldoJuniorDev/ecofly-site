@@ -9,6 +9,7 @@ import Store from './pages/Store'
 import Favorites from './pages/Favorites'
 import Contact from './pages/Contact'
 import { Toaster } from './components/ui/sonner'
+import Feedback from './pages/Fedback'
 
 console.log('App component loading...')
 
@@ -24,6 +25,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/loja" element={<Store />} />
+              <Route path="/feedback" element={<Feedback />} />
               <Route path="/favoritos" element={<Favorites />} />
               <Route path="/contato" element={<Contact />} />
             </Routes>
