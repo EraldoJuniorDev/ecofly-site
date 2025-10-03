@@ -261,7 +261,7 @@ const Store = () => {
     }
   ]
 
-  const categories = ["Todos", "EcoBags", "Cinzeiros", "Mini Telas", "Chaveiros"]
+  const categories = ["Todos", "EcoBags", "Cinzeiros", "Mini Telas"]
   const [selectedCategory, setSelectedCategory] = React.useState("Todos")
 
   const filteredProducts = selectedCategory === "Todos" 

@@ -8,7 +8,7 @@ import ProductCard from '../components/ProductCard'
 const Home = () => {
   console.log('Home page rendered with minimal animations')
   
-  const heroRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLImageElement>(null)
   const statsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -328,7 +328,7 @@ const Home = () => {
           </div>
 
           {/* Category Links */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 stagger-children">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 stagger-children">
             <Link to="/loja" className="group">
               <Card className="hover-subtle glass-subtle">
                 <CardContent className="p-6 text-center">
@@ -358,7 +358,7 @@ const Home = () => {
                 </CardContent>
               </Card>
             </Link>
-          </div>
+          </div> */}
 
           <div className="text-center animate-scale-in">
             <Button asChild size="lg" className="eco-gradient text-white btn-smooth">
