@@ -96,14 +96,14 @@ const Feedback = () => {
     }))
   }
 
-  // Função para formatar data em português (ex.: "Outubro 2025")
+  // Função para formatar data em português (ex.: "4 de Outubro de 2025")
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const months = [
       'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
     ]
-    return `${months[date.getMonth()]} ${date.getFullYear()}`
+    return `${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`
   }
 
   return (
@@ -185,13 +185,13 @@ const Feedback = () => {
                   name="product"
                   value={formData.product}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                  className="w-full px-3 py-2  border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                   disabled={loading}
                 >
                   <option value="">Selecione um produto</option>
-                  <option value="Ecobags">Ecobags</option>
-                  <option value="Cinzeiros">Cinzeiros</option>
-                  <option value="Mini Telas">Mini Telas</option>
+                  <option value="Ecobag">Ecobag</option>
+                  <option value="Cinzeiro">Cinzeiro</option>
+                  <option value="Mini Tela">Mini Tela</option>
                 </select>
               </div>
 
@@ -220,51 +220,49 @@ const Feedback = () => {
 
         {/* Testimonials (agora dinâmicos do Supabase) */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold mb-6">O que nossos clientes dizem</h2>
+  <h2 className="text-2xl font-bold mb-6">O que nossos clientes dizem</h2>
+  
+  {testimonials.length === 0 ? (
+    <p className="text-muted-foreground">Nenhum depoimento ainda. Seja o primeiro!</p>
+  ) : (
+    testimonials.slice(0, 3).map((testimonial) => (
+      <Card key={testimonial.id} className="shadow-md hover:shadow-lg transition-shadow text-white">
+        <CardContent className="p-4 overflow-hidden max-w-full">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+              <h3 className="font-semibold text-sm">{testimonial.name}</h3>
+              <p className="text-xs text-gray-400">{formatDate(testimonial.created_at)}</p>
+            </div>
+            <span className="inline-block bg-green-500 text-white text-xs font-bold py-1 px-2 rounded-full">
+              {testimonial.product || 'Geral'}
+            </span>
+          </div>
           
-          {testimonials.length === 0 ? (
-            <p className="text-muted-foreground">Nenhum depoimento ainda. Seja o primeiro!</p>
-          ) : (
-            testimonials.slice(0, 3).map((testimonial) => ( // Limita a 3 para manter o design
-              <Card key={testimonial.id} className="shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                      <User className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{testimonial.name}</h3>
-                          <p className="text-sm text-muted-foreground">{testimonial.product || 'Geral'}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{formatDate(testimonial.created_at)}</span>
-                      </div>
-                      
-                      <div className="flex gap-1">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
-                      
-                      <p className="text-sm leading-relaxed">"{testimonial.message}"</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+          <div className="flex gap-1 mb-2">
+            {[...Array(testimonial.rating)].map((_, i) => (
+              <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            ))}
+          </div>
+          
+          <p className="text-sm leading-relaxed break-words max-w-full"> "{testimonial.message}"</p>
+        </CardContent>
+      </Card>
+    ))
+  )}
 
-          {/* Call to Action */}
-          <Card className="eco-gradient text-white">
-            <CardContent className="p-6 text-center">
-              <h3 className="text-lg font-semibold mb-2">Satisfação Garantida</h3>
-              <p className="text-sm opacity-90">
-                Nossa prioridade é sua satisfação. Cada produto é feito com carinho e atenção aos detalhes.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+  {/* Call to Action */}
+  <Card className="eco-gradient text-white">
+    <CardContent className="p-6 text-center">
+      <h3 className="text-lg font-semibold mb-2">Satisfação Garantida</h3>
+      <p className="text-sm opacity-90">
+        Nossa prioridade é sua satisfação. Cada produto é feito com carinho e atenção aos detalhes.
+      </p>
+    </CardContent>
+  </Card>
+</div>
       </div>
     </div>
   )
