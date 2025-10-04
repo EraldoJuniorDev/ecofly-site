@@ -1,6 +1,6 @@
 # ECOFLY - EcoBags Personalizadas Sustentáveis
 
-![ECOFLY Logo](https://cdn-ai.onspace.ai/onspace/project/image/PmDAFoyvUEJHW4u7FEeqZd/logo.png)
+![ECOFLY Logo](https://ecofly-site.vercel.app/assets/logo_transparent-CYAqbDdT.png)
 
 ## 📖 Sobre o Projeto
 
