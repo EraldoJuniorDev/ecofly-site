@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge'
 import { Heart, MessageCircle, Trash2, ShoppingBag } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { WHATSAPP_LINK } from "../constants";
 
 const Favorites = () => {
   console.log('Favorites page rendered')
@@ -14,7 +15,7 @@ const Favorites = () => {
 
   const handleWhatsApp = (productName: string) => {
     const message = `Olá! Tenho interesse no produto dos meus favoritos: ${productName}. Poderia me dar mais informações?`
-    const whatsappUrl = `https://wa.me/558282113105?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
 
