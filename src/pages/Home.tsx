@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { ArrowRight, Leaf, Recycle, Heart, Star, Sparkles } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
 import Logo from '../img/logo_transparent.png'
+import productsData from '../data/products.json'
 
 const Home = () => {
   console.log('Home page rendered with minimal animations')
@@ -104,112 +105,44 @@ const Home = () => {
     }
   ]
 
-  const featuredProducts = [
-    {
-      id: 101,
-      name: "EcoBag Personalizada 'Mar Doce Lar'",
-      category: "EcoBags",
-      images: [
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/XeQ2YWQvTtREiHW8mDN79N/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.29_18aae992.jpg",
-          alt: "EcoBag Mar Doce Lar - Vista frontal"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/mUHwvvXqSHptCB4uvaVZc8/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.29_18aae992.jpg",
-          alt: "EcoBag Mar Doce Lar - Vista pendurada"
-        }
-      ],
-      description: "Design inspirado no mar com tipografia criativa e símbolos marítimos"
-    },
-    {
-      id: 102,
-      name: "Cinzeiro Artesanal Universo Místico",
-      category: "Cinzeiros",
-      images: [
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/XoNWXGKFovkBZWDxR2zUFV/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.27_17d633eb.jpg",
-          alt: "Cinzeiro Universo Místico - Vista superior"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/B3ujeDNDD66Eh9ykSQVcKB/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.27_17d633eb.jpg",
-          alt: "Cinzeiro Universo Místico - Vista na mão"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/LpTV7aG2YXVL5eKV5Gatv6/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.27_17d633eb.jpg",
-          alt: "Cinzeiro Universo Místico - Detalhe do design"
-        }
-      ],
-      description: "Design cósmico com olho central, estrelas douradas e gradiente místico"
-    },
-    {
-      id: 103,
-      name: "Mini Tela Cósmica",
-      category: "Mini Telas",
-      images: [
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/9pko3fbvc927PViDX539mT/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.29_a9e29dbc.jpg",
-          alt: "Mini Tela Cósmica - Vista superior"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/Q2XL2GHwhRAHQNreRvtswn/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.29_a9e29dbc.jpg",
-          alt: "Mini Tela Cósmica - Vista na mão"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/Nv6avEzcdGQy47eT2bxjH2/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.29_de2e1d21.jpg",
-          alt: "Mini Tela Espiral Colorida - Variação"
-        }
-      ],
-      description: "Universo em miniatura com olho central e padrões hipnóticos"
-    },
-    {
-      id: 104,
-      name: "EcoBag Lana Del Rey",
-      category: "EcoBags",
-      images: [
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/MjCgbX9iiN5zM37BGqs352/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
-          alt: "EcoBag Lana Del Rey - Vista frontal"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/gG2HHSLCDoxm2rscH6Viv3/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_c32269da.jpg",
-          alt: "EcoBag Lana Del Rey - Post Instagram"
-        }
-      ],
-      description: "Inspirada na música, com cerejas delicadas e frase icônica"
-    },
-    {
-      id: 105,
-      name: "Cinzeiro Rolling Stones",
-      category: "Cinzeiros",
-      images: [
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/i3DWd6hsNsLcKNCoRgDjTf/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.27_09211f44.jpg",
-          alt: "Cinzeiro Rolling Stones - Vista superior"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/5h5ukSGRg7QoVSxH63GBJj/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.27_09211f44.jpg",
-          alt: "Cinzeiro Rolling Stones - Vista lateral"
-        }
-      ],
-      description: "Clássico logo dos Rolling Stones em design elegante e resistente"
-    },
-    {
-      id: 106,
-      name: "EcoBag Olho Místico",
-      category: "EcoBags",
-      images: [
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/itTiUSDxUvB8WjUC4AUTMD/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_d405b426.jpg",
-          alt: "EcoBag Olho Místico - Vista frontal"
-        },
-        {
-          url: "https://cdn-ai.onspace.ai/onspace/project/image/DNpUUgoq8zLroVotVHmDbw/Imagem_do_WhatsApp_de_2025-09-30_à(s)_01.44.30_d405b426.jpg",
-          alt: "EcoBag Olho Místico - Post Instagram"
-        }
-      ],
-      description: "Design místico com olho centralizado e elementos esotéricos"
-    }
-  ]
+  function RandomProducts() {
+  const [randomProducts, setRandomProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    // copia os produtos
+    const productsCopy = [...productsData];
+
+    // embaralha os itens
+    const shuffled = productsCopy.sort(() => 0.5 - Math.random());
+
+    // pega só 6
+    const selected = shuffled.slice(0, 6);
+
+    setRandomProducts(selected);
+  }, []);
+
+  return (
+    <div>
+      <h1>Produtos em destaque</h1>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+        {randomProducts.map((product) => (
+          <div key={product.id} style={{ border: "1px solid #ddd", padding: "10px", borderRadius: "8px" }}>
+            <h2>{product.name}</h2>
+            <p>{product.description}</p>
+            {product.images && product.images[0] && (
+              <img
+                src={product.images[0].url}
+                alt={product.images[0].alt}
+                width="150"
+                style={{ borderRadius: "6px" }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
   const handleWhatsApp = (productName: string) => {
     const message = `Olá! Vi no site da ECOFLY o produto: ${productName}. Gostaria de mais informações!`
@@ -244,7 +177,7 @@ const Home = () => {
               
               <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
                 <Button asChild size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 btn-smooth">
-                  <Link to="/loja">
+                  <Link to="/catalogo">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Ver Produtos
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -307,15 +240,15 @@ const Home = () => {
         <div className="container px-4">
           <div className="text-center mb-12 animate-scale-in">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Nossos Produtos em Destaque
+              Conheça Nossa Variedade de Itens
             </h2>
             <p className="text-xl text-muted-foreground">
-              Explore nossa variedade de produtos sustentáveis e únicos
+              Explore opções que atendem a todos os gostos e necessidades.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12 stagger-children">
-            {featuredProducts.map((product) => (
+            {productsData.slice(0, 6).map((product) => (
               <ProductCard
                 key={product.id}
                 id={product.id}
@@ -328,42 +261,9 @@ const Home = () => {
             ))}
           </div>
 
-          {/* Category Links */}
-          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 stagger-children">
-            <Link to="/loja" className="group">
-              <Card className="hover-subtle glass-subtle">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl mb-4 animate-gentle-bounce">🛍️</div>
-                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">EcoBags</h3>
-                  <p className="text-muted-foreground">Personalizadas e sustentáveis</p>
-                </CardContent>
-              </Card>
-            </Link>
-            
-            <Link to="/loja" className="group">
-              <Card className="hover-subtle glass-subtle">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl mb-4 animate-float">🎨</div>
-                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">Cinzeiros</h3>
-                  <p className="text-muted-foreground">Arte funcional e criativa</p>
-                </CardContent>
-              </Card>
-            </Link>
-            
-            <Link to="/loja" className="group">
-              <Card className="hover-subtle glass-subtle">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl mb-4 animate-float-delayed">🖼️</div>
-                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">Mini Telas</h3>
-                  <p className="text-muted-foreground">Pequenas obras de arte</p>
-                </CardContent>
-              </Card>
-            </Link>
-          </div> */}
-
           <div className="text-center animate-scale-in">
             <Button asChild size="lg" className="eco-gradient text-white btn-smooth">
-              <Link to="/loja">
+              <Link to="/catalogo">
                 Ver Todos os Produtos
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
