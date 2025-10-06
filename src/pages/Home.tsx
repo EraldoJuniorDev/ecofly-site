@@ -7,6 +7,7 @@ import { ArrowRight, Leaf, Recycle, Heart, Sparkles } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import Logo from '../img/logo_transparent.png';
 import productsData from '../data/products.json';
+import { WHATSAPP_LINK } from '../constants'; // Importando o link do arquivo de constantes
 
 const Home = () => {
   console.log('Home page rendered with minimal animations');
@@ -103,8 +104,8 @@ const Home = () => {
   ];
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Vi no site da ECOFLY o produto: ${productName}. Gostaria de mais informações!`;
-    const whatsappUrl = `https://wa.me/5582982113105?text=${encodeURIComponent(message)}`;
+    const message = `Olá! Tenho interesse no produto: ${productName}. Poderia me dar mais informações?`;
+    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`; // Usando o WHATSAPP_LINK importado
     window.open(whatsappUrl, '_blank');
   };
 

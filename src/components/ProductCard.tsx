@@ -30,12 +30,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   description,
   onWhatsAppClick,
 }) => {
-  console.log(`ProductCard ${id} rendered with simplified design`);
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [modalImageIndex, setModalImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -77,7 +73,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleFavoriteToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Toggling favorite for item:', favoriteItem);
     toggleFavorite(favoriteItem);
 
     if (isProductFavorite) {
@@ -91,42 +86,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
     <Card
       ref={cardRef}
       className="group overflow-hidden card-hover glass-subtle border-0 relative animate-fade-in-up"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative aspect-square overflow-hidden bg-muted/20">
-        {!imageLoaded && (
-          <div className="absolute inset-0 skeleton"></div>
-        )}
-
         <img
           src={images[currentImageIndex]?.url || images[0]?.url}
           alt={images[currentImageIndex]?.alt || name}
-          className={`w-full h-full object-cover transition-all duration-500 hover-scale ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={() => setImageLoaded(true)}
+          className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
         />
 
-        <div className={`absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent transition-opacity duration-300 ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}></div>
+        {/* Gradiente e botões visíveis apenas no hover com CSS */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
         {images.length > 1 && (
           <>
             <button
               onClick={prevImage}
-              className={`absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center transition-all duration-300 hover:bg-white hover-scale ${
-                isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
-              }`}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={nextImage}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center transition-all duration-300 hover:bg-white hover-scale ${
-                isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'
-              }`}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -134,18 +115,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {images.length > 1 && (
-          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             {currentImageIndex + 1}/{images.length}
           </div>
         )}
 
-        <div className={`absolute top-3 left-3 flex flex-col gap-2 transition-all duration-300 ${
-          isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-        }`}>
+        <div className="absolute top-3 left-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <Dialog>
             <DialogTrigger asChild>
               <button
-                className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center hover:bg-white hover-scale transition-all duration-200"
+                className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center hover:bg-white hover:scale-105 transition-all duration-200"
                 onClick={() => setModalImageIndex(currentImageIndex)}
               >
                 <ZoomIn className="h-4 w-4" />
@@ -183,7 +162,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                         <button
                           key={index}
                           onClick={() => handleModalImageSelect(index)}
-                          className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover-scale ${
+                          className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                             index === modalImageIndex
                               ? 'border-primary'
                               : 'border-white/20 hover:border-white/40'
@@ -218,7 +197,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </Dialog>
           <button
             onClick={handleFavoriteToggle}
-            className={`w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center hover-scale transition-all duration-200 ${
+            className={`w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-105 transition-all duration-200 ${
               isProductFavorite
                 ? 'bg-red-500/90 text-white'
                 : 'bg-white/80 text-gray-700 hover:bg-white'
@@ -237,7 +216,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <button
                 key={index}
                 onClick={() => handleImageSelect(index)}
-                className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 hover-scale ${
+                className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
                   index === currentImageIndex
                     ? 'border-primary'
                     : 'border-transparent hover:border-muted-foreground/30'
@@ -289,4 +268,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   );
 };
 
-export default ProductCard;
+// Use React.memo para evitar re-renderizações desnecessárias
+export default React.memo(ProductCard, (prevProps, nextProps) => {
+  return prevProps.id === nextProps.id &&
+         prevProps.name === nextProps.name &&
+         prevProps.category === nextProps.category &&
+         prevProps.description === nextProps.description &&
+         prevProps.images.length === nextProps.images.length &&
+         prevProps.onWhatsAppClick === nextProps.onWhatsAppClick;
+});

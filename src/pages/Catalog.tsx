@@ -17,7 +17,7 @@ const Store = () => {
     : productsData.filter((product) => product.category === selectedCategory);
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Poderia me fornecer mais informações sobre os produtos da ECOFLY?`;
+    const message = `Olá! Tenho interesse no produto: ${productName}. Poderia me dar mais informações?`;
     const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

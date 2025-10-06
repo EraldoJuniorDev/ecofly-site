@@ -1,41 +1,52 @@
-import React, { useState, useEffect } from 'react'
-import { Button } from '../ui/button'
-import { ChevronUp } from 'lucide-react'
+// src/components/BackToTop.tsx
+import React, { useState, useEffect } from 'react';
+import { Button } from '../ui/button';
+import { ChevronUp } from 'lucide-react';
 
-const BackToTop = () => {
-  const [isVisible, setIsVisible] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
+const BackToTop: React.FC = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
-  console.log('BackToTop component rendered with minimal design')
+  // useEffect inicial para depuração (opcional)
+  useEffect(() => {
+    // console.log('BackToTop component mounted'); // Descomente para depuração inicial
+  }, []);
 
   useEffect(() => {
+    let debounceTimer: number;
+
     const toggleVisibility = () => {
-      const scrolled = window.pageYOffset
-      const maxHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = (scrolled / maxHeight) * 100
+      const scrolled = window.pageYOffset;
+      const maxHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (scrolled / maxHeight) * 100;
 
-      setScrollProgress(progress)
-      setIsVisible(scrolled > 300)
-    }
+      // Debounce para limitar atualizações
+      clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(() => {
+        setScrollProgress(progress);
+        setIsVisible(scrolled > 300);
+      }, 100); // Ajuste o tempo de debounce conforme necessário (100ms é um bom ponto de partida)
+    };
 
-    const handleScroll = () => requestAnimationFrame(toggleVisibility)
-    window.addEventListener('scroll', handleScroll)
+    const handleScroll = () => requestAnimationFrame(toggleVisibility);
+    window.addEventListener('scroll', handleScroll);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(debounceTimer); // Limpa o timer ao desmontar
+    };
+  }, []);
 
   const scrollToTop = () => {
-    console.log('ScrollToTop clicked with smooth animation')
+    // console.log('ScrollToTop clicked with smooth animation'); // Descomente para depuração de cliques
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
-    })
-  }
+      behavior: 'smooth',
+    });
+  };
 
   if (!isVisible) {
-    return null
+    return null;
   }
 
   return (
@@ -70,7 +81,7 @@ const BackToTop = () => {
             strokeLinecap="round"
           />
         </svg>
-        
+
         {/* Main Button */}
         <Button
           onClick={scrollToTop}
@@ -88,7 +99,7 @@ const BackToTop = () => {
           {/* Icon */}
           <ChevronUp className="h-5 w-5 transition-transform duration-200 group-hover:-translate-y-0.5" />
         </Button>
-        
+
         {/* Tooltip */}
         <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
           Voltar ao topo
@@ -96,7 +107,8 @@ const BackToTop = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BackToTop
+// Memoize o componente para evitar re-renderizações desnecessárias
+export default React.memo(BackToTop);
