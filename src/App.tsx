@@ -10,18 +10,19 @@ import Catalog from './pages/Catalog';
 import Favorites from './pages/Favorites';
 import Feedback from './pages/Feedback';
 import Contact from './pages/Contact';
+import AdminPage from './pages/AdminPage';
 import { Toaster } from './components/ui/sonner';
-import { FavoritesProvider } from './context/FavoritesContext'; // Adicione esta importação
+import { FavoritesProvider } from './context/FavoritesContext';
 
 console.log('App component loading...');
 
 function App() {
   console.log('App component rendered');
-  
+
   return (
     <ThemeProvider defaultTheme="system" storageKey="ecofly-ui-theme">
-      <FavoritesProvider> {/* Adicione o FavoritesProvider aqui */}
-        <Router>
+      <FavoritesProvider>
+        <Router future={{ v7_startTransition: true }}>
           <div className="min-h-screen bg-background flex flex-col">
             <Header />
             <main className="flex-1">
@@ -31,6 +32,7 @@ function App() {
                 <Route path="/favoritos" element={<Favorites />} />
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/contato" element={<Contact />} />
+                <Route path="/admin_page" element={<AdminPage />} />
               </Routes>
             </main>
             <Footer />

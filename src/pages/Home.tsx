@@ -1,19 +1,57 @@
-// src/pages/Home.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { ArrowRight, Leaf, Recycle, Heart, Sparkles } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import Logo from '../img/logo_transparent.png';
-import productsData from '../data/products.json';
-import { WHATSAPP_LINK } from '../constants'; // Importando o link do arquivo de constantes
+import { WHATSAPP_LINK } from '../constants';
+import { supabase } from '../lib/supabaseClient';
+
+// Definir a interface para os produtos
+interface Product {
+  id: number; // Alterado de string para number
+  name: string;
+  category: string;
+  description: string;
+  images: { url: string; alt: string }[];
+}
 
 const Home = () => {
   console.log('Home page rendered with minimal animations');
 
   const heroRef = useRef<HTMLImageElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Buscar produtos do Supabase ao carregar o componente
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('items')
+          .select('*')
+          .limit(6);
+
+        if (error) {
+          throw new Error(`Erro ao buscar produtos: ${error.message}`);
+        }
+
+        console.log('Produtos buscados do Supabase:', data);
+        setProducts(data || []);
+      } catch (err: any) {
+        console.error('Erro:', err.message);
+        setError('Não foi possível carregar os produtos. Tente novamente mais tarde.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -105,7 +143,7 @@ const Home = () => {
 
   const handleWhatsApp = (productName: string) => {
     const message = `Olá! Tenho interesse no produto: ${productName}. Poderia me dar mais informações?`;
-    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`; // Usando o WHATSAPP_LINK importado
+    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -202,19 +240,29 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12 stagger-children">
-            {productsData.slice(0, 6).map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                category={product.category}
-                images={product.images}
-                description={product.description}
-                onWhatsAppClick={handleWhatsApp}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground">Carregando produtos...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-red-600">{error}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12 stagger-children">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id} // Agora é number
+                  name={product.name}
+                  category={product.category}
+                  images={product.images}
+                  description={product.description}
+                  onWhatsAppClick={handleWhatsApp}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="text-center animate-scale-in">
             <Button asChild size="lg" className="eco-gradient text-white btn-smooth">

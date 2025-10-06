@@ -1,20 +1,59 @@
-// src/pages/Catalog.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { WHATSAPP_LINK } from '../constants';
-import productsData from '../data/products.json';
+import { supabase } from '../lib/supabaseClient';
+import { Item } from '../types/supabase';
+
+// Definir a interface para os produtos, alinhada com a tabela items
+interface Product {
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  images: { url: string; alt: string }[];
+}
 
 const Store = () => {
   console.log('Store page rendered with enhanced product cards');
 
-  const categories = ['Todos', 'EcoBags', 'Cinzeiros', 'Mini Telas'];
-  const [selectedCategory, setSelectedCategory] = React.useState('Todos');
+  const categories = ['Todos', 'Ecobags', 'Cinzeiros', 'Mini Telas'];
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Buscar produtos do Supabase ao carregar o componente
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('items')
+          .select('*') as { data: Item[] | null; error: any };
+        
+        if (error) {
+          throw new Error(`Erro ao buscar produtos: ${error.message}`);
+        }
+
+        console.log('Dados do Supabase:', data);
+        console.log('Tipo do primeiro id:', data?.[0]?.id, typeof data?.[0]?.id);
+        setProducts(data || []);
+      } catch (err: any) {
+        console.error('Erro:', err.message);
+        setError('Não foi possível carregar os produtos. Tente novamente mais tarde.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = selectedCategory === 'Todos'
-    ? productsData
-    : productsData.filter((product) => product.category === selectedCategory);
+    ? products
+    : products.filter((product) => product.category === selectedCategory);
 
   const handleWhatsApp = (productName: string) => {
     const message = `Olá! Tenho interesse no produto: ${productName}. Poderia me dar mais informações?`;
@@ -46,21 +85,31 @@ const Store = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            id={product.id}
-            name={product.name}
-            category={product.category}
-            images={product.images}
-            description={product.description}
-            onWhatsAppClick={handleWhatsApp}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-lg text-muted-foreground">Carregando produtos...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-lg text-red-600">{error}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              category={product.category}
+              images={product.images}
+              description={product.description}
+              onWhatsAppClick={handleWhatsApp}
+            />
+          ))}
+        </div>
+      )}
 
-      {filteredProducts.length === 0 && (
+      {filteredProducts.length === 0 && !loading && !error && (
         <div className="text-center py-12">
           <p className="text-lg text-muted-foreground">
             Nenhum produto encontrado nesta categoria.

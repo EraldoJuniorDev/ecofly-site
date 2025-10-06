@@ -1,4 +1,3 @@
-// src/components/ProductCard.tsx
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -94,7 +93,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
           className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
         />
 
-        {/* Gradiente e botões visíveis apenas no hover com CSS */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
         {images.length > 1 && (
@@ -268,7 +266,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   );
 };
 
-// Use React.memo para evitar re-renderizações desnecessárias
 export default React.memo(ProductCard, (prevProps, nextProps) => {
   return prevProps.id === nextProps.id &&
          prevProps.name === nextProps.name &&
