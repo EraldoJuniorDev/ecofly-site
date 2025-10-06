@@ -6,7 +6,7 @@ import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
 import { Badge } from '../ui/badge'
 import ThemeToggle from './ThemeToggle'
-import { useFavorites } from '../../hooks/useFavorites'
+import { useFavorites } from '../../context/FavoritesContext'
 
 console.log('Header component loading...')
 

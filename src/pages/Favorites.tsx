@@ -1,38 +1,39 @@
-import React from 'react'
-import { useFavorites } from '../hooks/useFavorites'
-import { Button } from '../components/ui/button'
-import { Card, CardContent } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import { Heart, MessageCircle, Trash2, ShoppingBag } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { toast } from 'sonner'
-import { WHATSAPP_LINK } from "../constants";
+// src/pages/Favorites.tsx
+import React, { useEffect } from 'react';
+import { useFavorites } from '../context/FavoritesContext';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Heart, MessageCircle, Trash2, ShoppingBag } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { WHATSAPP_LINK } from '../constants';
 
 const Favorites = () => {
-  console.log('Favorites page rendered')
+  console.log('Favorites page rendered with favorites:', useFavorites().favorites);
 
-  const { favorites, removeFromFavorites, clearAllFavorites } = useFavorites()
+  const { favorites, removeFromFavorites, clearAllFavorites } = useFavorites();
+
+  useEffect(() => {
+    console.log('Favorites state updated in component:', favorites);
+  }, [favorites]);
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Tenho interesse no produto dos meus favoritos: ${productName}. Poderia me dar mais informações?`
-    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`
-    window.open(whatsappUrl, '_blank')
-  }
+    const message = `Olá! Tenho interesse no produto dos meus favoritos: ${productName}. Poderia me dar mais informações?`;
+    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handleRemoveFavorite = (itemId: number, itemName: string) => {
-    removeFromFavorites(itemId)
-    toast.success(`${itemName} removido dos favoritos`)
-  }
+    removeFromFavorites(itemId);
+    toast.success(`${itemName} removido dos favoritos`);
+  };
 
   const handleClearAll = () => {
-    if (favorites.length === 0) return
-    
-    const confirmed = window.confirm('Tem certeza que deseja remover todos os favoritos?')
-    if (confirmed) {
-      clearAllFavorites()
-      toast.success('Todos os favoritos foram removidos')
-    }
-  }
+    if (favorites.length === 0) return;
+    clearAllFavorites();
+    toast.success('Todos os favoritos foram removidos');
+  };
 
   if (favorites.length === 0) {
     return (
@@ -46,7 +47,7 @@ const Favorites = () => {
             Você ainda não adicionou nenhum produto aos favoritos. 
             Explore nossa loja e salve os produtos que mais gostar!
           </p>
-          <Link to="/loja">
+          <Link to="/catalogo">
             <Button className="eco-gradient text-white">
               <ShoppingBag className="w-4 h-4 mr-2" />
               Explorar Produtos
@@ -54,7 +55,7 @@ const Favorites = () => {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -156,7 +157,7 @@ const Favorites = () => {
         <p className="text-muted-foreground mb-6">
           Continue explorando nossa loja para descobrir mais produtos únicos e sustentáveis!
         </p>
-        <Link to="/loja">
+        <Link to="/catalogo">
           <Button className="eco-gradient text-white">
             <ShoppingBag className="w-4 h-4 mr-2" />
             Ver Mais Produtos
@@ -164,7 +165,7 @@ const Favorites = () => {
         </Link>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Favorites
+export default Favorites;

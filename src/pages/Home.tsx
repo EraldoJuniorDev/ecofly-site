@@ -1,160 +1,116 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from '../components/ui/button'
-import { Card, CardContent } from '../components/ui/card'
-import { ArrowRight, Leaf, Recycle, Heart, Star, Sparkles } from 'lucide-react'
-import ProductCard from '../components/ProductCard'
-import Logo from '../img/logo_transparent.png'
-import productsData from '../data/products.json'
+// src/pages/Home.tsx
+import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { ArrowRight, Leaf, Recycle, Heart, Sparkles } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
+import Logo from '../img/logo_transparent.png';
+import productsData from '../data/products.json';
 
 const Home = () => {
-  console.log('Home page rendered with minimal animations')
-  
-  const heroRef = useRef<HTMLImageElement>(null)
-  const statsRef = useRef<HTMLDivElement>(null)
+  console.log('Home page rendered with minimal animations');
+
+  const heroRef = useRef<HTMLImageElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Intersection Observer for scroll animations
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('animate')
+            entry.target.classList.add('animate');
           }
-        })
+        });
       },
       { threshold: 0.1 }
-    )
+    );
 
-    // Observe all elements with animate-on-scroll class
-    const animateElements = document.querySelectorAll('.animate-on-scroll')
-    animateElements.forEach((el) => observer.observe(el))
+    const animateElements = document.querySelectorAll('.animate-on-scroll');
+    animateElements.forEach((el) => observer.observe(el));
 
-    // Subtle parallax effect for hero background
     const handleScroll = () => {
-      const scrolled = window.pageYOffset
-      const parallax = heroRef.current
+      const scrolled = window.pageYOffset;
+      const parallax = heroRef.current;
       if (parallax) {
-        const speed = scrolled * 0.3
-        parallax.style.transform = `translateY(${speed}px)`
+        const speed = scrolled * 0.3;
+        parallax.style.transform = `translateY(${speed}px)`;
       }
-    }
+    };
 
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll);
 
-    // Stats counter animation
     const animateStats = () => {
-      const statsElements = statsRef.current?.querySelectorAll('.stat-number')
+      const statsElements = statsRef.current?.querySelectorAll('.stat-number');
       if (statsElements) {
         statsElements.forEach((stat, index) => {
-          const target = parseInt(stat.getAttribute('data-target') || '0')
-          const increment = target / 80
-          let current = 0
-          
+          const target = parseInt(stat.getAttribute('data-target') || '0');
+          const increment = target / 80;
+          let current = 0;
+
           const timer = setInterval(() => {
-            current += increment
+            current += increment;
             if (current >= target) {
-              stat.textContent = target.toString()
-              clearInterval(timer)
+              stat.textContent = target.toString();
+              clearInterval(timer);
             } else {
-              stat.textContent = Math.ceil(current).toString()
+              stat.textContent = Math.ceil(current).toString();
             }
-          }, 25 + index * 5)
-        })
+          }, 25 + index * 5);
+        });
       }
-    }
+    };
 
     const statsObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            animateStats()
-            statsObserver.unobserve(entry.target)
+            animateStats();
+            statsObserver.unobserve(entry.target);
           }
-        })
+        });
       },
       { threshold: 0.5 }
-    )
+    );
 
     if (statsRef.current) {
-      statsObserver.observe(statsRef.current)
+      statsObserver.observe(statsRef.current);
     }
 
     return () => {
-      observer.disconnect()
-      statsObserver.disconnect()
-      window.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
+      observer.disconnect();
+      statsObserver.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const highlights = [
     {
       icon: <Leaf className="h-7 w-7 text-primary animate-float" />,
-      title: "100% Sustentável",
-      description: "Produtos ecológicos que fazem a diferença"
+      title: '100% Sustentável',
+      description: 'Produtos ecológicos que fazem a diferença',
     },
     {
       icon: <Recycle className="h-7 w-7 text-primary animate-float-delayed" />,
-      title: "Reutilizável",
-      description: "Durabilidade e qualidade em cada produto"
+      title: 'Reutilizável',
+      description: 'Durabilidade e qualidade em cada produto',
     },
     {
       icon: <Heart className="h-7 w-7 text-primary animate-gentle-bounce" />,
-      title: "Feito com Amor",
-      description: "Cada peça é única e artesanal"
-    }
-  ]
-
-  function RandomProducts() {
-  const [randomProducts, setRandomProducts] = useState<any[]>([]);
-
-  useEffect(() => {
-    // copia os produtos
-    const productsCopy = [...productsData];
-
-    // embaralha os itens
-    const shuffled = productsCopy.sort(() => 0.5 - Math.random());
-
-    // pega só 6
-    const selected = shuffled.slice(0, 6);
-
-    setRandomProducts(selected);
-  }, []);
-
-  return (
-    <div>
-      <h1>Produtos em destaque</h1>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
-        {randomProducts.map((product) => (
-          <div key={product.id} style={{ border: "1px solid #ddd", padding: "10px", borderRadius: "8px" }}>
-            <h2>{product.name}</h2>
-            <p>{product.description}</p>
-            {product.images && product.images[0] && (
-              <img
-                src={product.images[0].url}
-                alt={product.images[0].alt}
-                width="150"
-                style={{ borderRadius: "6px" }}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+      title: 'Feito com Amor',
+      description: 'Cada peça é única e artesanal',
+    },
+  ];
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Vi no site da ECOFLY o produto: ${productName}. Gostaria de mais informações!`
-    const whatsappUrl = `https://wa.me/5582982113105?text=${encodeURIComponent(message)}`
-    window.open(whatsappUrl, '_blank')
-  }
+    const message = `Olá! Vi no site da ECOFLY o produto: ${productName}. Gostaria de mais informações!`;
+    const whatsappUrl = `https://wa.me/5582982113105?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <div className="min-h-screen overflow-hidden">
-      {/* Hero Section with Minimal Animations */}
       <section className="relative overflow-hidden eco-gradient min-h-screen flex items-center">
-        {/* Subtle Background Elements */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-20 left-20 w-24 h-24 bg-white/10 rounded-full animate-float"></div>
           <div className="absolute top-1/3 right-24 w-16 h-16 bg-white/10 rounded-full animate-float-delayed"></div>
@@ -167,15 +123,17 @@ const Home = () => {
               <h1 className="text-4xl md:text-6xl font-bold leading-tight">
                 <span className="inline-block">EcoBags</span>
                 <br />
-                <span className="text-white/90 inline-block animate-fade-in-up" style={{animationDelay: '0.2s'}}>Personalizadas</span>
+                <span className="text-white/90 inline-block animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                  Personalizadas
+                </span>
               </h1>
-              
-              <p className="text-xl text-white/90 max-w-lg animate-fade-in-up" style={{animationDelay: '0.4s'}}>
+
+              <p className="text-xl text-white/90 max-w-lg animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
                 Transforme sua rotina com produtos sustentáveis únicos. 
                 EcoBags, cinzeiros artesanais, chaveiros e mini telas criativas.
               </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
+
+              <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
                 <Button asChild size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 btn-smooth">
                   <Link to="/catalogo">
                     <Sparkles className="mr-2 h-4 w-4" />
@@ -190,17 +148,15 @@ const Home = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="relative animate-fade-in-right">
               <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group">
-                <img 
+                <img
                   ref={heroRef}
                   src={Logo}
                   alt="ECOFLY Logo"
                   className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-300"
                 />
-                
-                {/* Decorative elements */}
                 <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full blur-xl animate-float"></div>
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full blur-2xl animate-float-delayed"></div>
               </div>
@@ -209,7 +165,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Section with Staggered Animation */}
       <section className="py-16 md:py-24 animate-on-scroll">
         <div className="container px-4">
           <div className="text-center mb-12 animate-fade-in-up">
@@ -235,7 +190,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Products Preview */}
       <section className="py-16 md:py-24 bg-muted/30 animate-on-scroll">
         <div className="container px-4">
           <div className="text-center mb-12 animate-scale-in">
@@ -272,15 +226,12 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Sustainability Section */}
       <section className="py-16 md:py-24 animate-on-scroll">
         <div className="container px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="eco-gradient rounded-2xl p-8 md:p-12 text-white relative overflow-hidden">
-              {/* Subtle decorative elements */}
               <div className="absolute top-4 right-4 w-16 h-16 bg-white/5 rounded-full animate-float-delayed"></div>
               <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/5 rounded-full animate-gentle-bounce"></div>
-              
               <Leaf className="h-12 w-12 mx-auto mb-6 opacity-80 animate-float" />
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
                 Sustentabilidade em Cada Detalhe
@@ -289,7 +240,6 @@ const Home = () => {
                 Na ECOFLY, cada produto é pensado para minimizar o impacto ambiental. 
                 Usamos materiais sustentáveis e processos artesanais que respeitam o planeta.
               </p>
-              
               <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                 <div className="animate-scale-in">
                   <div className="text-3xl font-bold mb-2">
@@ -297,13 +247,13 @@ const Home = () => {
                   </div>
                   <div className="opacity-90">Materiais Sustentáveis</div>
                 </div>
-                <div className="animate-scale-in" style={{animationDelay: '0.2s'}}>
+                <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
                   <div className="text-3xl font-bold mb-2">
                     <span className="stat-number" data-target="0">0</span>%
                   </div>
                   <div className="opacity-90">Desperdício</div>
                 </div>
-                <div className="animate-scale-in" style={{animationDelay: '0.4s'}}>
+                <div className="animate-scale-in" style={{ animationDelay: '0.4s' }}>
                   <div className="text-3xl font-bold mb-2">∞</div>
                   <div className="opacity-90">Reutilização</div>
                 </div>
@@ -313,7 +263,7 @@ const Home = () => {
         </div>
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
