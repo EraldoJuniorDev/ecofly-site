@@ -4,7 +4,6 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { ArrowRight, Leaf, Recycle, Heart, Sparkles } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import Logo from '../img/logo_transparent.png';
 import { WHATSAPP_LINK } from '../constants';
 import { supabase } from '../lib/supabaseClient';
 
@@ -192,7 +191,7 @@ const Home = () => {
               <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group">
                 <img
                   ref={heroRef}
-                  src={Logo}
+                  src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/logo_transparent.png"
                   alt="ECOFLY Logo"
                   className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-300"
                 />
