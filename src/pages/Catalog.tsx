@@ -18,7 +18,7 @@ interface Product {
 const Store = () => {
   console.log('Store page rendered with enhanced product cards');
 
-  const categories = ['Todos', 'Ecobags', 'Cinzeiros', 'Mini Telas'];
+  const categories = ['Todos', 'Ecobag', 'Cinzeiro', 'Mini Tela'];
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
