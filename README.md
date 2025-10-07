@@ -53,21 +53,97 @@ Vite para bundling rápido e eficiente
 Controle de versão: Git + GitHub
 
 🏗 Estrutura do Projeto
-ecofly-site/
-├── public/                  # Assets públicos (imagens, favicon, logos)
-├── src/
-│   ├── components/          # Componentes reutilizáveis (Card, Button, Badge, etc.)
-│   ├── hooks/               # Hooks customizados (ex: useFavorites)
-│   ├── pages/               # Páginas do site (Home, Produto, Contato)
-│   ├── styles/              # Estilos globais e variáveis Tailwind
-│   ├── utils/               # Funções utilitárias
-│   ├── data/                # JSON de produtos e categorias
-│   ├── App.tsx              # Componente principal
-│   └── main.tsx             # Ponto de entrada do React
-├── package.json             # Dependências e scripts
-├── tsconfig.json            # Configuração do TypeScript
-├── tailwind.config.js       # Configuração do Tailwind CSS
-└── vite.config.ts           # Configuração do Vite
+src/
+├── components/                  # Componentes reutilizáveis
+│   ├── layout/                  # Componentes de layout da aplicação
+│   │   ├── BackToTop.tsx        # Botão para voltar ao topo da página
+│   │   ├── Footer.tsx           # Rodapé do site
+│   │   ├── Header.tsx           # Cabeçalho do site
+│   │   └── ThemeToggle.tsx      # Componente para alternar tema claro/escuro
+│   │
+│   ├── ui/                      # Componentes de interface do usuário
+│   │   ├── FeedbackForm.js      # Formulário de feedback
+│   │   ├── FeedbackList.js      # Lista de feedbacks
+│   │   └── ProductCard.tsx      # Card de produtos
+│
+├── context/                     # Contextos do React para estado global
+│   └── FavoritesContext.tsx     # Contexto para gerenciar favoritos
+│
+├── data/                        # Dados e configuração do cliente Supabase
+│   └── supabaseClient.js        # Inicialização do cliente Supabase (JS)
+│
+├── hooks/                       # Hooks customizados
+│   ├── use-mobile.tsx           # Hook para detectar mobile
+│   ├── use-toast.ts             # Hook para notificações
+│   └── useFeedback.ts           # Hook para gerenciar feedback
+│
+├── lib/                         # Bibliotecas auxiliares do projeto
+│   ├── supabaseClient.ts        # Cliente Supabase (TS)
+│   ├── theme-provider.tsx       # Provider para tema claro/escuro
+│   └── utils.ts                 # Funções utilitárias
+│
+├── pages/                       # Páginas da aplicação
+│   ├── admin/                   # Páginas de administração
+│   │   ├── AdminPage.tsx        # Dashboard/Admin principal
+│   │   ├── EditProductPage.tsx  # Página para editar produtos
+│   │   └── ProductListPage.tsx  # Página para listar produtos
+│   │
+│   ├── auth/                    # Páginas de autenticação
+│   │   ├── LoginPage.css        # Estilos do login
+│   │   └── LoginPage.tsx        # Página de login
+│   │
+│   ├── public/                  # Páginas acessíveis ao público
+│   │   └── Feedback.tsx         # Página de feedback
+│   │
+│   └── user/                    # Páginas para usuários logados/visitantes
+│       ├── Catalog.tsx          # Catálogo de produtos
+│       ├── Contact.tsx          # Página de contato
+│       ├── Contact_backup.tsx   # Backup da página de contato
+│       ├── Favorites.tsx        # Página de favoritos
+│       ├── Home.tsx             # Página inicial
+│       └── Index.tsx            # Página de entrada (rota principal)
+
+🔹 Explicação das Pastas e Arquivos
+
+components/layout/
+
+Componentes que estruturam a aplicação e aparecem em várias páginas, como cabeçalho, rodapé, botão de voltar ao topo e alternador de tema.
+
+components/ui/
+
+Componentes de interface reutilizáveis, como cards de produtos e formulários de feedback.
+
+context/
+
+Contém contexts do React para estado global, como FavoritesContext para gerenciar produtos favoritos.
+
+data/
+
+Armazena dados estáticos e inicializações de clientes externos (Supabase neste caso).
+
+hooks/
+
+Hooks customizados para lógica reutilizável: detectar dispositivos móveis, gerenciar feedbacks e exibir notificações.
+
+lib/
+
+Bibliotecas auxiliares e funções utilitárias, incluindo cliente Supabase em TypeScript e provedor de tema.
+
+pages/admin/
+
+Páginas do painel administrativo para gerenciar produtos.
+
+pages/auth/
+
+Páginas de autenticação, como login.
+
+pages/public/
+
+Páginas públicas acessíveis sem login, como feedback.
+
+pages/user/
+
+Páginas voltadas ao usuário, incluindo catálogo, favoritos, contato e página inicial.
 
 🚀 Instalação e Execução Local
 

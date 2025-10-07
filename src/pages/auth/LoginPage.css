@@ -12,9 +12,9 @@
 @keyframes drip {
   0%, 100% {
     text-shadow:
-      0 0 2px #ff0000,
-      0 0 5px #003cff,
-      0 0 10px #0400ff;
+      0 0 2px #ffffff,
+      0 0 5px #ff0000,
+      0 0 10px #ffffff;
     transform: translateY(0);
   }
   50% {

@@ -7,7 +7,8 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
-import './LoginPage.css' // Import do CSS de animação sangrenta
+import './LoginPage.css' // CSS de animação sangrenta
+import ThemeToggle from '../../components/layout/ThemeToggle'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -17,12 +18,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!formData.email.trim() || !formData.password.trim()) {
       toast.error('Por favor, preencha todos os campos.')
       return
     }
-
     if (!formData.email.includes('@')) {
       toast.error('Por favor, insira um email válido.')
       return
@@ -30,13 +29,11 @@ export default function LoginPage() {
 
     setIsSubmitting(true)
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       })
-
       if (error) throw error
-
       toast.success('Login realizado com sucesso!')
       navigate('/admin')
     } catch (error) {
@@ -46,31 +43,26 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoBack = () => navigate('/')
+  const handleGoBack = () => navigate('/home')
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Animations */}
-      <div className="absolute inset-0" />
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-teal-500/10 rounded-full blur-2xl animate-float" style={{ animationDelay: '2s' }} />
-      </div>
+    <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
 
       {/* Login Card */}
       <div className="w-full max-w-md relative z-10 animate-fade-in">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={handleGoBack}
-          className="mb-6 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-300"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar para a página inicial
-        </Button>
+        {/* Top Bar: Voltar + Tema */}
+        <div className="flex justify-between items-center mb-4">
+          <Button
+            variant="ghost"
+            onClick={handleGoBack}
+            className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-700/30 transition-all duration-300"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+        </div>
 
-        <Card className="glass-morphism border-white/10 shadow-2xl animate-slide-up">
+        <Card className="bg-white dark:bg-background border border-gray-200 dark:border-white/10 shadow-2xl animate-slide-up transition-colors duration-500">
           <CardHeader className="text-center pb-8">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse-glow">
               <LogIn className="h-8 w-8 text-white" />
@@ -79,7 +71,7 @@ export default function LoginPage() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
               Login
             </h1>
-            <p className="text-slate-400 mt-2">
+            <p className="text-gray-700 dark:text-slate-200 mt-2 transition-colors duration-500">
               Entre com suas credenciais para acessar o sistema
             </p>
           </CardHeader>
@@ -88,8 +80,8 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-200 font-medium flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-emerald-400" />
+                <Label htmlFor="email" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
+                  <Mail className="h-4 w-4 text-emerald-500" />
                   <span>Email</span>
                 </Label>
                 <Input
@@ -98,15 +90,15 @@ export default function LoginPage() {
                   placeholder="Digite seu email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all duration-300 pl-4 pr-4"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                   required
                 />
               </div>
 
               {/* Password Field */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-200 font-medium flex items-center space-x-2">
-                  <Lock className="h-4 w-4 text-emerald-400" />
+                <Label htmlFor="password" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
+                  <Lock className="h-4 w-4 text-emerald-500" />
                   <span>Senha</span>
                 </Label>
                 <div className="relative">
@@ -116,7 +108,7 @@ export default function LoginPage() {
                     placeholder="Digite sua senha"
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    className="bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all duration-300 pl-4 pr-12"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                     required
                   />
                   <Button
@@ -124,7 +116,7 @@ export default function LoginPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-gray-500 dark:text-slate-300 hover:text-gray-700 dark:hover:text-slate-100 hover:bg-gray-200 dark:hover:bg-slate-700/50 transition-colors duration-500"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -150,7 +142,7 @@ export default function LoginPage() {
               </Button>
 
               {/* Mensagem sangrenta/macabra */}
-              <p className="text-center text-sm mt-4 blood-text">
+              <p className="text-center text-sm mt-4 blood-text text-red-600 dark:text-red-400 transition-colors duration-500">
                 Se você está aqui e não tem um e-mail/senha, você está no lugar errado.
               </p>
             </form>

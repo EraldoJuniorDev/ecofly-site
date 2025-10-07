@@ -17,13 +17,15 @@ import { Badge } from '../ui/badge'
 import ThemeToggle from './ThemeToggle'
 import { useFavorites } from '../../context/FavoritesContext'
 import { supabase } from '../../lib/supabaseClient'
+import { toast } from 'sonner'
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<any>(null)
   const location = useLocation()
   const { favoritesCount } = useFavorites()
 
+  // Buscar usuário atual
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -40,9 +42,19 @@ const Header = () => {
     }
   }, [])
 
+  // Logout com confirmação
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+    const confirmed = window.confirm("Tem certeza que deseja sair?")
+    if (!confirmed) return
+
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      toast.success("Logout realizado com sucesso!")
+    } catch (error) {
+      console.error("Erro ao sair:", error)
+      toast.error("Erro ao sair. Tente novamente.")
+    }
   }
 
   const menuItems = [
@@ -56,18 +68,22 @@ const Header = () => {
   const isActive = (href: string) => location.pathname === href
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-colors duration-500">
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-          <img src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico" alt="Logo" className="w-14" />
+          <img
+            src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico"
+            alt="Logo"
+            className="w-14"
+          />
           <div className="flex flex-col">
             <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
             <span className="text-xs text-muted-foreground -mt-1">ecobags personalizadas</span>
           </div>
         </Link>
 
-        {/* Menu Desktop com ícones (sem Favoritos) */}
+        {/* Menu Desktop */}
         <nav className="hidden lg:flex items-center space-x-6">
           {menuItems.slice(0, 4).map((item) => (
             <Link
@@ -113,7 +129,7 @@ const Header = () => {
             </Link>
           )}
 
-          {/* Ícone de Favoritos só desktop */}
+          {/* Favoritos */}
           <Link to="/favoritos">
             <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-5 w-5 text-red-500" />
@@ -159,7 +175,7 @@ const Header = () => {
           {/* Menu hambúrguer mobile */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary">
+              <Button variant="ghost" size="icon">
                 <Menu className="h-6 w-6 text-muted-foreground" />
                 <span className="sr-only">Abrir menu</span>
               </Button>
@@ -168,7 +184,11 @@ const Header = () => {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <div className="flex flex-col h-full">
                 <div className="flex items-center space-x-2 py-4">
-                  <img src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico" alt="Logo" className="w-8 h-8" />
+                  <img
+                    src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico"
+                    alt="Logo"
+                    className="w-8 h-8"
+                  />
                   <span className="text-lg font-bold eco-text-gradient">ECOFLY</span>
                 </div>
 
