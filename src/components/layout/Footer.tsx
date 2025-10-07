@@ -1,7 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { MessageCircle, Mail, Instagram } from 'lucide-react'
-import MainLogo from '../../../public/favicon.ico'
 import { WHATSAPP_LINK, INSTAGRAM_LINK, INSTAGRAM_USER }   from "../../constants";
 
 const Footer = () => {
@@ -14,7 +13,7 @@ const Footer = () => {
           {/* Logo e Descrição */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-                <img src={MainLogo} alt="Logo"  className='w-14'/>
+                <img src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico" alt="Logo"  className='w-14'/>
               <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-xs">

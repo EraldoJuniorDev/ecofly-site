@@ -11,7 +11,6 @@ import {
   MessageSquare,
   Phone,
 } from 'lucide-react'
-import MainLogo from '../../../public/favicon.ico'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
 import { Badge } from '../ui/badge'
@@ -61,7 +60,7 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-          <img src={MainLogo} alt="Logo" className="w-14" />
+          <img src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico" alt="Logo" className="w-14" />
           <div className="flex flex-col">
             <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
             <span className="text-xs text-muted-foreground -mt-1">ecobags personalizadas</span>
@@ -169,7 +168,7 @@ const Header = () => {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <div className="flex flex-col h-full">
                 <div className="flex items-center space-x-2 py-4">
-                  <img src={MainLogo} alt="Logo" className="w-8 h-8" />
+                  <img src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico" alt="Logo" className="w-8 h-8" />
                   <span className="text-lg font-bold eco-text-gradient">ECOFLY</span>
                 </div>
 
