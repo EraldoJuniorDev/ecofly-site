@@ -1,28 +1,57 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, Heart } from 'lucide-react'
+import {
+  Menu,
+  Heart,
+  LogIn,
+  LogOut,
+  User,
+  Home,
+  ShoppingBag,
+  MessageSquare,
+  Phone,
+} from 'lucide-react'
 import MainLogo from '../../../public/favicon.ico'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
 import { Badge } from '../ui/badge'
 import ThemeToggle from './ThemeToggle'
 import { useFavorites } from '../../context/FavoritesContext'
-
-console.log('Header component loading...')
+import { supabase } from '../../lib/supabaseClient'
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [user, setUser] = useState(null)
   const location = useLocation()
   const { favoritesCount } = useFavorites()
 
-  console.log('Header rendered, current location:', location.pathname)
-  console.log('Favorites count:', favoritesCount)
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user || null)
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+  }
 
   const menuItems = [
-    { href: '/', label: 'Início' },
-    { href: '/catalogo', label: 'Catálogo' },
-    { href: '/feedback', label: 'Feedback' },
-    { href: '/contato', label: 'Contato' }
+    { href: '/', label: 'Início', icon: <Home /> },
+    { href: '/catalogo', label: 'Catálogo', icon: <ShoppingBag /> },
+    { href: '/feedback', label: 'Feedback', icon: <MessageSquare /> },
+    { href: '/contato', label: 'Contato', icon: <Phone /> },
+    { href: '/favoritos', label: 'Favoritos', icon: <Heart /> },
   ]
 
   const isActive = (href: string) => location.pathname === href
@@ -32,16 +61,16 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <img src={MainLogo} alt="Logo" className='w-14'/>
+          <img src={MainLogo} alt="Logo" className="w-14" />
           <div className="flex flex-col">
             <span className="text-xl font-bold eco-text-gradient">ECOFLY</span>
             <span className="text-xs text-muted-foreground -mt-1">ecobags personalizadas</span>
           </div>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Navegação Desktop */}
         <nav className="hidden lg:flex items-center space-x-6">
-          {menuItems.map((item) => (
+          {menuItems.slice(0, 4).map((item) => (
             <Link
               key={item.href}
               to={item.href}
@@ -52,86 +81,110 @@ const Header = () => {
               }`}
             >
               {item.label}
-              {item.href === '/favoritos' && favoritesCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-scale-in"
-                >
-                  {favoritesCount}
-                </Badge>
-              )}
             </Link>
           ))}
         </nav>
 
-        {/* Desktop Actions */}
+        {/* Ações Desktop */}
         <div className="hidden lg:flex items-center gap-2">
+          {user ? (
+            <>
+              <Link to="/admin">
+                <Button variant="ghost" size="icon" title="Painel Admin">
+                  <User className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                title="Sair"
+              >
+                <LogOut className="h-5 w-5 text-red-500 hover:text-red-400" />
+              </Button>
+            </>
+          ) : (
+            <Link to="/login">
+              <Button variant="ghost" size="icon" title="Entrar">
+                <LogIn className="h-5 w-5 text-muted-foreground hover:text-primary" />
+              </Button>
+            </Link>
+          )}
+
           <Link to="/favoritos">
             <Button variant="ghost" size="icon" className="relative">
-              <Heart className={`h-5 w-5 ${favoritesCount > 0 ? 'text-red-500' : ''}`} />
+              <Heart className={`h-5 w-5 text-muted-foreground hover:text-primary ${favoritesCount > 0 ? 'text-red-500' : ''}`} />
               {favoritesCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-scale-in"
-                >
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                   {favoritesCount}
                 </Badge>
               )}
-              <span className="sr-only">Favoritos ({favoritesCount})</span>
             </Button>
           </Link>
           <ThemeToggle />
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Versão Mobile */}
         <div className="flex items-center gap-2 lg:hidden">
-          <Link to="/favoritos">
-            <Button variant="ghost" size="icon" className="relative">
-              <Heart className={`h-5 w-5 ${favoritesCount > 0 ? 'text-red-500' : ''}`} />
-              {favoritesCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-scale-in"
-                >
-                  {favoritesCount}
-                </Badge>
-              )}
-              <span className="sr-only">Favoritos ({favoritesCount})</span>
-            </Button>
-          </Link>
+          {user ? (
+            <>
+              <Link to="/admin">
+                <Button variant="ghost" size="icon" title="Painel Admin">
+                  <User className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                title="Sair"
+              >
+                <LogOut className="h-5 w-5 text-red-500 hover:text-red-400" />
+              </Button>
+            </>
+          ) : (
+            <Link to="/login">
+              <Button variant="ghost" size="icon" title="Entrar">
+                <LogIn className="h-5 w-5 text-muted-foreground hover:text-primary" />
+              </Button>
+            </Link>
+          )}
+
           <ThemeToggle />
+
+          {/* Menu lateral (hambúrguer) */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary">
-                <Menu className="h-6 w-6" />
+                <Menu className="h-6 w-6 text-muted-foreground" />
                 <span className="sr-only">Abrir menu</span>
               </Button>
             </SheetTrigger>
+
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <div className="flex flex-col h-full">
                 <div className="flex items-center space-x-2 py-4">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full eco-gradient">
-                  </div>
+                  <img src={MainLogo} alt="Logo" className="w-8 h-8" />
                   <span className="text-lg font-bold eco-text-gradient">ECOFLY</span>
                 </div>
-                
-                <nav className="flex flex-col space-y-4 mt-8">
+
+                <nav className="flex flex-col space-y-3 mt-8">
                   {menuItems.map((item) => (
                     <SheetClose asChild key={item.href}>
                       <Link
                         to={item.href}
-                        className={`text-lg font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg relative flex items-center justify-between ${
+                        className={`text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg flex items-center justify-between ${
                           isActive(item.href)
                             ? 'text-primary bg-primary/10'
                             : 'text-muted-foreground hover:bg-accent'
                         }`}
                       >
-                        <span>{item.label}</span>
+                        <span className="flex items-center gap-2">
+                          {React.cloneElement(item.icon, { className: "h-4 w-4 text-muted-foreground hover:text-primary" })}
+                          {item.label}
+                        </span>
                         {item.href === '/favoritos' && favoritesCount > 0 && (
-                          <Badge 
-                            variant="destructive" 
-                            className="h-5 w-5 p-0 flex items-center justify-center text-xs"
-                          >
+                          <Badge className="h-5 w-5 p-0 flex items-center justify-center text-xs">
                             {favoritesCount}
                           </Badge>
                         )}

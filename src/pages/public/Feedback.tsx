@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { Button } from '../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Input } from '../components/ui/input'
-import { Textarea } from '../components/ui/textarea'
-import { Label } from '../components/ui/label'
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Input } from '../../components/ui/input'
+import { Textarea } from '../../components/ui/textarea'
+import { Label } from '../../components/ui/label'
 import { Star, Send, User, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
-import { supabase } from '../lib/supabaseClient' // Importe o cliente Supabase (ajuste o caminho se necessário)
+import { supabase } from '../../lib/supabaseClient'
 
 const Feedback = () => {
   console.log('Feedback page rendered')
@@ -20,15 +20,14 @@ const Feedback = () => {
     message: ''
   })
   const [loading, setLoading] = useState(false)
-  const [testimonials, setTestimonials] = useState([]) // Estado para feedbacks dinâmicos do Supabase
+  const [testimonials, setTestimonials] = useState([])
 
-  // Função para buscar feedbacks do Supabase
   useEffect(() => {
     const fetchFeedbacks = async () => {
       const { data, error } = await supabase
         .from('feedbacks')
         .select('*')
-        .order('created_at', { ascending: false }) // Mais recentes primeiro
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Erro ao carregar feedbacks:', error)
@@ -55,8 +54,8 @@ const Feedback = () => {
 
     const feedbackData = {
       name: formData.name,
-      email: formData.email || null, // Opcional
-      product: formData.product || null, // Opcional
+      email: formData.email || null,
+      product: formData.product || null,
       message: formData.message,
       rating: rating,
     }
@@ -73,11 +72,9 @@ const Feedback = () => {
     } else {
       toast.success('Obrigado pelo seu feedback! Sua opinião é muito importante para nós.')
       
-      // Reset form
       setFormData({ name: '', email: '', product: '', message: '' })
       setRating(0)
       
-      // Recarregar depoimentos para incluir o novo
       const { data: refreshedData, error: refreshError } = await supabase
         .from('feedbacks')
         .select('*')
@@ -96,7 +93,6 @@ const Feedback = () => {
     }))
   }
 
-  // Função para formatar data em português (ex.: "4 de Outubro de 2025")
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const months = [
@@ -108,7 +104,6 @@ const Feedback = () => {
 
   return (
     <div className="container px-4 py-8">
-      {/* Header */}
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold mb-4 eco-text-gradient">
           Sua Opinião Importa
@@ -119,7 +114,6 @@ const Feedback = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Feedback Form */}
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -129,7 +123,6 @@ const Feedback = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Rating */}
               <div className="space-y-2">
                 <Label>Avaliação</Label>
                 <div className="flex gap-1">
@@ -149,7 +142,6 @@ const Feedback = () => {
                 </div>
               </div>
 
-              {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name">Nome *</Label>
                 <Input
@@ -163,7 +155,6 @@ const Feedback = () => {
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email (opcional)</Label>
                 <Input
@@ -177,7 +168,6 @@ const Feedback = () => {
                 />
               </div>
 
-              {/* Product */}
               <div className="space-y-2">
                 <Label htmlFor="product">Produto (opcional)</Label>
                 <select
@@ -185,7 +175,7 @@ const Feedback = () => {
                   name="product"
                   value={formData.product}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2  border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                   disabled={loading}
                 >
                   <option value="">Selecione um produto</option>
@@ -195,7 +185,6 @@ const Feedback = () => {
                 </select>
               </div>
 
-              {/* Message */}
               <div className="space-y-2">
                 <Label htmlFor="message">Sua experiência *</Label>
                 <Textarea
@@ -210,7 +199,11 @@ const Feedback = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full eco-gradient text-white" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full eco-gradient text-white !bg-[linear-gradient(90deg,#22c55e,#4ade80)] hover:!bg-[linear-gradient(90deg,#16a34a,#22c55e)]"
+                disabled={loading}
+              >
                 <Send className="w-4 h-4 mr-2" />
                 {loading ? 'Enviando...' : 'Enviar Feedback'}
               </Button>
@@ -218,51 +211,51 @@ const Feedback = () => {
           </CardContent>
         </Card>
 
-        {/* Testimonials (agora dinâmicos do Supabase) */}
         <div className="space-y-6">
-  <h2 className="text-2xl font-bold mb-6">O que nossos clientes dizem</h2>
-  
-  {testimonials.length === 0 ? (
-    <p className="text-muted-foreground">Nenhum depoimento ainda. Seja o primeiro!</p>
-  ) : (
-    testimonials.slice(0, 3).map((testimonial) => (
-      <Card key={testimonial.id} className="shadow-md hover:shadow-lg transition-shadow text-white">
-        <CardContent className="p-4 overflow-hidden max-w-full">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            <div className="flex flex-1 flex-col gap-1">
-              <h3 className="font-semibold text-sm">{testimonial.name}</h3>
-              <p className="text-xs text-gray-400">{formatDate(testimonial.created_at)}</p>
-            </div>
-            <span className="inline-block bg-green-500 text-white text-xs font-bold py-1 px-2 rounded-full">
-              {testimonial.product || 'Geral'}
-            </span>
-          </div>
+          <h2 className="text-2xl font-bold mb-6">O que nossos clientes dizem</h2>
           
-          <div className="flex gap-1 mb-2">
-            {[...Array(testimonial.rating)].map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            ))}
+          <div className="max-h-[600px] overflow-y-auto space-y-6 pr-4">
+            {testimonials.length === 0 ? (
+              <p className="text-muted-foreground">Nenhum depoimento ainda. Seja o primeiro!</p>
+            ) : (
+              testimonials.map((testimonial) => (
+                <Card key={testimonial.id} className="shadow-md hover:shadow-lg transition-shadow text-foreground">
+                  <CardContent className="p-4 overflow-hidden max-w-full">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <h3 className="font-semibold text-sm">{testimonial.name}</h3>
+                        <p className="text-xs text-gray-400">{formatDate(testimonial.created_at)}</p>
+                      </div>
+                      <span className="inline-block bg-green-500 text-white text-xs font-bold py-1 px-2 rounded-full">
+                        {testimonial.product || 'Geral'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-1 mb-2">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    
+                    <p className="text-sm leading-relaxed break-words max-w-full"> "{testimonial.message}"</p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
-          
-          <p className="text-sm leading-relaxed break-words max-w-full"> "{testimonial.message}"</p>
-        </CardContent>
-      </Card>
-    ))
-  )}
 
-  {/* Call to Action */}
-  <Card className="eco-gradient text-white">
-    <CardContent className="p-6 text-center">
-      <h3 className="text-lg font-semibold mb-2">Satisfação Garantida</h3>
-      <p className="text-sm opacity-90">
-        Nossa prioridade é sua satisfação. Cada produto é feito com carinho e atenção aos detalhes.
-      </p>
-    </CardContent>
-  </Card>
-</div>
+          <Card className="eco-gradient text-white">
+            <CardContent className="p-6 text-center">
+              <h3 className="text-lg font-semibold mb-2">Satisfação Garantida</h3>
+              <p className="text-sm opacity-90">
+                Nossa prioridade é sua satisfação. Cada produto é feito com carinho e atenção aos detalhes.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
