@@ -51,7 +51,7 @@ const Header = () => {
     { href: '/catalogo', label: 'Catálogo', icon: <ShoppingBag /> },
     { href: '/feedback', label: 'Feedback', icon: <MessageSquare /> },
     { href: '/contato', label: 'Contato', icon: <Phone /> },
-    { href: '/favoritos', label: 'Favoritos', icon: <Heart /> },
+    { href: '/favoritos', label: 'Favoritos', icon: <Heart /> }
   ]
 
   const isActive = (href: string) => location.pathname === href
@@ -68,18 +68,21 @@ const Header = () => {
           </div>
         </Link>
 
-        {/* Navegação Desktop */}
+        {/* Menu Desktop com ícones (sem Favoritos) */}
         <nav className="hidden lg:flex items-center space-x-6">
           {menuItems.slice(0, 4).map((item) => (
             <Link
               key={item.href}
               to={item.href}
-              className={`text-sm font-medium transition-colors hover:text-primary relative ${
+              className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary relative ${
                 isActive(item.href)
                   ? 'text-primary border-b-2 border-primary pb-1'
                   : 'text-muted-foreground'
               }`}
             >
+              {React.cloneElement(item.icon, {
+                className: 'h-4 w-4 text-muted-foreground hover:text-primary',
+              })}
               {item.label}
             </Link>
           ))}
@@ -111,9 +114,10 @@ const Header = () => {
             </Link>
           )}
 
+          {/* Ícone de Favoritos só desktop */}
           <Link to="/favoritos">
             <Button variant="ghost" size="icon" className="relative">
-              <Heart className={`h-5 w-5 text-muted-foreground hover:text-primary ${favoritesCount > 0 ? 'text-red-500' : ''}`} />
+              <Heart className="h-5 w-5 text-red-500" />
               {favoritesCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                   {favoritesCount}
@@ -121,10 +125,11 @@ const Header = () => {
               )}
             </Button>
           </Link>
+
           <ThemeToggle />
         </div>
 
-        {/* Versão Mobile */}
+        {/* Mobile */}
         <div className="flex items-center gap-2 lg:hidden">
           {user ? (
             <>
@@ -152,7 +157,7 @@ const Header = () => {
 
           <ThemeToggle />
 
-          {/* Menu lateral (hambúrguer) */}
+          {/* Menu hambúrguer mobile */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary">
@@ -180,7 +185,13 @@ const Header = () => {
                         }`}
                       >
                         <span className="flex items-center gap-2">
-                          {React.cloneElement(item.icon, { className: "h-4 w-4 text-muted-foreground hover:text-primary" })}
+                          {React.cloneElement(item.icon, {
+                            className: `h-4 w-4 ${
+                              item.href === '/favoritos' && favoritesCount > 0
+                                ? 'text-red-500'
+                                : 'text-muted-foreground hover:text-primary'
+                            }`,
+                          })}
                           {item.label}
                         </span>
                         {item.href === '/favoritos' && favoritesCount > 0 && (
