@@ -120,27 +120,6 @@ Abrir links diretos para WhatsApp e Instagram da loja
 
 Enviar mensagens de contato
 
-🤝 Como Contribuir
-
-Faça um fork deste repositório.
-
-Crie uma branch para sua feature:
-
-git checkout -b minha-feature
-
-
-Faça commit das suas alterações:
-
-git commit -m "Adiciona nova feature"
-
-
-Envie para o repositório remoto:
-
-git push origin minha-feature
-
-
-Abra um Pull Request para revisão.
-
 🌐 Acesso Online
 
 O site está disponível online em:
