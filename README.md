@@ -1,313 +1,147 @@
-# ECOFLY - EcoBags Personalizadas Sustentáveis
+🛍️ ECOFLY - Loja de EcoBags Personalizadas
 
-![ECOFLY Logo](https://ecofly-site.vercel.app/assets/logo_transparent-CYAqbDdT.png)
+<img alt="Ecofly Banner" src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/logo_transparent.png">
 
-## 📖 Sobre o Projeto
+🌱 Sobre o Projeto
 
-ECOFLY é um site de e-commerce dedicado à venda de produtos artesanais sustentáveis, com foco em EcoBags personalizadas, cinzeiros artísticos, chaveiros únicos e mini telas criativas. O projeto combina consciência ambiental com arte personalizada, oferecendo produtos únicos feitos com amor e responsabilidade ecológica.
+O ECOFLY é um site de e-commerce focado em eco bags personalizadas e sustentáveis, oferecendo aos usuários uma experiência de compra moderna e intuitiva. O projeto foi desenvolvido com foco em:
 
-## 🎨 Características do Site
+Performance e responsividade
 
-### Design e Experiência do Usuário
-- **Design Responsivo**: Totalmente adaptado para desktop, tablet e mobile
-- **Identidade Visual Eco-friendly**: Cores verdes e naturais que refletem sustentabilidade
-- **Interface Intuitiva**: Navegação simples e acessível
-- **Animações Suaves**: Transições elegantes e micro-interações
+Boa experiência do usuário (UX)
 
-### Funcionalidades Principais
-- **Galeria de Produtos Interativa**: Visualização em múltiplos ângulos
-- **Sistema de Zoom**: Modal expandido para examinar detalhes
-- **Navegação por Categorias**: Filtros para EcoBags, Cinzeiros, Mini Telas e Chaveiros
-- **Integração WhatsApp**: Contato direto para pedidos e consultas
-- **Sistema de Feedback**: Área dedicada para avaliações de clientes
-- **SEO Otimizado**: Meta tags e estrutura otimizada para buscadores
+Código limpo e modular
 
-## 🛍️ Produtos Disponíveis
+Facilidade para manutenção e expansão futura
 
-### EcoBags Personalizadas
-- **Mar Doce Lar**: Design inspirado no mar com tipografia criativa
-- **Lana Del Rey**: Inspirada na música com cerejas delicadas
-- **Olho Místico**: Design esotérico com olho centralizado
-- **Borboleta**: Delicadas borboletas em tons suaves
-- **Girassol**: Alegria do girassol em ecobags sustentáveis
+O site é ideal para quem deseja aprender boas práticas de desenvolvimento frontend usando React + Vite + TypeScript e ferramentas modernas de estilização como Tailwind CSS.
 
-### Cinzeiros Artísticos
-- **Universo Místico**: Design cósmico com olho central e estrelas douradas
-- **Rolling Stones**: Logo clássico da banda
-- **Homem-Aranha**: Máscara do herói em detalhes
-- **Jack Skellington**: Personagem do "Pesadelo Antes do Natal"
-- **Batman**: Logo icônico em amarelo sobre fundo escuro
-- **Diabinho Fumante**: Design divertido e irreverente
-- **Proibido Fumar**: Ironia artística com símbolo proibido
-- **Futebol**: Para os apaixonados pelo esporte
-- **Bart Simpson**: Personagem em estilo divertido
+🎯 Funcionalidades
 
-### Mini Telas e Arte
-- **Cósmica**: Universo em miniatura com olho central
-- **Espiral Colorida**: Padrões hipnóticos em tons vibrantes
+Catálogo de produtos com categorias
 
-## 🌱 Compromisso Sustentável
+Visualização detalhada de cada produto
 
-### Valores Ambientais
-- **100% Materiais Sustentáveis**: Uso exclusivo de materiais eco-friendly
-- **Zero Desperdício**: Processo produtivo consciente
-- **Reutilização Infinita**: Produtos duráveis e reutilizáveis
-- **Produção Artesanal**: Cada peça é única e feita à mão
+Sistema de favoritos
 
-## 🚀 Tecnologias Utilizadas
+Formulário de contato
 
-### Frontend
-- **React 18.3**: Biblioteca JavaScript para interfaces de usuário
-- **TypeScript**: Tipagem estática para maior confiabilidade
-- **Vite**: Build tool rápido e moderno
-- **React Router DOM**: Navegação entre páginas
-- **Tailwind CSS**: Framework CSS utilitário
+Links diretos para WhatsApp e Instagram da loja
 
-### UI/UX
-- **shadcn/ui**: Biblioteca de componentes elegantes
-- **Radix UI**: Componentes acessíveis e primitivos
-- **Lucide React**: Ícones modernos e consistentes
-- **Framer Motion**: Animações suaves (implícito via Tailwind)
+Responsividade para dispositivos móveis e desktops
 
-### Funcionalidades Avançadas
-- **React Query**: Gerenciamento de estado e cache
-- **Sonner**: Sistema de notificações toast
-- **Zod**: Validação de formulários
-- **Class Variance Authority**: Gestão de variantes CSS
+Uso de TypeScript para tipagem e segurança
 
-## 📱 Estrutura de Páginas
+🛠 Tecnologias Utilizadas
 
-### Página Inicial (`/`)
-- Hero Section com call-to-action
-- Produtos em destaque com galeria interativa
-- Seção de valores sustentáveis
-- Estatísticas de impacto ambiental
+Frontend: React + Vite
 
-### Loja (`/loja`)
-- Catálogo completo de produtos
-- Filtros por categoria
-- Cards interativos com múltiplas imagens
-- Sistema de zoom e modal
+Estilização: Tailwind CSS + CSS Modules
 
-### Feedback (`/feedback`)
-- Formulário de avaliação com estrelas
-- Depoimentos de clientes
-- Sistema de ratings
+Tipagem: TypeScript
 
-### Contato (`/contato`)
-- Formulário de contato
-- Integração com WhatsApp
-- Informações de atendimento
-- Links para redes sociais
+Gerenciamento de estado: useState, useEffect (React Hooks)
 
-## 🎯 Funcionalidades Especiais
+Ferramentas de desenvolvimento:
 
-### Sistema de Galeria Avançado
-```typescript
-// Cada produto pode ter múltiplas imagens
-interface ProductImage {
-  url: string
-  alt: string
-}
+ESLint + Prettier
 
-// Navegação entre imagens com thumbnails
-- Setas de navegação
-- Thumbnails clicáveis
-- Contador de imagens
-- Modal expandido com zoom
-```
+PostCSS
 
-### Integração WhatsApp
-```typescript
-// Mensagens personalizadas por produto
-const handleWhatsApp = (productName: string) => {
-  const message = `Olá! Tenho interesse no produto: ${productName}`
-  const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`
-  window.open(whatsappUrl, '_blank')
-}
-```
+Vite para bundling rápido e eficiente
 
-### Sistema de Notificações
-- Toast notifications para feedback do usuário
-- Confirmações de envio de formulários
-- Alertas de erro amigáveis
+Controle de versão: Git + GitHub
 
-## 🎨 Design System
+🏗 Estrutura do Projeto
+ecofly-site/
+├── public/                  # Assets públicos (imagens, favicon, logos)
+├── src/
+│   ├── components/          # Componentes reutilizáveis (Card, Button, Badge, etc.)
+│   ├── hooks/               # Hooks customizados (ex: useFavorites)
+│   ├── pages/               # Páginas do site (Home, Produto, Contato)
+│   ├── styles/              # Estilos globais e variáveis Tailwind
+│   ├── utils/               # Funções utilitárias
+│   ├── data/                # JSON de produtos e categorias
+│   ├── App.tsx              # Componente principal
+│   └── main.tsx             # Ponto de entrada do React
+├── package.json             # Dependências e scripts
+├── tsconfig.json            # Configuração do TypeScript
+├── tailwind.config.js       # Configuração do Tailwind CSS
+└── vite.config.ts           # Configuração do Vite
 
-### Paleta de Cores
-```css
-:root {
-  --primary: 142 69% 58%;        /* Verde principal */
-  --secondary: 160 84% 39%;      /* Verde escuro */
-  --accent: 82 84% 67%;          /* Verde claro */
-  --background: 120 60% 98%;     /* Fundo claro */
-  --muted: 120 60% 96%;          /* Cinza suave */
-}
-```
+🚀 Instalação e Execução Local
 
-### Gradientes Eco-friendly
-```css
-.eco-gradient {
-  background: linear-gradient(135deg, hsl(142 69% 58%) 0%, hsl(160 84% 39%) 100%);
-}
+Clone o repositório:
 
-.eco-text-gradient {
-  background: linear-gradient(135deg, hsl(142 69% 58%) 0%, hsl(160 84% 39%) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-```
+git clone https://github.com/EraldoJuniorDev/ecofly-site.git
 
-## 📊 SEO e Performance
 
-### Otimizações Implementadas
-- **Meta Tags Completas**: Title, description, keywords
-- **Open Graph**: Compartilhamento otimizado em redes sociais
-- **Twitter Cards**: Visualização aprimorada no Twitter
-- **Schema.org**: Estrutura de dados estruturados
-- **Lazy Loading**: Carregamento otimizado de imagens
-- **Code Splitting**: Divisão inteligente do código
+Acesse o diretório do projeto:
 
-### Meta Tags Exemplo
-```html
-<title>ECOFLY - EcoBags Personalizadas Sustentáveis</title>
-<meta name="description" content="EcoBags personalizadas, cinzeiros artesanais, chaveiros únicos e mini telas criativas. Produtos sustentáveis e artesanais da ECOFLY com designs exclusivos.">
-<meta property="og:image" content="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1200&h=630&fit=crop">
-```
+cd ecofly-site
 
-## 🚀 Como Executar o Projeto
 
-### Pré-requisitos
-- Node.js 18+ ou Bun
-- Git
+Instale as dependências:
 
-### Instalação
-```bash
-# Clone o repositório
-git clone [repository-url]
-cd ecofly-website
-
-# Instale as dependências
 npm install
-# ou
-bun install
 
-# Execute o projeto em desenvolvimento
+
+Execute o servidor de desenvolvimento:
+
 npm run dev
-# ou
-bun dev
 
-# Build para produção
+
+Abra o navegador em http://localhost:5173
+ (porta padrão do Vite).
+
+Para gerar uma versão de produção:
+
 npm run build
-# ou
-bun run build
-```
 
-### Variáveis de Ambiente
-```env
-# Criar arquivo .env na raiz do projeto
-VITE_WHATSAPP_NUMBER=5511999999999
-VITE_EMAIL_CONTACT=contato@ecofly.com.br
-VITE_INSTAGRAM_HANDLE=_ecofly_
-```
 
-## 📱 Responsividade
+Para pré-visualizar a build:
 
-### Breakpoints Tailwind
-- **Mobile**: < 768px
-- **Tablet**: 768px - 1024px  
-- **Desktop**: > 1024px
-- **Large Desktop**: > 1400px
+npm run preview
 
-### Grid Responsivo
-```typescript
-// Cards de produtos adaptáveis
-grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
-```
+📦 Scripts Disponíveis
+Script	Descrição
+npm run dev	Inicializa o servidor de desenvolvimento
+npm run build	Gera build otimizada para produção
+npm run preview	Pré-visualiza a versão de produção localmente
+npm run lint	Executa ESLint para verificação de código
+npm run format	Formata o código usando Prettier
+🔍 Exemplos de Uso
 
-## 🔧 Estrutura de Arquivos
+Adicionar produtos aos favoritos
 
-```
-src/
-├── components/          # Componentes reutilizáveis
-│   ├── ui/             # Componentes base (shadcn/ui)
-│   ├── layout/         # Header, Footer, navegação
-│   └── ProductCard.tsx # Card de produto com galeria
-├── pages/              # Páginas da aplicação
-│   ├── Home.tsx        # Página inicial
-│   ├── Store.tsx       # Loja/catálogo
-│   ├── Feedback.tsx    # Avaliações
-│   └── Contact.tsx     # Contato
-├── lib/                # Utilitários e configurações
-│   └── utils.ts        # Funções auxiliares
-└── types/              # Definições TypeScript
-```
+Navegar entre categorias e produtos
 
-## 🌐 Deploy e Hospedagem
+Abrir links diretos para WhatsApp e Instagram da loja
 
-### Plataformas Compatíveis
-- **Vercel**: Deploy automático via Git
-- **Netlify**: Integração contínua
-- **AWS S3 + CloudFront**: Hospedagem estática
-- **GitHub Pages**: Deploy gratuito
+Enviar mensagens de contato
 
-### Configuração de Build
-```json
-{
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  }
-}
-```
+🤝 Como Contribuir
 
-## 📈 Métricas e Analytics
+Faça um fork deste repositório.
 
-### Performance
-- **Lighthouse Score**: 90+ em todas as métricas
-- **Core Web Vitals**: Otimizado
-- **Bundle Size**: Minimizado com tree-shaking
+Crie uma branch para sua feature:
 
-### Acessibilidade
-- **WCAG 2.1**: Conformidade AA
-- **Screen Readers**: Compatível
-- **Keyboard Navigation**: Totalmente navegável
+git checkout -b minha-feature
 
-## 🤝 Contribuição
 
-### Como Contribuir
-1. Fork o repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
+Faça commit das suas alterações:
 
-### Padrões de Código
-- **ESLint**: Linting automatizado
-- **Prettier**: Formatação de código
-- **Conventional Commits**: Padrão de commits
-- **TypeScript**: Tipagem obrigatória
+git commit -m "Adiciona nova feature"
 
-## 📞 Contato e Suporte
 
-### ECOFLY
-- **WhatsApp**: +55 (11) 99999-9999
-- **Email**: contato@ecofly.com.br
-- **Instagram**: [@_ecofly_](https://instagram.com/_ecofly_)
-- **Horário**: Segunda a Sexta, 9h às 18h | Sábado, 9h às 14h
+Envie para o repositório remoto:
 
-### Desenvolvedores
-- **Plataforma**: OnSpace.AI
-- **Tecnologia**: React + TypeScript + Tailwind CSS
-- **Suporte**: Integração completa com WhatsApp Business
+git push origin minha-feature
 
-## 📄 Licença
 
-Este projeto é propriedade da ECOFLY. Todos os direitos reservados.
+Abra um Pull Request para revisão.
 
----
+🌐 Acesso Online
 
-**Feito com 💚 para um mundo mais sustentável** 🌱
-
-*Transforme sua rotina com produtos únicos e conscientes da ECOFLY*
+O site está disponível online em:
+https://ecofly-site.vercel.app
