@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
+import './LoginPage.css' // Import do CSS de animação sangrenta
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -37,7 +38,7 @@ export default function LoginPage() {
       if (error) throw error
 
       toast.success('Login realizado com sucesso!')
-      navigate('/admin') // redireciona para a página admin
+      navigate('/admin')
     } catch (error) {
       toast.error((error as Error).message)
     } finally {
@@ -71,12 +72,10 @@ export default function LoginPage() {
 
         <Card className="glass-morphism border-white/10 shadow-2xl animate-slide-up">
           <CardHeader className="text-center pb-8">
-            {/* Logo/Icon */}
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse-glow">
               <LogIn className="h-8 w-8 text-white" />
             </div>
 
-            {/* Title */}
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
               Login
             </h1>
@@ -149,6 +148,11 @@ export default function LoginPage() {
                   </div>
                 )}
               </Button>
+
+              {/* Mensagem sangrenta/macabra */}
+              <p className="text-center text-sm mt-4 blood-text">
+                Se você está aqui e não tem um e-mail/senha, você está no lugar errado.
+              </p>
             </form>
           </CardContent>
         </Card>

@@ -1,0 +1,27 @@
+.blood-text {
+  color: #ff0000;
+  font-weight: bold;
+  position: relative;
+  animation: drip 0.5s infinite;
+  text-shadow:
+    0 0 2px #ff0000,
+    0 0 5px #ff0000,
+    0 0 10px #8B0000;
+}
+
+@keyframes drip {
+  0%, 100% {
+    text-shadow:
+      0 0 2px #ff0000,
+      0 0 5px #003cff,
+      0 0 10px #0400ff;
+    transform: translateY(0);
+  }
+  50% {
+    text-shadow:
+      0 0 2px #ff0000,
+      0 0 5px #ff0000,
+      0 4px 15px #8B0000;
+    transform: translateY(2px);
+  }
+}
