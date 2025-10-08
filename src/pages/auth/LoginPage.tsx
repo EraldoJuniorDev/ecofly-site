@@ -68,7 +68,7 @@ export default function LoginPage() {
               <LogIn className="h-8 w-8 text-white" />
             </div>
 
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent pb-1">
               Login
             </h1>
             <p className="text-gray-700 dark:text-slate-200 mt-2 transition-colors duration-500">
