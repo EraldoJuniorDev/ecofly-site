@@ -597,7 +597,7 @@ const AdminPage: React.FC = () => {
                                 </span>
                               </div>
                               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                                <div className="bg-gradient-to-r from-emerald-500 to-blue-500 h-2 rounded-full transition-all duration-300" style={{ width: `${([formData.name, formData.category, formData.description, imagePreviews.length > 0].filter(Boolean).length / 4) * 100}%` }} />
+                                <div className="bg-gradient-to-r from-emerald-500 to-emerald-500 h-2 rounded-full transition-all duration-300" style={{ width: `${([formData.name, formData.category, formData.description, imagePreviews.length > 0].filter(Boolean).length / 4) * 100}%` }} />
                               </div>
                             </div>
                           </div>
@@ -679,7 +679,6 @@ const AdminPage: React.FC = () => {
                       <div className="flex items-center justify-between mb-6 gap-4 flex-col md:flex-row">
                         <div className="flex items-center gap-3 w-full md:w-auto">
                           <div className="flex items-center gap-2 bg-card dark:bg-background rounded-md p-2">
-                            <Search className="h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Buscar por nome ou descrição..." value={listSearch} onChange={(e) => setListSearch(e.target.value)} className="w-64" />
                           </div>
                         </div>
