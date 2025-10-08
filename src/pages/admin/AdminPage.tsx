@@ -591,7 +591,7 @@ const AdminPage: React.FC = () => {
 
                             <div className="space-y-3">
                               <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Progresso do formulário</span>
+                                <span className="text-muted-foreground">Progresso do produto</span>
                                 <span className="font-semibold">
                                   {[formData.name, formData.category, formData.description, imagePreviews.length > 0].filter(Boolean).length}/4
                                 </span>
