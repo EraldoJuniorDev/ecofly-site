@@ -472,22 +472,22 @@ const AdminPage: React.FC = () => {
                 Estatísticas
               </h3>
 
-              <div className="space-y-3 text-slate-700 dark:text-slate-200">
+              <div className="space-y-3 text-slate-800 dark:text-slate-100">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Total</span>
                   <span className="font-bold">{stats.total}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Ecobags</span>
-                  <span className="font-semibold text-emerald-600">{stats.ecobags}</span>
+                  <span className="font-semibold">{stats.ecobags}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Cinzeiros</span>
-                  <span className="font-semibold text-blue-600">{stats.cinzeiros}</span>
+                  <span className="font-semibold">{stats.cinzeiros}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center ">
                   <span className="text-sm">Mini Telas</span>
-                  <span className="font-semibold text-purple-600">{stats.minitelas}</span>
+                  <span className="font-semibold">{stats.minitelas}</span>
                 </div>
               </div>
             </motion.div>
