@@ -723,7 +723,7 @@ const AdminPage: React.FC = () => {
                                     <Button variant="ghost" onClick={() => openQuickEditFor(product)}>
                                       <Pencil className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Editar</span>
                                     </Button>
-                                    <Button variant="ghost" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
+                                    <Button className="hover:bg-red-600" variant="ghost" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
                                       <Trash2 className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Excluir</span>
                                     </Button>
                                   </div>
