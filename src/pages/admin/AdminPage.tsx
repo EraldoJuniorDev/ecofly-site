@@ -1,4 +1,3 @@
-// src/pages/admin/AdminPage.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -88,11 +87,13 @@ const AdminPage: React.FC = () => {
   });
   const [editPreviews, setEditPreviews] = useState<string[]>([]);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showEditConfirmDialog, setShowEditConfirmDialog] = useState(false);
 
   // quick edit (for List cards) - simplified modal
   const [quickEditProduct, setQuickEditProduct] = useState<any>(null);
   const [quickEditForm, setQuickEditForm] = useState({ name: "", category: "", description: "" });
   const [showQuickEditDialog, setShowQuickEditDialog] = useState(false);
+  const [showQuickEditConfirmDialog, setShowQuickEditConfirmDialog] = useState(false);
 
   // delete (shared)
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
@@ -241,6 +242,7 @@ const AdminPage: React.FC = () => {
   };
   const handleEditSubmit = async () => {
     if (!editingProduct) return;
+    setShowEditConfirmDialog(false);
     setShowEditDialog(false);
     setIsSubmitting(true);
     try {
@@ -272,7 +274,7 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // --- Quick edit for list cards (simplified; no image changes) ---
+  // --- Quick edit for list cards (simplified; no image changes in original) ---
   const openQuickEditFor = (product: any) => {
     setQuickEditProduct(product);
     setQuickEditForm({ name: product.name || "", category: product.category || "", description: product.description || "" });
@@ -286,6 +288,7 @@ const AdminPage: React.FC = () => {
 
   const handleQuickEditSubmit = async () => {
     if (!quickEditProduct) return;
+    setShowQuickEditConfirmDialog(false);
     setShowQuickEditDialog(false);
     setIsSubmitting(true);
     try {
@@ -295,6 +298,7 @@ const AdminPage: React.FC = () => {
           name: quickEditForm.name,
           category: quickEditForm.category,
           description: quickEditForm.description,
+          images: quickEditProduct.images,
         })
         .eq("id", quickEditProduct.id);
       if (error) throw error;
@@ -408,11 +412,10 @@ const AdminPage: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab("list")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === "list"
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === "list"
                       ? "bg-slate-100/80 dark:bg-slate-700/30 text-slate-800 dark:text-slate-50"
                       : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
-                  }`}
+                    }`}
                 >
                   <ListIcon className="h-5 w-5" />
                   <span className="font-medium">Lista de Itens</span>
@@ -421,11 +424,10 @@ const AdminPage: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab("add")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === "add"
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === "add"
                       ? "bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
                       : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
-                  }`}
+                    }`}
                 >
                   <Plus className="h-5 w-5" />
                   <span className="font-medium">Adicionar</span>
@@ -435,11 +437,10 @@ const AdminPage: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab("edit")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === "edit"
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === "edit"
                       ? "bg-blue-100/80 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                       : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
-                  }`}
+                    }`}
                 >
                   <Pencil className="h-5 w-5" />
                   <span className="font-medium">Editar</span>
@@ -449,11 +450,10 @@ const AdminPage: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab("delete")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === "delete"
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === "delete"
                       ? "bg-red-100/80 dark:bg-red-900/30 text-red-600 dark:text-red-400"
                       : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
-                  }`}
+                    }`}
                 >
                   <Trash2 className="h-5 w-5" />
                   <span className="font-medium">Excluir</span>
@@ -558,7 +558,7 @@ const AdminPage: React.FC = () => {
                           </div>
 
                           <div className="space-y-6">
-                              <Label>Imagens Selecionadas:</Label>
+                            <Label>Imagens Selecionadas:</Label>
                             <div>
                               {imagePreviews.length > 0 && (
                                 <div className="grid grid-cols-2 gap-4 mb-6">
@@ -653,9 +653,24 @@ const AdminPage: React.FC = () => {
                                 <div><Label>Categoria *</Label><Select value={editForm.category} onValueChange={handleEditCategoryChange}><SelectTrigger><SelectValue placeholder="Selecione categoria" /></SelectTrigger><SelectContent>{categories.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent></Select></div>
                                 <div><Label>Descrição *</Label><Textarea name="description" value={editForm.description} onChange={handleEditInputChange} rows={5} /></div>
                                 <div><Label>Imagens *</Label><div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{editPreviews.map((src, idx) => (<div key={idx} className="relative group"><img src={src} alt={`Preview ${idx + 1}`} className="w-full h-32 object-cover rounded-md" /><button type="button" onClick={() => handleRemoveEditImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"><X className="h-4 w-4" /></button></div>))}<label className="cursor-pointer border-2 border-dashed rounded-md flex items-center justify-center p-4 hover:border-emerald-400/50 transition"><Upload className="h-6 w-6 text-muted-foreground" /><input type="file" accept="image/*" multiple className="hidden" onChange={handleEditImageChange} /></label></div></div>
-                                <DialogFooter><div className="flex gap-3 mt-4"><Button variant="ghost" onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}>Cancelar</Button><Button onClick={handleEditSubmit} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Atualizando..." : "Confirmar"}</Button></div></DialogFooter>
+                                <DialogFooter><div className="flex gap-3 mt-4"><Button variant="ghost" onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}>Cancelar</Button><Button onClick={() => setShowEditConfirmDialog(true)} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Atualizando..." : "Confirmar"}</Button></div></DialogFooter>
                               </div>
                             )}
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog open={showEditConfirmDialog} onOpenChange={setShowEditConfirmDialog}>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Confirmar edição</DialogTitle>
+                              <p>Tem certeza que deseja salvar as alterações no produto "{editingProduct?.name}"?</p>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <div className="flex gap-3">
+                                <Button className="" variant="ghost" onClick={() => setShowEditConfirmDialog(false)}>Cancelar</Button>
+                                <Button onClick={handleEditSubmit} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Salvando..." : "Confirmar"}</Button>
+                              </div>
+                            </DialogFooter>
                           </DialogContent>
                         </Dialog>
                       </div>
@@ -719,7 +734,6 @@ const AdminPage: React.FC = () => {
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
                                 <div className="flex items-center justify-between mt-4">
                                   <div className="flex items-center gap-2">
-                                    {/* Quick edit: opens simplified dialog only */}
                                     <Button variant="ghost" onClick={() => openQuickEditFor(product)}>
                                       <Pencil className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Editar</span>
                                     </Button>
@@ -757,12 +771,12 @@ const AdminPage: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Quick Edit Dialog (simplified) */}
+                      {/* Quick Edit Dialog */}
                       <Dialog open={showQuickEditDialog} onOpenChange={setShowQuickEditDialog}>
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Editar Rápido</DialogTitle>
-                            <p className="text-muted-foreground">Edição rápida (sem alterar imagens)</p>
+                            <p className="text-muted-foreground">Edição rápida (agora com imagens)</p>
                           </DialogHeader>
 
                           {quickEditProduct && (
@@ -787,16 +801,78 @@ const AdminPage: React.FC = () => {
                                 <Textarea name="description" value={quickEditForm.description} onChange={handleQuickEditChange} rows={4} />
                               </div>
 
+                              <div>
+                                <Label>Imagens</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                  {(quickEditProduct.images || []).map((img: ImageObj, idx: number) => (
+                                    <div key={idx} className="relative group">
+                                      <img src={img.url} alt={img.alt || `Imagem ${idx + 1}`} className="w-full h-32 object-cover rounded-md" />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newImages = quickEditProduct.images.filter((_: any, i: number) => i !== idx);
+                                          setQuickEditProduct((p: any) => ({ ...p, images: newImages }));
+                                        }}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  <label className="cursor-pointer border-2 border-dashed rounded-md flex items-center justify-center p-4 hover:border-emerald-400/50 transition">
+                                    <Upload className="h-6 w-6 text-muted-foreground" />
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      className="hidden"
+                                      onChange={async (e) => {
+                                        const files = e.target.files ? Array.from(e.target.files) : [];
+                                        if (files.length === 0) return;
+                                        const uploadedImages: ImageObj[] = [];
+                                        for (const file of files) {
+                                          const url = await uploadFileToStorage(file);
+                                          uploadedImages.push({ url, alt: file.name });
+                                        }
+                                        setQuickEditProduct((p: any) => ({ ...p, images: [...(p.images || []), ...uploadedImages] }));
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+
                               <DialogFooter>
                                 <div className="flex gap-3">
-                                  <Button variant="ghost" onClick={() => { setShowQuickEditDialog(false); setQuickEditProduct(null); }}>Cancelar</Button>
-                                  <Button onClick={handleQuickEditSubmit} disabled={isSubmitting} className="eco-gradient text-white">
+                                  <Button className="hover:bg-red-600 hover:text-white" variant="ghost" onClick={() => { setShowQuickEditDialog(false); setQuickEditProduct(null); }}>
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    onClick={() => setShowQuickEditConfirmDialog(true)}
+                                    disabled={isSubmitting}
+                                    className="eco-gradient text-white"
+                                  >
                                     {isSubmitting ? "Salvando..." : "Salvar Alterações"}
                                   </Button>
                                 </div>
                               </DialogFooter>
                             </div>
                           )}
+                        </DialogContent>
+                      </Dialog>
+
+                      {/* Quick Edit Confirm Dialog */}
+                      <Dialog open={showQuickEditConfirmDialog} onOpenChange={setShowQuickEditConfirmDialog}>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Confirmar edição</DialogTitle>
+                            <p>Tem certeza que deseja salvar as alterações no produto "{quickEditProduct?.name}"?</p>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <div className="flex gap-3">
+                              <Button variant="ghost" onClick={() => setShowQuickEditConfirmDialog(false)}>Cancelar</Button>
+                              <Button onClick={handleQuickEditSubmit} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Salvando..." : "Confirmar"}</Button>
+                            </div>
+                          </DialogFooter>
                         </DialogContent>
                       </Dialog>
 

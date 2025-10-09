@@ -56,7 +56,7 @@ const Store = () => {
     : products.filter((product) => product.category === selectedCategory);
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Tenho interesse. Poderia me dar mais informações?`;
+    const message = `Olá! Tenho interesse no produto dos meus favoritos: ${productName}. Poderia me dar mais informações?`;
     const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
