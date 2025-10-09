@@ -207,7 +207,7 @@ const Feedback = () => {
 
               <Button
                 type="submit"
-                className="w-full eco-gradient text-white !bg-[linear-gradient(90deg,#22c55e,#4ade80)] hover:!bg-[linear-gradient(90deg,#16a34a,#22c55e)]"
+                className="w-full eco-gradient text-white hover:!bg-[linear-gradient(90deg,#16a34a,#22c55e)]"
                 disabled={loading}
               >
                 <Send className="w-4 h-4 mr-2" />
