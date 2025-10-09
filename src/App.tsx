@@ -11,6 +11,7 @@ import Feedback from './pages/public/Feedback';
 import Contact from './pages/Contact';
 import AdminPage from './pages/admin/AdminPage';
 import LoginPage from './pages/auth/LoginPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage'; // Nova importação
 import { Toaster } from './components/ui/sonner';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { supabase } from './lib/supabaseClient';
@@ -113,6 +114,7 @@ function App() {
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/contato" element={<Contact />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} /> {/* Nova rota */}
                 <Route
                   path="/admin"
                   element={
