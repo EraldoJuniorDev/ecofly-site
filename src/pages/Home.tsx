@@ -172,7 +172,7 @@ const Home = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-                <Button asChild size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 btn-smooth">
+                <Button asChild size="lg" variant="secondary" className="bg-white text-black hover:bg-white/90 btn-smooth">
                   <Link to="/catalogo">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Ver Produtos
@@ -190,10 +190,9 @@ const Home = () => {
             <div className="relative animate-fade-in-right">
               <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group">
                 <img
-                  ref={heroRef}
                   src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/logo_transparent.png"
                   alt="ECOFLY Logo"
-                  className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-300"
+                  className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-400"
                 />
                 <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full blur-xl animate-float"></div>
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full blur-2xl animate-float-delayed"></div>
@@ -278,8 +277,6 @@ const Home = () => {
         <div className="container px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="eco-gradient rounded-2xl p-8 md:p-12 text-white relative overflow-hidden">
-              <div className="absolute top-4 right-4 w-16 h-16 bg-white/5 rounded-full animate-float-delayed"></div>
-              <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/5 rounded-full animate-gentle-bounce"></div>
               <Leaf className="h-12 w-12 mx-auto mb-6 opacity-80 animate-float" />
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
                 Sustentabilidade em Cada Detalhe

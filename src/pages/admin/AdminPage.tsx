@@ -274,7 +274,7 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // --- Quick edit for list cards (simplified; no image changes in original) ---
+  // --- Quick edit for list cards ---
   const openQuickEditFor = (product: any) => {
     setQuickEditProduct(product);
     setQuickEditForm({ name: product.name || "", category: product.category || "", description: product.description || "" });
@@ -393,8 +393,8 @@ const AdminPage: React.FC = () => {
       </div>
 
       {/* Page content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             <motion.div
@@ -517,28 +517,28 @@ const AdminPage: React.FC = () => {
                       exit={{ opacity: 0, y: -6 }}
                       className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm"
                     >
-                      <div className="p-8">
+                      <div className="p-4 sm:p-8">
                         <div className="flex items-center gap-3 mb-8">
                           <div className="p-3 eco-gradient rounded-xl">
                             <Plus className="h-6 w-6 text-white" />
                           </div>
                           <div>
-                            <h2 className="text-2xl font-bold">Adicionar Novo Produto</h2>
-                            <p className="text-muted-foreground">Preencha as informações do produto abaixo</p>
+                            <h2 className="text-xl sm:text-2xl font-bold">Adicionar Novo Produto</h2>
+                            <p className="text-sm sm:text-base text-muted-foreground">Preencha as informações do produto abaixo</p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                           <div className="space-y-6">
                             <div>
                               <Label htmlFor="name">Nome do Produto *</Label>
-                              <Input id="name" name="name" placeholder="Digite o nome do produto" value={formData.name} onChange={handleInputChange} />
+                              <Input id="name" name="name" placeholder="Digite o nome do produto" value={formData.name} onChange={handleInputChange} className="w-full" />
                             </div>
 
                             <div>
                               <Label>Categoria *</Label>
                               <Select value={formData.category} onValueChange={handleCategoryChange}>
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                   <SelectValue placeholder="Selecione uma categoria" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -553,7 +553,7 @@ const AdminPage: React.FC = () => {
 
                             <div>
                               <Label>Descrição *</Label>
-                              <Textarea id="description" name="description" placeholder="Digite a descrição do produto" value={formData.description} onChange={handleInputChange} rows={6} />
+                              <Textarea id="description" name="description" placeholder="Digite a descrição do produto" value={formData.description} onChange={handleInputChange} rows={6} className="w-full" />
                             </div>
                           </div>
 
@@ -561,7 +561,7 @@ const AdminPage: React.FC = () => {
                             <Label>Imagens Selecionadas:</Label>
                             <div>
                               {imagePreviews.length > 0 && (
-                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
                                   {imagePreviews.map((src, i) => (
                                     <div key={i} className="relative group/image">
                                       <img src={src} alt={`Preview ${i + 1}`} className="w-full h-32 object-cover rounded-lg shadow-sm" />
@@ -580,8 +580,8 @@ const AdminPage: React.FC = () => {
                                     </div>
 
                                     <div>
-                                      <p className="text-lg font-semibold">Adicionar Imagens</p>
-                                      <p className="text-sm text-muted-foreground">PNG, JPG até 5MB cada (múltiplas seleções permitidas)</p>
+                                      <p className="text-base sm:text-lg font-semibold">Adicionar Imagens</p>
+                                      <p className="text-xs sm:text-sm text-muted-foreground">PNG, JPG até 5MB cada (múltiplas seleções permitidas)</p>
                                     </div>
                                   </div>
                                   <input id="images" type="file" accept="image/*" multiple ref={fileInputRef} onChange={handleImageChange} className="hidden" />
@@ -610,13 +610,26 @@ const AdminPage: React.FC = () => {
                         </div>
 
                         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                          <DialogContent>
-                            <DialogHeader><DialogTitle>Confirmar adição</DialogTitle><p>Tem certeza que deseja adicionar este produto?</p></DialogHeader>
-                            <DialogFooter>
-                              <div className="flex gap-3">
-                                <Button variant="ghost" onClick={() => setShowAddDialog(false)}>Cancelar</Button>
-                                <Button onClick={handleAddProduct} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Adicionando..." : "Confirmar"}</Button>
-                              </div>
+                          <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar adição</DialogTitle>
+                              <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja adicionar este produto?</p>
+                            </DialogHeader>
+                            <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                              <Button
+                                variant="ghost"
+                                onClick={() => setShowAddDialog(false)}
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                onClick={handleAddProduct}
+                                disabled={isSubmitting}
+                                className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                              >
+                                {isSubmitting ? "Adicionando..." : "Confirmar"}
+                              </Button>
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
@@ -627,10 +640,10 @@ const AdminPage: React.FC = () => {
                   {/* Edit tab (full editor) */}
                   <TabsContent value="edit">
                     <motion.div key="edit" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm">
-                      <div className="p-8">
+                      <div className="p-4 sm:p-8">
                         <div className="flex items-center gap-3 mb-8">
                           <div className="p-3 eco-gradient rounded-xl"><Pencil className="h-6 w-6 text-white" /></div>
-                          <div><h2 className="text-2xl font-bold">Editar Produtos</h2><p className="text-muted-foreground">Selecione um produto para editar suas informações</p></div>
+                          <div><h2 className="text-xl sm:text-2xl font-bold">Editar Produtos</h2><p className="text-sm sm:text-base text-muted-foreground">Selecione um produto para editar suas informações</p></div>
                         </div>
 
                         {isLoading ? (<p className="text-muted-foreground">Carregando produtos...</p>) : (
@@ -645,31 +658,97 @@ const AdminPage: React.FC = () => {
                         )}
 
                         <Dialog open={showEditDialog} onOpenChange={(open) => { setShowEditDialog(open); if (!open) setEditingProduct(null); }}>
-                          <DialogContent>
-                            <DialogHeader><DialogTitle>Editar Produto</DialogTitle><p className="text-muted-foreground">Atualize as informações e confirme.</p></DialogHeader>
+                          <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Editar Produto</DialogTitle>
+                              <p className="text-sm sm:text-base text-muted-foreground">Atualize as informações e confirme.</p>
+                            </DialogHeader>
                             {editingProduct && (
                               <div className="space-y-4 mt-4">
-                                <div><Label htmlFor="edit-name">Nome *</Label><Input id="edit-name" name="name" value={editForm.name} onChange={handleEditInputChange} /></div>
-                                <div><Label>Categoria *</Label><Select value={editForm.category} onValueChange={handleEditCategoryChange}><SelectTrigger><SelectValue placeholder="Selecione categoria" /></SelectTrigger><SelectContent>{categories.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent></Select></div>
-                                <div><Label>Descrição *</Label><Textarea name="description" value={editForm.description} onChange={handleEditInputChange} rows={5} /></div>
-                                <div><Label>Imagens *</Label><div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{editPreviews.map((src, idx) => (<div key={idx} className="relative group"><img src={src} alt={`Preview ${idx + 1}`} className="w-full h-32 object-cover rounded-md" /><button type="button" onClick={() => handleRemoveEditImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"><X className="h-4 w-4" /></button></div>))}<label className="cursor-pointer border-2 border-dashed rounded-md flex items-center justify-center p-4 hover:border-emerald-400/50 transition"><Upload className="h-6 w-6 text-muted-foreground" /><input type="file" accept="image/*" multiple className="hidden" onChange={handleEditImageChange} /></label></div></div>
-                                <DialogFooter><div className="flex gap-3 mt-4"><Button variant="ghost" onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}>Cancelar</Button><Button onClick={() => setShowEditConfirmDialog(true)} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Atualizando..." : "Confirmar"}</Button></div></DialogFooter>
+                                <div>
+                                  <Label htmlFor="edit-name">Nome *</Label>
+                                  <Input id="edit-name" name="name" value={editForm.name} onChange={handleEditInputChange} className="w-full" />
+                                </div>
+                                <div>
+                                  <Label>Categoria *</Label>
+                                  <Select value={editForm.category} onValueChange={handleEditCategoryChange}>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Selecione categoria" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {categories.map((c) => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label>Descrição *</Label>
+                                  <Textarea name="description" value={editForm.description} onChange={handleEditInputChange} rows={5} className="w-full" />
+                                </div>
+                                <div>
+                                  <Label>Imagens *</Label>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    {editPreviews.map((src, idx) => (
+                                      <div key={idx} className="relative group">
+                                        <img src={src} alt={`Preview ${idx + 1}`} className="w-full h-32 object-cover rounded-md" />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveEditImage(idx)}
+                                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                    <label className="cursor-pointer border-2 border-dashed rounded-md flex items-center justify-center p-4 hover:border-emerald-400/50 transition">
+                                      <Upload className="h-6 w-6 text-muted-foreground" />
+                                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleEditImageChange} />
+                                    </label>
+                                  </div>
+                                </div>
+                                <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  >
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    onClick={() => setShowEditConfirmDialog(true)}
+                                    disabled={isSubmitting}
+                                    className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                                  >
+                                    {isSubmitting ? "Atualizando..." : "Confirmar"}
+                                  </Button>
+                                </DialogFooter>
                               </div>
                             )}
                           </DialogContent>
                         </Dialog>
 
                         <Dialog open={showEditConfirmDialog} onOpenChange={setShowEditConfirmDialog}>
-                          <DialogContent>
+                          <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>Confirmar edição</DialogTitle>
-                              <p>Tem certeza que deseja salvar as alterações no produto "{editingProduct?.name}"?</p>
+                              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar edição</DialogTitle>
+                              <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja salvar as alterações no produto "{editingProduct?.name}"?</p>
                             </DialogHeader>
-                            <DialogFooter>
-                              <div className="flex gap-3">
-                                <Button className="" variant="ghost" onClick={() => setShowEditConfirmDialog(false)}>Cancelar</Button>
-                                <Button onClick={handleEditSubmit} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Salvando..." : "Confirmar"}</Button>
-                              </div>
+                            <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                              <Button
+                                variant="ghost"
+                                onClick={() => setShowEditConfirmDialog(false)}
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                onClick={handleEditSubmit}
+                                disabled={isSubmitting}
+                                className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                              >
+                                {isSubmitting ? "Salvando..." : "Confirmar"}
+                              </Button>
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
@@ -679,9 +758,43 @@ const AdminPage: React.FC = () => {
 
                   {/* Delete tab (list of products with delete control) */}
                   <TabsContent value="delete">
-                    <motion.div key="delete" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-6">
-                      <div className="flex items-center gap-3 mb-6"><div className="p-3 rounded-xl eco-gradient"><Trash2 className="h-6 w-6 text-white" /></div><div><h2 className="text-2xl font-bold">Excluir Produtos</h2><p className="text-muted-foreground">Selecione um produto para excluir permanentemente</p></div></div>
-                      {isLoading ? (<p className="text-muted-foreground">Carregando produtos...</p>) : (<div className="space-y-4">{products.map((product) => (<div key={product.id} className="flex justify-between items-center border p-2 rounded-md"><div className="flex items-center gap-2"><img src={product.images?.[0]?.url} alt={product.name} className="w-12 h-12 object-cover rounded" /><span>{product.name}</span></div><div><Dialog open={showDeleteDialog && deleteTarget?.id === product.id} onOpenChange={setShowDeleteDialog}><DialogTrigger asChild><Button variant="destructive" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>Excluir</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Confirmar exclusão</DialogTitle><p>Tem certeza que deseja excluir o produto "{product.name}"?</p></DialogHeader><DialogFooter><div className="flex gap-3"><Button variant="ghost" onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}>Cancelar</Button><Button variant="destructive" onClick={handleConfirmDelete} disabled={isSubmitting}>{isSubmitting ? "Excluindo..." : "Confirmar"}</Button></div></DialogFooter></DialogContent></Dialog></div></div>))}</div>)}
+                    <motion.div key="delete" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-4 sm:p-6">
+                      <div className="flex items-center gap-3 mb-6"><div className="p-3 rounded-xl eco-gradient"><Trash2 className="h-6 w-6 text-white" /></div><div><h2 className="text-xl sm:text-2xl font-bold">Excluir Produtos</h2><p className="text-sm sm:text-base text-muted-foreground">Selecione um produto para excluir permanentemente</p></div></div>
+                      {isLoading ? (<p className="text-muted-foreground">Carregando produtos...</p>) : (<div className="space-y-4">{products.map((product) => (
+                        <div key={product.id} className="flex justify-between items-center border p-2 rounded-md">
+                          <div className="flex items-center gap-2"><img src={product.images?.[0]?.url} alt={product.name} className="w-12 h-12 object-cover rounded" /><span>{product.name}</span></div>
+                          <div>
+                            <Dialog open={showDeleteDialog && deleteTarget?.id === product.id} onOpenChange={setShowDeleteDialog}>
+                              <DialogTrigger asChild>
+                                <Button variant="destructive" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>Excluir</Button>
+                              </DialogTrigger>
+                              <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar exclusão</DialogTitle>
+                                  <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja excluir o produto "{product.name}"?</p>
+                                </DialogHeader>
+                                <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  >
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={handleConfirmDelete}
+                                    disabled={isSubmitting}
+                                    className="w-full sm:w-auto"
+                                  >
+                                    {isSubmitting ? "Excluindo..." : "Confirmar"}
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
+                      ))}</div>)}
                     </motion.div>
                   </TabsContent>
                 </Tabs>
@@ -689,18 +802,20 @@ const AdminPage: React.FC = () => {
                 {/* ===== List tab (separate area) ===== */}
                 <AnimatePresence>
                   {activeTab === "list" && (
-                    <motion.div key="list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-6">
+                    <motion.div key="list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-4 sm:p-6">
                       {/* filter & search */}
                       <div className="flex items-center justify-between mb-6 gap-4 flex-col md:flex-row">
                         <div className="flex items-center gap-3 w-full md:w-auto">
                           <div className="flex items-center gap-2 bg-card dark:bg-background rounded-md p-2">
-                            <Input placeholder="Buscar por nome ou descrição..." value={listSearch} onChange={(e) => setListSearch(e.target.value)} className="w-64" />
+                            <Input placeholder="Buscar por nome ou descrição..." value={listSearch} onChange={(e) => setListSearch(e.target.value)} className="w-full md:w-64" />
                           </div>
                         </div>
 
                         <div className="flex items-center gap-3">
                           <Select value={listCategory} onValueChange={(v) => setListCategory(String(v))}>
-                            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="w-full md:w-44">
+                              <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Todos">Todos</SelectItem>
                               {categories.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
@@ -732,13 +847,13 @@ const AdminPage: React.FC = () => {
                               <div className="p-4">
                                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
-                                <div className="flex items-center justify-between mt-4">
+                                <div className="flex justify-center items-center mt-4">
                                   <div className="flex items-center gap-2">
                                     <Button variant="ghost" onClick={() => openQuickEditFor(product)}>
-                                      <Pencil className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Editar</span>
+                                      <Pencil className="h-4 w-4" /><span className="ml-2 sm:inline">Editar</span>
                                     </Button>
                                     <Button className="hover:bg-red-600" variant="ghost" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
-                                      <Trash2 className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Excluir</span>
+                                      <Trash2 className="h-4 w-4" /><span className="ml-2 sm:inline">Excluir</span>
                                     </Button>
                                   </div>
                                 </div>
@@ -773,23 +888,25 @@ const AdminPage: React.FC = () => {
 
                       {/* Quick Edit Dialog */}
                       <Dialog open={showQuickEditDialog} onOpenChange={setShowQuickEditDialog}>
-                        <DialogContent>
+                        <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Editar Rápido</DialogTitle>
-                            <p className="text-muted-foreground">Edição rápida (agora com imagens)</p>
+                            <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Editar Rápido</DialogTitle>
+                            <p className="text-sm sm:text-base text-muted-foreground">Edição rápida (agora com imagens)</p>
                           </DialogHeader>
 
                           {quickEditProduct && (
-                            <div className="space-y-4 mt-2">
+                            <div className="space-y-4 mt-4">
                               <div>
                                 <Label htmlFor="qe-name">Nome</Label>
-                                <Input id="qe-name" name="name" value={quickEditForm.name} onChange={handleQuickEditChange} />
+                                <Input id="qe-name" name="name" value={quickEditForm.name} onChange={handleQuickEditChange} className="w-full" />
                               </div>
 
                               <div>
                                 <Label>Categoria</Label>
                                 <Select value={quickEditForm.category} onValueChange={(v) => setQuickEditForm((p) => ({ ...p, category: String(v) }))}>
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                  </SelectTrigger>
                                   <SelectContent>
                                     {categories.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
                                   </SelectContent>
@@ -798,7 +915,7 @@ const AdminPage: React.FC = () => {
 
                               <div>
                                 <Label>Descrição</Label>
-                                <Textarea name="description" value={quickEditForm.description} onChange={handleQuickEditChange} rows={4} />
+                                <Textarea name="description" value={quickEditForm.description} onChange={handleQuickEditChange} rows={4} className="w-full" />
                               </div>
 
                               <div>
@@ -841,19 +958,21 @@ const AdminPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              <DialogFooter>
-                                <div className="flex gap-3">
-                                  <Button className="hover:bg-red-600 hover:text-white" variant="ghost" onClick={() => { setShowQuickEditDialog(false); setQuickEditProduct(null); }}>
-                                    Cancelar
-                                  </Button>
-                                  <Button
-                                    onClick={() => setShowQuickEditConfirmDialog(true)}
-                                    disabled={isSubmitting}
-                                    className="eco-gradient text-white"
-                                  >
-                                    {isSubmitting ? "Salvando..." : "Salvar Alterações"}
-                                  </Button>
-                                </div>
+                              <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => { setShowQuickEditDialog(false); setQuickEditProduct(null); }}
+                                  className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                >
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  onClick={() => setShowQuickEditConfirmDialog(true)}
+                                  disabled={isSubmitting}
+                                  className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                                >
+                                  {isSubmitting ? "Salvando..." : "Salvar Alterações"}
+                                </Button>
                               </DialogFooter>
                             </div>
                           )}
@@ -862,34 +981,53 @@ const AdminPage: React.FC = () => {
 
                       {/* Quick Edit Confirm Dialog */}
                       <Dialog open={showQuickEditConfirmDialog} onOpenChange={setShowQuickEditConfirmDialog}>
-                        <DialogContent>
+                        <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Confirmar edição</DialogTitle>
-                            <p>Tem certeza que deseja salvar as alterações no produto "{quickEditProduct?.name}"?</p>
+                            <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar edição</DialogTitle>
+                            <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja salvar as alterações no produto "{quickEditProduct?.name}"?</p>
                           </DialogHeader>
-                          <DialogFooter>
-                            <div className="flex gap-3">
-                              <Button variant="ghost" onClick={() => setShowQuickEditConfirmDialog(false)}>Cancelar</Button>
-                              <Button onClick={handleQuickEditSubmit} disabled={isSubmitting} className="eco-gradient text-white">{isSubmitting ? "Salvando..." : "Confirmar"}</Button>
-                            </div>
+                          <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                            <Button
+                              variant="ghost"
+                              onClick={() => setShowQuickEditConfirmDialog(false)}
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              onClick={handleQuickEditSubmit}
+                              disabled={isSubmitting}
+                              className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                            >
+                              {isSubmitting ? "Salvando..." : "Confirmar"}
+                            </Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
 
                       {/* Delete Dialog (used in list and delete tab) */}
                       <Dialog open={showDeleteDialog && Boolean(deleteTarget)} onOpenChange={setShowDeleteDialog}>
-                        <DialogContent>
+                        <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Confirmar exclusão</DialogTitle>
-                            <p>Tem certeza que deseja excluir o produto "{deleteTarget?.name}"?</p>
+                            <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar exclusão</DialogTitle>
+                            <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja excluir o produto "{deleteTarget?.name}"?</p>
                           </DialogHeader>
-                          <DialogFooter>
-                            <div className="flex gap-3">
-                              <Button variant="ghost" onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}>Cancelar</Button>
-                              <Button variant="destructive" onClick={handleConfirmDelete} disabled={isSubmitting}>
-                                {isSubmitting ? "Excluindo..." : "Confirmar"}
-                              </Button>
-                            </div>
+                          <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                            <Button
+                              variant="ghost"
+                              onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleConfirmDelete}
+                              disabled={isSubmitting}
+                              className="w-full sm:w-auto"
+                            >
+                              {isSubmitting ? "Excluindo..." : "Confirmar"}
+                            </Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>

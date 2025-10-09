@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Input } from '../../components/ui/input'
-import { Textarea } from '../../components/ui/textarea'
-import { Label } from '../../components/ui/label'
+import { Button } from '../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Input } from '../components/ui/input'
+import { Textarea } from '../components/ui/textarea'
+import { Label } from '../components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Star, Send, User, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
-import { supabase } from '../../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
 const Feedback = () => {
   console.log('Feedback page rendered')
@@ -55,7 +56,7 @@ const Feedback = () => {
     const feedbackData = {
       name: formData.name,
       email: formData.email || null,
-      product: formData.product || null,
+      product: formData.product === 'none' ? null : formData.product, // Convert "none" to null for database
       message: formData.message,
       rating: rating,
     }
@@ -86,10 +87,17 @@ const Feedback = () => {
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
+    }))
+  }
+
+  const handleProductChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      product: value
     }))
   }
 
@@ -169,20 +177,18 @@ const Feedback = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="product">Produto (opcional)</Label>
-                <select
-                  id="product"
-                  name="product"
-                  value={formData.product}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
-                  disabled={loading}
-                >
-                  <option value="">Selecione um produto</option>
-                  <option value="Ecobag">Ecobag</option>
-                  <option value="Cinzeiro">Cinzeiro</option>
-                  <option value="Mini Tela">Mini Tela</option>
-                </select>
+                <Label>Produto (opcional)</Label>
+                <Select value={formData.product} onValueChange={handleProductChange} disabled={loading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um produto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    <SelectItem value="Ecobag">Ecobag</SelectItem>
+                    <SelectItem value="Cinzeiro">Cinzeiro</SelectItem>
+                    <SelectItem value="Mini Tela">Mini Tela</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

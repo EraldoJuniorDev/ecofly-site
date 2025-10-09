@@ -7,7 +7,7 @@ import BackToTop from './components/layout/BackToTop';
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import Favorites from './pages/Favorites';
-import Feedback from './pages/public/Feedback';
+import Feedback from './pages/Feedback';
 import Contact from './pages/Contact';
 import AdminPage from './pages/admin/AdminPage';
 import LoginPage from './pages/auth/LoginPage';

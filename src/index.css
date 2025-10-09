@@ -24,7 +24,6 @@ All colors MUST be HSL.
     --secondary-foreground: 160 20% 15%;
 
     --muted: 120 60% 96%;
-    --muted-foreground: 160 20% 45%;
 
     --accent: 82 84% 67%;
     --accent-foreground: 160 20% 15%;
@@ -56,7 +55,6 @@ All colors MUST be HSL.
     --secondary-foreground: 120 60% 95%;
 
     --muted: 160 20% 15%;
-    --muted-foreground: 120 20% 65%;
 
     --accent: 82 84% 67%;
     --accent-foreground: 160 20% 8%;
@@ -87,7 +85,7 @@ All colors MUST be HSL.
 
 @layer components {
   .eco-gradient {
-    background: linear-gradient(135deg, hsl(142 69% 58%) 0%, hsl(160 84% 39%) 100%);
+    background: linear-gradient(135deg, hsl(142, 100%, 16%) 0%, hsl(160, 82%, 24%) 100%);
   }
   
   .eco-text-gradient {
