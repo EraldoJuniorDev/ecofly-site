@@ -610,16 +610,16 @@ const AdminPage: React.FC = () => {
                         </div>
 
                         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                          <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar adição</DialogTitle>
-                              <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja adicionar este produto?</p>
+                          <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader className="text-center sm:text-left mb-4">
+                              <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Confirmar Adição</DialogTitle>
+                              <p className="text-sm text-muted-foreground">Tem certeza que deseja adicionar este produto?</p>
                             </DialogHeader>
-                            <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                            <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowAddDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
                               >
                                 Cancelar
                               </Button>
@@ -658,10 +658,10 @@ const AdminPage: React.FC = () => {
                         )}
 
                         <Dialog open={showEditDialog} onOpenChange={(open) => { setShowEditDialog(open); if (!open) setEditingProduct(null); }}>
-                          <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Editar Produto</DialogTitle>
-                              <p className="text-sm sm:text-base text-muted-foreground">Atualize as informações e confirme.</p>
+                          <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[600px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader className="text-center sm:text-left mb-4">
+                              <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Editar Produto</DialogTitle>
+                              <p className="text-sm text-muted-foreground">Atualize as informações e confirme.</p>
                             </DialogHeader>
                             {editingProduct && (
                               <div className="space-y-4 mt-4">
@@ -707,11 +707,11 @@ const AdminPage: React.FC = () => {
                                     </label>
                                   </div>
                                 </div>
-                                <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                                <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
                                   >
                                     Cancelar
                                   </Button>
@@ -729,16 +729,16 @@ const AdminPage: React.FC = () => {
                         </Dialog>
 
                         <Dialog open={showEditConfirmDialog} onOpenChange={setShowEditConfirmDialog}>
-                          <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar edição</DialogTitle>
-                              <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja salvar as alterações no produto "{editingProduct?.name}"?</p>
+                          <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader className="text-center sm:text-left mb-4">
+                              <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Confirmar Edição</DialogTitle>
+                              <p className="text-sm text-muted-foreground">Tem certeza que deseja salvar as alterações no produto "{editingProduct?.name}"?</p>
                             </DialogHeader>
-                            <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                            <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowEditConfirmDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
                               >
                                 Cancelar
                               </Button>
@@ -768,16 +768,16 @@ const AdminPage: React.FC = () => {
                               <DialogTrigger asChild>
                                 <Button variant="destructive" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>Excluir</Button>
                               </DialogTrigger>
-                              <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                  <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar exclusão</DialogTitle>
-                                  <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja excluir o produto "{product.name}"?</p>
+                              <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader className="text-center sm:text-left mb-4">
+                                  <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Confirmar Exclusão</DialogTitle>
+                                  <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir o produto "{product.name}"?</p>
                                 </DialogHeader>
-                                <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                                <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
                                   >
                                     Cancelar
                                   </Button>
@@ -848,7 +848,7 @@ const AdminPage: React.FC = () => {
                                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
                                 <div className="flex justify-center items-center mt-4">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-5">
                                     <Button variant="ghost" onClick={() => openQuickEditFor(product)}>
                                       <Pencil className="h-4 w-4" /><span className="ml-2 sm:inline">Editar</span>
                                     </Button>
@@ -888,10 +888,10 @@ const AdminPage: React.FC = () => {
 
                       {/* Quick Edit Dialog */}
                       <Dialog open={showQuickEditDialog} onOpenChange={setShowQuickEditDialog}>
-                        <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Editar Rápido</DialogTitle>
-                            <p className="text-sm sm:text-base text-muted-foreground">Edição rápida (agora com imagens)</p>
+                        <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[600px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader className="text-center sm:text-left mb-4">
+                            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Editar Rápido</DialogTitle>
+                            <p className="text-sm text-muted-foreground">Edição rápida (agora com imagens)</p>
                           </DialogHeader>
 
                           {quickEditProduct && (
@@ -958,11 +958,11 @@ const AdminPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                              <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
                                 <Button
                                   variant="ghost"
                                   onClick={() => { setShowQuickEditDialog(false); setQuickEditProduct(null); }}
-                                  className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
                                 >
                                   Cancelar
                                 </Button>
@@ -981,16 +981,16 @@ const AdminPage: React.FC = () => {
 
                       {/* Quick Edit Confirm Dialog */}
                       <Dialog open={showQuickEditConfirmDialog} onOpenChange={setShowQuickEditConfirmDialog}>
-                        <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar edição</DialogTitle>
-                            <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja salvar as alterações no produto "{quickEditProduct?.name}"?</p>
+                        <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader className="text-center sm:text-left mb-4">
+                            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Confirmar Edição</DialogTitle>
+                            <p className="text-sm text-muted-foreground">Tem certeza que deseja salvar as alterações no produto "{quickEditProduct?.name}"?</p>
                           </DialogHeader>
-                          <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                          <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
                             <Button
                               variant="ghost"
                               onClick={() => setShowQuickEditConfirmDialog(false)}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
                             >
                               Cancelar
                             </Button>
@@ -1007,16 +1007,16 @@ const AdminPage: React.FC = () => {
 
                       {/* Delete Dialog (used in list and delete tab) */}
                       <Dialog open={showDeleteDialog && Boolean(deleteTarget)} onOpenChange={setShowDeleteDialog}>
-                        <DialogContent className="w-full max-w-md sm:max-w-lg bg-card dark:bg-background border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Confirmar exclusão</DialogTitle>
-                            <p className="text-sm sm:text-base text-muted-foreground">Tem certeza que deseja excluir o produto "{deleteTarget?.name}"?</p>
+                        <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader className="text-center sm:text-left mb-4">
+                            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Confirmar Exclusão</DialogTitle>
+                            <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir o produto "{deleteTarget?.name}"?</p>
                           </DialogHeader>
-                          <DialogFooter className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3">
+                          <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
                             <Button
                               variant="ghost"
                               onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
                             >
                               Cancelar
                             </Button>
