@@ -11,7 +11,8 @@ import Feedback from './pages/Feedback';
 import Contact from './pages/Contact';
 import AdminPage from './pages/admin/AdminPage';
 import LoginPage from './pages/auth/LoginPage';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage'; // Nova importação
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import { ProductDetail } from '../src/components/ProductComponents';
 import { Toaster } from './components/ui/sonner';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { supabase } from './lib/supabaseClient';
@@ -114,7 +115,7 @@ function App() {
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/contato" element={<Contact />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} /> {/* Nova rota */}
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route
                   path="/admin"
                   element={
@@ -123,6 +124,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/product/:productId" element={<ProductDetail />} /> {/* Nova rota */}
               </Routes>
             </main>
             <Footer />

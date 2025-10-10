@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { ArrowRight, Leaf, Recycle, Heart, Sparkles } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
+import { ProductCard } from '../components/ProductComponents'; // Updated import
 import { WHATSAPP_LINK } from '../constants';
 import { supabase } from '../lib/supabaseClient';
 
 // Definir a interface para os produtos
 interface Product {
-  id: number; // Alterado de string para number
+  id: number;
   name: string;
   category: string;
   description: string;
@@ -193,6 +193,7 @@ const Home = () => {
                   src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/logo_transparent.png"
                   alt="ECOFLY Logo"
                   className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-400"
+                  ref={heroRef}
                 />
                 <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full blur-xl animate-float"></div>
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full blur-2xl animate-float-delayed"></div>
@@ -251,7 +252,7 @@ const Home = () => {
               {products.map((product) => (
                 <ProductCard
                   key={product.id}
-                  id={product.id} // Agora é number
+                  id={product.id}
                   name={product.name}
                   category={product.category}
                   images={product.images}

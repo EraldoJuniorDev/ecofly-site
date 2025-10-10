@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { MessageCircle } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
+import { ProductCard } from '../components/ProductComponents'; // Atualizado para importar do ProductComponents
 import { WHATSAPP_LINK } from '../constants';
 import { supabase } from '../lib/supabaseClient';
 import { Item } from '../types/supabase';
@@ -56,7 +56,7 @@ const Store = () => {
     : products.filter((product) => product.category === selectedCategory);
 
   const handleWhatsApp = (productName: string) => {
-    const message = `Olá! Tenho interesse no produto dos meus favoritos: ${productName}. Poderia me dar mais informações?`;
+    const message = `Olá! Tenho interesse no produto: ${productName}. Poderia me dar mais informações?`;
     const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

@@ -807,7 +807,8 @@ const AdminPage: React.FC = () => {
                       <div className="flex items-center justify-between mb-6 gap-4 flex-col md:flex-row">
                         <div className="flex items-center gap-3 sm:w-fit">
                           <div className="flex items-center gap-2 bg-card dark:bg-background rounded-md p-2">
-                            <Input placeholder="Buscar por nome ou descrição..." value={listSearch} onChange={(e) => setListSearch(e.target.value)} className="w-full md:w-64" />
+                            <p>Buscar:</p>
+                            <Input placeholder="Digite o nome ou descrição do produto" value={listSearch} onChange={(e) => setListSearch(e.target.value)} className="w-full md:w-64" />
                           </div>
                         </div>
 
