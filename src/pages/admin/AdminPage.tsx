@@ -619,7 +619,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowAddDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
                               >
                                 Cancelar
                               </Button>
@@ -711,7 +711,7 @@ const AdminPage: React.FC = () => {
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
                                   >
                                     Cancelar
                                   </Button>
@@ -738,7 +738,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowEditConfirmDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
                               >
                                 Cancelar
                               </Button>
@@ -777,15 +777,15 @@ const AdminPage: React.FC = () => {
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
                                   >
                                     Cancelar
                                   </Button>
                                   <Button
-                                    variant="destructive"
+                                    variant="default"
                                     onClick={handleConfirmDelete}
                                     disabled={isSubmitting}
-                                    className="w-full sm:w-auto"
+                                    className="w-full sm:w-auto text-white bg-green-700"
                                   >
                                     {isSubmitting ? "Excluindo..." : "Confirmar"}
                                   </Button>
@@ -805,7 +805,7 @@ const AdminPage: React.FC = () => {
                     <motion.div key="list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-4 sm:p-6">
                       {/* filter & search */}
                       <div className="flex items-center justify-between mb-6 gap-4 flex-col md:flex-row">
-                        <div className="flex items-center gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-3 sm:w-fit">
                           <div className="flex items-center gap-2 bg-card dark:bg-background rounded-md p-2">
                             <Input placeholder="Buscar por nome ou descrição..." value={listSearch} onChange={(e) => setListSearch(e.target.value)} className="w-full md:w-64" />
                           </div>
@@ -849,10 +849,10 @@ const AdminPage: React.FC = () => {
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
                                 <div className="flex justify-center items-center mt-4">
                                   <div className="flex items-center gap-5">
-                                    <Button variant="ghost" onClick={() => openQuickEditFor(product)}>
+                                    <Button className="border" variant="ghost" onClick={() => openQuickEditFor(product)}>
                                       <Pencil className="h-4 w-4" /><span className="ml-2 sm:inline">Editar</span>
                                     </Button>
-                                    <Button className="hover:bg-red-600" variant="ghost" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
+                                    <Button className="border hover:bg-red-600" variant="ghost" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
                                       <Trash2 className="h-4 w-4" /><span className="ml-2 sm:inline">Excluir</span>
                                     </Button>
                                   </div>
@@ -864,10 +864,10 @@ const AdminPage: React.FC = () => {
                       ) : (
                         <div className="space-y-4">
                           {listFilteredProducts.map((product) => (
-                            <motion.div key={product.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4 p-4 border rounded-lg">
+                            <motion.div key={product.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex items-start gap-4 p-4 border rounded-lg">
                               <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0"><img src={product.images?.[0]?.url} alt={product.name} className="w-full h-full object-cover" /></div>
                               <div className="flex-1">
-                                <div className="flex items-start justify-between">
+                                <div className="flex flex-col gap-3 items-start justify-between">
                                   <div>
                                     <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                     <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
@@ -875,8 +875,12 @@ const AdminPage: React.FC = () => {
                                   </div>
                                   <div className="flex flex-col gap-2 items-end">
                                     <div className="flex gap-2">
-                                      <Button onClick={() => openQuickEditFor(product)} className="eco-gradient text-white">Editar</Button>
-                                      <Button variant="destructive" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>Excluir</Button>
+                                      <Button onClick={() => openQuickEditFor(product)} className="eco-gradient text-white">
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="destructive" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
                                     </div>
                                   </div>
                                 </div>
@@ -962,7 +966,7 @@ const AdminPage: React.FC = () => {
                                 <Button
                                   variant="ghost"
                                   onClick={() => { setShowQuickEditDialog(false); setQuickEditProduct(null); }}
-                                  className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
+                                  className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100  border"
                                 >
                                   Cancelar
                                 </Button>
@@ -990,7 +994,7 @@ const AdminPage: React.FC = () => {
                             <Button
                               variant="ghost"
                               onClick={() => setShowQuickEditConfirmDialog(false)}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
                             >
                               Cancelar
                             </Button>
@@ -1016,15 +1020,15 @@ const AdminPage: React.FC = () => {
                             <Button
                               variant="ghost"
                               onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border"
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
                             >
                               Cancelar
                             </Button>
                             <Button
-                              variant="destructive"
+                              variant="ghost"
                               onClick={handleConfirmDelete}
                               disabled={isSubmitting}
-                              className="w-full sm:w-auto"
+                              className="w-full sm:w-auto bg-green-700"
                             >
                               {isSubmitting ? "Excluindo..." : "Confirmar"}
                             </Button>
