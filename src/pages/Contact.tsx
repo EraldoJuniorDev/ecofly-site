@@ -46,16 +46,16 @@ const Contact = () => {
     window.open(whatsappUrl, '_blank')
   }
 
-const formatWhatsAppNumber = (number: string) => {
-  const countryCode = number.slice(0, 2); // 55
-  const areaCode = number.slice(2, 4);    // 82
-  const firstPart = number.slice(4, 8);   // 9821
-  const secondPart = number.slice(8);     // 3105
-  return `+${countryCode} ${areaCode} ${firstPart}-${secondPart}`;
-};
+  const formatWhatsAppNumber = (number: string) => {
+    const countryCode = number.slice(0, 2); // 55
+    const areaCode = number.slice(2, 4);    // 82
+    const firstPart = number.slice(4, 8);   // 9821
+    const secondPart = number.slice(8);     // 3105
+    return `+${countryCode} ${areaCode} ${firstPart}-${secondPart}`;
+  };
 
-// Número formatado para exibição
-const WHATSAPP_FORMATTED = formatWhatsAppNumber(WHATSAPP_NUMBER);
+  // Número formatado para exibição
+  const WHATSAPP_FORMATTED = formatWhatsAppNumber(WHATSAPP_NUMBER);
 
   const contactMethods = [
     {
@@ -232,7 +232,7 @@ const WHATSAPP_FORMATTED = formatWhatsAppNumber(WHATSAPP_NUMBER);
               <Button
                 onClick={handleWhatsApp}
                 variant="secondary"
-                className="mt-4 bg-white text-primary hover:bg-white/90"
+                className="bg-white text-black hover:bg-gray-300"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Falar no WhatsApp

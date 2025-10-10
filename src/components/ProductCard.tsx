@@ -256,7 +256,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             variant="outline"
             size="sm"
             onClick={() => onWhatsAppClick(name)}
-            className="w-full mt-2"
+            className="w-full mt-2 hover:text-white"
           >
             Consultar no WhatsApp
           </Button>

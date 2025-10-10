@@ -126,7 +126,7 @@ const Store = () => {
           onClick={() => handleWhatsApp('produto personalizado')}
           variant="secondary"
           size="lg"
-          className="bg-white text-primary hover:bg-white/90"
+          className="bg-white text-black hover:bg-gray-300"
         >
           <MessageCircle className="w-5 h-5 mr-2" />
           Solicitar Orçamento

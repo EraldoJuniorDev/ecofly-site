@@ -451,7 +451,7 @@ const AdminPage: React.FC = () => {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab("delete")}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === "delete"
-                      ? "bg-red-100/80 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                      ? "bg-red-100/80 dark:bg-red-900/30 text-destructive dark:text-red-400"
                       : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
                     }`}
                 >
@@ -619,7 +619,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowAddDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
                               >
                                 Cancelar
                               </Button>
@@ -711,7 +711,7 @@ const AdminPage: React.FC = () => {
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
                                   >
                                     Cancelar
                                   </Button>
@@ -738,7 +738,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowEditConfirmDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
                               >
                                 Cancelar
                               </Button>
@@ -777,7 +777,7 @@ const AdminPage: React.FC = () => {
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
                                   >
                                     Cancelar
                                   </Button>
@@ -852,7 +852,7 @@ const AdminPage: React.FC = () => {
                                     <Button className="border" variant="ghost" onClick={() => openQuickEditFor(product)}>
                                       <Pencil className="h-4 w-4" /><span className="ml-2 sm:inline">Editar</span>
                                     </Button>
-                                    <Button className="border hover:bg-red-600" variant="ghost" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
+                                    <Button className="border hover:bg-destructive" variant="ghost" onClick={() => { setDeleteTarget(product); setShowDeleteDialog(true); }}>
                                       <Trash2 className="h-4 w-4" /><span className="ml-2 sm:inline">Excluir</span>
                                     </Button>
                                   </div>
@@ -895,7 +895,7 @@ const AdminPage: React.FC = () => {
                         <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[600px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader className="text-center sm:text-left mb-4">
                             <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Editar Rápido</DialogTitle>
-                            <p className="text-sm text-muted-foreground">Edição rápida (agora com imagens)</p>
+                            <p className="text-sm text-muted-foreground">Edição rápida dos itens do catálogo.</p>
                           </DialogHeader>
 
                           {quickEditProduct && (
@@ -966,7 +966,7 @@ const AdminPage: React.FC = () => {
                                 <Button
                                   variant="ghost"
                                   onClick={() => { setShowQuickEditDialog(false); setQuickEditProduct(null); }}
-                                  className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100  border"
+                                  className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
                                 >
                                   Cancelar
                                 </Button>
@@ -994,7 +994,7 @@ const AdminPage: React.FC = () => {
                             <Button
                               variant="ghost"
                               onClick={() => setShowQuickEditConfirmDialog(false)}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
                             >
                               Cancelar
                             </Button>
@@ -1020,7 +1020,7 @@ const AdminPage: React.FC = () => {
                             <Button
                               variant="ghost"
                               onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-red-600 border"
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
                             >
                               Cancelar
                             </Button>
