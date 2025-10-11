@@ -124,7 +124,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/product/:productId" element={<ProductDetail />} /> {/* Nova rota */}
+                <Route path="/produto/:productSlug" element={<ProductDetail />} /> {/* Nova rota */}
               </Routes>
             </main>
             <Footer />

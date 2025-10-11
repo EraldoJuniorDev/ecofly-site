@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { MessageCircle } from 'lucide-react';
-import { ProductCard } from '../components/ProductComponents'; // Atualizado para importar do ProductComponents
+import { ProductCard } from '../components/ProductComponents';
 import { WHATSAPP_LINK } from '../constants';
 import { supabase } from '../lib/supabaseClient';
-import { Item } from '../types/supabase';
 
 // Definir a interface para os produtos, alinhada com a tabela items
 interface Product {
@@ -13,10 +12,11 @@ interface Product {
   category: string;
   description: string;
   images: { url: string; alt: string }[];
+  slug: string;
 }
 
-const Store = () => {
-  console.log('Store page rendered with enhanced product cards');
+const Catalog = () => {
+  console.log('Catalog page rendered with enhanced product cards');
 
   const categories = ['Todos', 'Ecobag', 'Cinzeiro', 'Mini Tela'];
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -31,14 +31,13 @@ const Store = () => {
         setLoading(true);
         const { data, error } = await supabase
           .from('items')
-          .select('*') as { data: Item[] | null; error: any };
+          .select('id, name, category, description, images, slug') as { data: Product[] | null; error: any };
         
         if (error) {
           throw new Error(`Erro ao buscar produtos: ${error.message}`);
         }
 
         console.log('Dados do Supabase:', data);
-        console.log('Tipo do primeiro id:', data?.[0]?.id, typeof data?.[0]?.id);
         setProducts(data || []);
       } catch (err: any) {
         console.error('Erro:', err.message);
@@ -103,6 +102,7 @@ const Store = () => {
               category={product.category}
               images={product.images}
               description={product.description}
+              slug={product.slug}
               onWhatsAppClick={handleWhatsApp}
             />
           ))}
@@ -136,4 +136,4 @@ const Store = () => {
   );
 };
 
-export default Store;
+export default Catalog;

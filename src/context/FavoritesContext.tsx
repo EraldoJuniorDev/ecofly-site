@@ -1,93 +1,50 @@
-// src/context/FavoritesContext.tsx
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export interface FavoriteItem {
+interface FavoriteItem {
   id: number;
   name: string;
   category: string;
   image: string;
   description: string;
+  slug: string; // Added slug
 }
 
 interface FavoritesContextType {
   favorites: FavoriteItem[];
-  addToFavorites: (item: FavoriteItem) => void;
-  removeFromFavorites: (itemId: number) => void;
-  isFavorite: (itemId: number) => boolean;
+  isFavorite: (id: number) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
-  clearAllFavorites: () => void;
-  favoritesCount: number;
-  isLoaded: boolean;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const loadFavorites = () => {
-      try {
-        const savedFavorites = localStorage.getItem('ecofly-favorites');
-        if (savedFavorites) {
-          setFavorites(JSON.parse(savedFavorites));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar favoritos do localStorage:', error);
-        localStorage.removeItem('ecofly-favorites');
-        setFavorites([]);
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-    loadFavorites();
+    const storedFavorites = localStorage.getItem('favorites');
+    if (storedFavorites) {
+      setFavorites(JSON.parse(storedFavorites));
+    }
   }, []);
 
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('ecofly-favorites', JSON.stringify(favorites));
-    }
-  }, [favorites, isLoaded]);
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
-  const addToFavorites = (item: FavoriteItem) => {
-    setFavorites(prev => {
-      if (prev.some(fav => fav.id === item.id)) return prev;
-      return [...prev, item];
-    });
+  const isFavorite = (id: number) => {
+    return favorites.some((item) => item.id === id);
   };
-
-  // ⚡ Remove sem pop-up
-  const removeFromFavorites = (itemId: number) => {
-    setFavorites(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  const isFavorite = (itemId: number) => favorites.some(item => item.id === itemId);
 
   const toggleFavorite = (item: FavoriteItem) => {
-    if (isFavorite(item.id)) {
-      removeFromFavorites(item.id);
-    } else {
-      addToFavorites(item);
-    }
+    setFavorites((prev) =>
+      isFavorite(item.id)
+        ? prev.filter((fav) => fav.id !== item.id)
+        : [...prev, item]
+    );
   };
 
-  const clearAllFavorites = useCallback(() => {
-    setFavorites([]);
-    localStorage.removeItem('ecofly-favorites');
-  }, []);
-
   return (
-    <FavoritesContext.Provider value={{
-      favorites,
-      addToFavorites,
-      removeFromFavorites,
-      isFavorite,
-      toggleFavorite,
-      clearAllFavorites,
-      favoritesCount: favorites.length,
-      isLoaded
-    }}>
+    <FavoritesContext.Provider value={{ favorites, isFavorite, toggleFavorite }}>
       {children}
     </FavoritesContext.Provider>
   );
@@ -95,6 +52,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 export const useFavorites = () => {
   const context = useContext(FavoritesContext);
-  if (!context) throw new Error('useFavorites deve ser usado dentro de um FavoritesProvider');
+  if (!context) {
+    throw new Error('useFavorites must be used within a FavoritesProvider');
+  }
   return context;
 };

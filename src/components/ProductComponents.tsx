@@ -19,6 +19,7 @@ interface Product {
   category: string;
   images: ProductImage[];
   description: string;
+  slug: string;
 }
 
 interface ProductCardProps extends Product {
@@ -31,6 +32,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   category,
   images,
   description,
+  slug,
   onWhatsAppClick,
 }) => {
   const navigate = useNavigate();
@@ -46,7 +48,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     category,
     image: images[0]?.url || '',
     description,
-  }), [id, name, category, images, description]);
+    slug, // Include slug in favorite item
+  }), [id, name, category, images, description, slug]);
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,7 +77,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   }, [favoriteItem, isProductFavorite, name, toggleFavorite]);
 
   const handleCardClick = () => {
-    navigate(`/product/${id}`);
+    if (!slug) {
+      console.error('Slug is undefined for product:', { id, name });
+      navigate('/catalogo'); // Fallback to catalog page
+      return;
+    }
+    navigate(`/produto/${slug}`);
   };
 
   return (
@@ -196,7 +204,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 };
 
 export const ProductDetail: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -204,13 +212,23 @@ export const ProductDetail: React.FC = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
+      if (!productSlug) {
+        console.error('productSlug is undefined');
+        setProduct(null);
+        return;
+      }
       try {
         const { data, error } = await supabase
           .from('items')
-          .select('*')
-          .eq('id', productId)
-          .single();
-        if (error) throw error;
+          .select('id, name, category, description, images, slug')
+          .eq('slug', productSlug)
+          .single() as { data: Product | null; error: any };
+
+        if (error) {
+          console.error('Erro ao buscar produto:', error);
+          throw error;
+        }
+
         setProduct(data);
       } catch (error) {
         console.error('Erro ao buscar produto:', error);
@@ -218,7 +236,7 @@ export const ProductDetail: React.FC = () => {
       }
     };
     fetchProduct();
-  }, [productId]);
+  }, [productSlug]);
 
   const handleFavoriteToggle = useCallback(() => {
     if (product) {
@@ -228,6 +246,7 @@ export const ProductDetail: React.FC = () => {
         category: product.category,
         image: product.images[0]?.url || '',
         description: product.description,
+        slug: product.slug,
       };
       toggleFavorite(favoriteItem);
       toast.success(
@@ -362,5 +381,6 @@ export default React.memo(ProductCard, (prevProps, nextProps) => {
          prevProps.category === nextProps.category &&
          prevProps.description === nextProps.description &&
          prevProps.images.length === nextProps.images.length &&
+         prevProps.slug === nextProps.slug &&
          prevProps.onWhatsAppClick === nextProps.onWhatsAppClick;
 });

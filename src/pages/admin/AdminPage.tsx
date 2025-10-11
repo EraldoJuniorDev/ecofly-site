@@ -17,6 +17,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabaseClient";
 import { toast } from "sonner";
+import slugify from "slugify"; // Import slugify
 
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -122,6 +123,24 @@ const AdminPage: React.FC = () => {
     fetchProducts();
   }, []);
 
+  // Helper to generate a unique slug
+  const generateUniqueSlug = async (name: string): Promise<string> => {
+    const baseSlug = slugify(name, { lower: true, strict: true });
+    let uniqueSlug = baseSlug;
+    let suffix = 1;
+
+    while (true) {
+      const { data: existing } = await supabase
+        .from("items")
+        .select("slug")
+        .eq("slug", uniqueSlug)
+        .single();
+      if (!existing) break;
+      uniqueSlug = `${baseSlug}-${suffix++}`;
+    }
+    return uniqueSlug;
+  };
+
   const handleGoBack = () => navigate(-1);
 
   // --- Add helpers ---
@@ -177,11 +196,13 @@ const AdminPage: React.FC = () => {
         const url = await uploadFileToStorage(file);
         imageObjs.push({ url, alt: file.name });
       }
+      const slug = await generateUniqueSlug(formData.name); // Generate unique slug
       const newProduct = {
         name: formData.name,
         category: formData.category,
         description: formData.description,
         images: imageObjs,
+        slug, // Include slug
       };
       const { error: insertError } = await supabase.from("items").insert([newProduct]);
       if (insertError) throw insertError;
@@ -251,6 +272,7 @@ const AdminPage: React.FC = () => {
         const url = await uploadFileToStorage(file);
         updatedImages.push({ url, alt: file.name });
       }
+      const slug = await generateUniqueSlug(editForm.name); // Generate unique slug
       const { error: updateError } = await supabase
         .from("items")
         .update({
@@ -258,6 +280,7 @@ const AdminPage: React.FC = () => {
           category: editForm.category,
           description: editForm.description,
           images: updatedImages,
+          slug, // Include slug
         })
         .eq("id", editingProduct.id);
       if (updateError) throw updateError;
@@ -292,6 +315,7 @@ const AdminPage: React.FC = () => {
     setShowQuickEditDialog(false);
     setIsSubmitting(true);
     try {
+      const slug = await generateUniqueSlug(quickEditForm.name); // Generate unique slug
       const { error } = await supabase
         .from("items")
         .update({
@@ -299,6 +323,7 @@ const AdminPage: React.FC = () => {
           category: quickEditForm.category,
           description: quickEditForm.description,
           images: quickEditProduct.images,
+          slug, // Include slug
         })
         .eq("id", quickEditProduct.id);
       if (error) throw error;
@@ -619,7 +644,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowAddDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
                               >
                                 Cancelar
                               </Button>
@@ -711,7 +736,7 @@ const AdminPage: React.FC = () => {
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowEditDialog(false); setEditingProduct(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
                                   >
                                     Cancelar
                                   </Button>
@@ -738,7 +763,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 variant="ghost"
                                 onClick={() => setShowEditConfirmDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
+                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
                               >
                                 Cancelar
                               </Button>
@@ -777,7 +802,7 @@ const AdminPage: React.FC = () => {
                                   <Button
                                     variant="ghost"
                                     onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
+                                    className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
                                   >
                                     Cancelar
                                   </Button>
@@ -1021,7 +1046,7 @@ const AdminPage: React.FC = () => {
                             <Button
                               variant="ghost"
                               onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null); }}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-destructive border"
+                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
                             >
                               Cancelar
                             </Button>
@@ -1029,7 +1054,7 @@ const AdminPage: React.FC = () => {
                               variant="ghost"
                               onClick={handleConfirmDelete}
                               disabled={isSubmitting}
-                              className="w-full sm:w-auto bg-green-700"
+                              className="w-full sm:w-auto bg-green-700 text-white"
                             >
                               {isSubmitting ? "Excluindo..." : "Confirmar"}
                             </Button>
