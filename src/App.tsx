@@ -16,6 +16,7 @@ import { ProductDetail } from '../src/components/ProductComponents';
 import { Toaster } from './components/ui/sonner';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { supabase } from './lib/supabaseClient';
+import RegisterPage from './pages/auth/RegisterPage';
 
 console.log('App component loading...');
 
@@ -115,6 +116,7 @@ function App() {
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/contato" element={<Contact />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route
                   path="/admin"

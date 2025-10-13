@@ -1,24 +1,24 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, UserPlus } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
-import './LoginPage.css' // CSS de animação sangrenta
 import ThemeToggle from '../../components/layout/ThemeToggle'
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' })
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.email.trim() || !formData.password.trim()) {
+    if (!formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
       toast.error('Por favor, preencha todos os campos.')
       return
     }
@@ -26,16 +26,24 @@ export default function LoginPage() {
       toast.error('Por favor, insira um email válido.')
       return
     }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('As senhas não coincidem.')
+      return
+    }
+    if (formData.password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres.')
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password
       })
       if (error) throw error
-      toast.success('Login realizado com sucesso!')
-      navigate('/admin')
+      toast.success('Registro realizado com sucesso! Verifique seu email para confirmar.')
+      navigate('/login')
     } catch (error) {
       toast.error(error.message)
     } finally {
@@ -43,12 +51,11 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoBack = () => navigate('/')
-  const handleRegister = () => navigate('/register')
+  const handleGoBack = () => navigate('/login')
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
-      {/* Login Card */}
+      {/* Register Card */}
       <div className="w-full max-w-md relative z-10 animate-fade-in">
         {/* Top Bar: Voltar + Tema */}
         <div className="flex justify-between items-center mb-4">
@@ -65,14 +72,14 @@ export default function LoginPage() {
         <Card className="bg-white dark:bg-background border border-gray-200 dark:border-white/10 shadow-2xl animate-slide-up transition-colors duration-500">
           <CardHeader className="text-center pb-8">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse-glow">
-              <LogIn className="h-8 w-8 text-white" />
+              <UserPlus className="h-8 w-8 text-white" />
             </div>
 
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent pb-1">
-              Login
+              Registrar
             </h1>
             <p className="text-gray-700 dark:text-slate-200 mt-2 transition-colors duration-500">
-              Entre com suas credenciais para acessar o sistema
+              Crie uma conta para acessar o sistema
             </p>
           </CardHeader>
 
@@ -123,7 +130,35 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Login Button */}
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
+                  <Lock className="h-4 w-4 text-emerald-500" />
+                  <span>Confirmar Senha</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirme sua senha"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-gray-500 dark:text-slate-300 hover:text-gray-700 dark:hover:text-slate-100 hover:bg-gray-200 dark:hover:bg-slate-700/50 transition-colors duration-500"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Register Button */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
@@ -131,28 +166,15 @@ export default function LoginPage() {
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center space-x-2">
-                    <span>Entrando...</span>
+                    <span>Registrando...</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center space-x-2">
-                    <LogIn className="h-5 w-5" />
-                    <span>Entrar</span>
+                    <UserPlus className="h-5 w-5" />
+                    <span>Registrar</span>
                   </div>
                 )}
               </Button>
-
-              {/* Register Link */}
-              <div className="flex flex-col justify-center text-center text-sm mt-4 space-y-2">
-                  <p>Não tem uma conta?</p>
-                  <Button
-                    variant="link"
-                    onClick={handleRegister}
-                    className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 pl-2 transition-colors duration-300"
-                  >
-                    <UserPlus className="h-4 w-4 mr-1" />
-                    Crie uma agora
-                  </Button>
-              </div>
             </form>
           </CardContent>
         </Card>
