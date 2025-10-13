@@ -7,7 +7,6 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
-import './LoginPage.css' // CSS de animação sangrenta
 import ThemeToggle from '../../components/layout/ThemeToggle'
 
 export default function LoginPage() {
@@ -35,7 +34,7 @@ export default function LoginPage() {
       })
       if (error) throw error
       toast.success('Login realizado com sucesso!')
-      navigate('/admin')
+      navigate('/')
     } catch (error) {
       toast.error(error.message)
     } finally {

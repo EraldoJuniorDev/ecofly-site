@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   Menu,
-  Heart,
+  ShoppingCart,
   LogIn,
   LogOut,
   User,
@@ -15,7 +15,7 @@ import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
 import { Badge } from '../ui/badge'
 import ThemeToggle from './ThemeToggle'
-import { useFavorites } from '../../context/FavoritesContext'
+import { useCart } from '../../context/CartContext' // Correct import
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
 import {
@@ -30,21 +30,60 @@ import {
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [loadingLogout, setLoadingLogout] = useState(false)
   const location = useLocation()
-  const { favoritesCount } = useFavorites()
+  const { cartCount } = useCart() // Correct variable
 
-  // Buscar usuário atual
+  // Fetch user and role
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) {
+        console.error('Error fetching user:', userError)
+        setUser(null)
+        setIsAdmin(false)
+        return
+      }
       setUser(user)
+      if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+          setIsAdmin(false)
+        } else {
+          setIsAdmin(profile?.role === 'admin')
+        }
+      } else {
+        setIsAdmin(false)
+      }
     }
     getUser()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null)
+      if (event === 'SIGNED_IN' && session?.user) {
+        supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data: profile, error: profileError }) => {
+            if (profileError) {
+              console.error('Error fetching profile on auth change:', profileError)
+              setIsAdmin(false)
+            } else {
+              setIsAdmin(profile?.role === 'admin')
+            }
+          })
+      } else if (event === 'SIGNED_OUT') {
+        setIsAdmin(false)
+      }
     })
 
     return () => {
@@ -52,12 +91,13 @@ const Header = () => {
     }
   }, [])
 
-  // Logout com confirmação via Dialog
+  // Logout with confirmation dialog
   const handleLogout = async () => {
     setLoadingLogout(true)
     try {
       await supabase.auth.signOut()
       setUser(null)
+      setIsAdmin(false)
       toast.success("Logout realizado com sucesso!")
       setShowLogoutDialog(false)
     } catch (error) {
@@ -73,7 +113,7 @@ const Header = () => {
     { href: '/catalogo', label: 'Catálogo', icon: <ShoppingBag /> },
     { href: '/feedback', label: 'Feedback', icon: <MessageSquare /> },
     { href: '/contato', label: 'Contato', icon: <Phone /> },
-    { href: '/favoritos', label: 'Favoritos', icon: <Heart /> },
+    { href: '/carrinho', label: 'Carrinho', icon: <ShoppingCart /> },
   ]
 
   const isActive = (href: string) => location.pathname === href
@@ -120,8 +160,8 @@ const Header = () => {
           <div className="hidden lg:flex items-center gap-2">
             {user ? (
               <>
-                <Link to="/admin">
-                  <Button variant="ghost" size="icon" title="Painel Admin">
+                <Link to={isAdmin ? '/admin' : '/user'}>
+                  <Button variant="ghost" size="icon" title={isAdmin ? 'Painel Admin' : 'Perfil'}>
                     <User className="h-5 w-5 text-muted-foreground hover:text-primary" />
                   </Button>
                 </Link>
@@ -142,13 +182,13 @@ const Header = () => {
               </Link>
             )}
 
-            {/* Favoritos */}
-            <Link to="/favoritos">
+            {/* Carrinho */}
+            <Link to="/carrinho">
               <Button variant="ghost" size="icon" className="relative">
-                <Heart className="h-5 w-5 text-red-500" />
-                {favoritesCount > 0 && (
+                <ShoppingCart className="h-5 w-5 text-emerald-500" />
+                {cartCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs text-white">
-                    {favoritesCount}
+                    {cartCount}
                   </Badge>
                 )}
               </Button>
@@ -161,8 +201,8 @@ const Header = () => {
           <div className="flex items-center gap-2 lg:hidden">
             {user ? (
               <>
-                <Link to="/admin">
-                  <Button variant="ghost" size="icon" title="Painel Admin">
+                <Link to={isAdmin ? '/admin' : '/user'}>
+                  <Button variant="ghost" size="icon" title={isAdmin ? 'Painel Admin' : 'Perfil'}>
                     <User className="h-5 w-5 text-muted-foreground hover:text-primary" />
                   </Button>
                 </Link>
@@ -219,21 +259,38 @@ const Header = () => {
                           <span className="flex items-center gap-2">
                             {React.cloneElement(item.icon, {
                               className: `h-4 w-4 ${
-                                item.href === '/favoritos' && favoritesCount > 0
-                                  ? 'text-red-500'
+                                item.href === '/carrinho' && cartCount > 0
+                                  ? 'text-emerald-500'
                                   : 'text-muted-foreground hover:text-primary'
                               }`,
                             })}
                             {item.label}
                           </span>
-                          {item.href === '/favoritos' && favoritesCount > 0 && (
+                          {item.href === '/carrinho' && cartCount > 0 && (
                             <Badge className="h-5 w-5 p-0 flex items-center justify-center text-xs">
-                              {favoritesCount}
+                              {cartCount}
                             </Badge>
                           )}
                         </Link>
                       </SheetClose>
                     ))}
+                    {user && (
+                      <SheetClose asChild>
+                        <Link
+                          to={isAdmin ? '/admin' : '/user'}
+                          className={`text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg flex items-center justify-between ${
+                            isActive(isAdmin ? '/admin' : '/user')
+                              ? 'text-primary bg-primary/10'
+                              : 'text-muted-foreground hover:bg-accent'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                            {isAdmin ? 'Painel Admin' : 'Perfil'}
+                          </span>
+                        </Link>
+                      </SheetClose>
+                    )}
                   </nav>
                 </div>
               </SheetContent>

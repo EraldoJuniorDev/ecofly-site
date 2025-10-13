@@ -15,23 +15,23 @@ import {
   Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 import { toast } from "sonner";
 import slugify from "slugify"; // Import slugify
 
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
+import { Button } from "../../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
+import { Textarea } from "../../../components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+} from "../../../components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import {
   Dialog,
   DialogTrigger,
@@ -39,7 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "../../components/ui/dialog";
+} from "../../../components/ui/dialog";
 
 const categories = ["Ecobag", "Cinzeiro", "Mini Tela"];
 const LOCAL_STORAGE_TAB_KEY = "admin_active_tab";

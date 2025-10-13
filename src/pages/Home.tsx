@@ -2,14 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import { ArrowRight, Leaf, Recycle, Heart, Sparkles } from 'lucide-react';
-import { ProductCard } from '../components/ProductComponents';
+import { ArrowRight, Leaf, Recycle, Sparkles } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
 import { WHATSAPP_LINK } from '../constants';
 import { supabase } from '../lib/supabaseClient';
 
-// Definir a interface para os produtos
 interface Product {
-  id: number;
+  id: number; // Changed to number to match items.id (bigint)
   name: string;
   category: string;
   description: string;
@@ -26,7 +25,6 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Buscar produtos do Supabase ao carregar o componente
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -40,8 +38,12 @@ const Home = () => {
           throw new Error(`Erro ao buscar produtos: ${error.message}`);
         }
 
-        console.log('Produtos buscados do Supabase:', data);
-        setProducts(data || []);
+        console.log('Produtos buscados do Supabase:', data?.map(p => ({ id: p.id, slug: p.slug })));
+        const validProducts = data?.map(product => ({
+          ...product,
+          slug: product.slug || `product-${product.id}` // Fallback for missing slugs
+        })) || [];
+        setProducts(validProducts);
       } catch (err: any) {
         console.error('Erro:', err.message);
         setError('Não foi possível carregar os produtos. Tente novamente mais tarde.');
@@ -135,7 +137,7 @@ const Home = () => {
       description: 'Durabilidade e qualidade em cada produto',
     },
     {
-      icon: <Heart className="h-7 w-7 text-primary animate-gentle-bounce" />,
+      icon: <Sparkles className="h-7 w-7 text-primary animate-gentle-bounce" />,
       title: 'Feito com Amor',
       description: 'Cada peça é única e artesanal',
     },
@@ -191,6 +193,7 @@ const Home = () => {
             <div className="relative animate-fade-in-right">
               <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group">
                 <img
+                  ref={heroRef}
                   src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/logo_transparent.png"
                   alt="ECOFLY Logo"
                   className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-400"

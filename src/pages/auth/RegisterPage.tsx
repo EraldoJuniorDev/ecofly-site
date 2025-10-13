@@ -1,24 +1,23 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, UserPlus } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
-import ThemeToggle from '../../components/layout/ThemeToggle'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' })
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '', username: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
+    if (!formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || !formData.username.trim()) {
       toast.error('Por favor, preencha todos os campos.')
       return
     }
@@ -34,14 +33,43 @@ export default function RegisterPage() {
       toast.error('A senha deve ter pelo menos 6 caracteres.')
       return
     }
+    if (formData.username.length < 3) {
+      toast.error('O nome de usuário deve ter pelo menos 3 caracteres.')
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        options: {
+          data: {
+            display_name: formData.username // Store username as display_name in auth metadata
+          }
+        }
       })
-      if (error) throw error
+
+      if (authError) throw authError
+
+      // Insert user data into the Users table
+      if (authData.user) {
+        const { error: dbError } = await supabase
+          .from('Users')
+          .insert({
+            UID: authData.user.id, // Use the auth user ID
+            'Display name': formData.username, // Match column name exactly
+            Email: formData.email
+          })
+
+        if (dbError) {
+          // Optionally roll back the auth signup if the DB insert fails
+          await supabase.auth.admin.deleteUser(authData.user.id)
+          throw dbError
+        }
+      }
+
       toast.success('Registro realizado com sucesso! Verifique seu email para confirmar.')
       navigate('/login')
     } catch (error) {
@@ -51,13 +79,13 @@ export default function RegisterPage() {
     }
   }
 
-  const handleGoBack = () => navigate('/login')
+  const handleGoBack = () => navigate('/home')
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
       {/* Register Card */}
       <div className="w-full max-w-md relative z-10 animate-fade-in">
-        {/* Top Bar: Voltar + Tema */}
+        {/* Top Bar: Voltar */}
         <div className="flex justify-between items-center mb-4">
           <Button
             variant="ghost"
@@ -85,6 +113,23 @@ export default function RegisterPage() {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Username Field */}
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
+                  <User className="h-4 w-4 text-emerald-500" />
+                  <span>Nome de Usuário</span>
+                </Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Digite seu nome de usuário"
+                  value={formData.username}
+                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                  required
+                />
+              </div>
+
               {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">

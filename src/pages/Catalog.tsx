@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { MessageCircle } from 'lucide-react';
-import { ProductCard } from '../components/ProductComponents';
+import ProductCard from '../components/ProductCard';
 import { WHATSAPP_LINK } from '../constants';
 import { supabase } from '../lib/supabaseClient';
 
-// Definir a interface para os produtos, alinhada com a tabela items
 interface Product {
-  id: number;
+  id: number; // Changed to number to match items.id (bigint)
   name: string;
   category: string;
   description: string;
@@ -24,7 +23,6 @@ const Catalog = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Buscar produtos do Supabase ao carregar o componente
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -37,8 +35,12 @@ const Catalog = () => {
           throw new Error(`Erro ao buscar produtos: ${error.message}`);
         }
 
-        console.log('Dados do Supabase:', data);
-        setProducts(data || []);
+        console.log('Dados do Supabase:', data?.map(p => ({ id: p.id, slug: p.slug })));
+        const validProducts = data?.map(product => ({
+          ...product,
+          slug: product.slug || `product-${product.id}` // Fallback for missing slugs
+        })) || [];
+        setProducts(validProducts);
       } catch (err: any) {
         console.error('Erro:', err.message);
         setError('Não foi possível carregar os produtos. Tente novamente mais tarde.');
