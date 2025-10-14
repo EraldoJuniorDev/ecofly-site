@@ -34,55 +34,83 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isInCart, setIsInCart] = useState(false);
+  const [price, setPrice] = useState<number | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-
   const { addToCart, removeFromCart } = useCart();
 
   useEffect(() => {
     if (!slug) {
       console.error(`Slug is undefined for product: ${name} (ID: ${id})`);
+      return;
     }
-    const checkCart = async () => {
+    const fetchData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        console.log('Checking cart for user:', user?.id, 'item_id:', id);
+        console.log('Checking status for user:', user?.id, 'item_id:', id);
         if (user) {
-          const { data: cartItem, error } = await supabase
+          // Check cart
+          const { data: cartItem, error: cartError } = await supabase
             .from('cart')
             .select('id')
             .eq('user_id', user.id)
             .eq('item_id', id)
             .single();
-          if (error && error.code !== 'PGRST116') {
-            console.error('Cart query error:', error.message, error.code);
-            throw error;
+          if (cartError && cartError.code !== 'PGRST116') {
+            console.error('Cart query error:', cartError.message, cartError.code);
+            throw cartError;
           }
           setIsInCart(!!cartItem);
         }
+
+        // Fetch price from items table
+        console.log('Fetching price for item ID:', id);
+        const { data: item, error: itemError } = await supabase
+          .from('items')
+          .select('price')
+          .eq('id', id)
+          .single();
+        if (itemError) {
+          console.error('Item query error:', itemError.message, itemError.code);
+          throw itemError;
+        }
+        if (!item || item.price === null) {
+          console.warn(`No price found for item ID: ${id}, name: ${name}`);
+          setPrice(null);
+        } else {
+          console.log(`Price fetched for item ID: ${id}, price: ${item.price}`);
+          setPrice(item.price);
+        }
       } catch (error) {
-        console.error('Error checking cart status:', error);
+        console.error('Error fetching data:', error);
+        toast.error('Erro ao carregar informações do item.');
+        setPrice(null);
       }
     };
-    checkCart();
+    fetchData();
   }, [id, name, slug]);
 
-  const nextImage = (e: React.MouseEvent) => {
+  const nextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('Next image button clicked for item:', name);
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
+  }, [images.length, name]);
 
-  const prevImage = (e: React.MouseEvent) => {
+  const prevImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('Previous image button clicked for item:', name);
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  }, [images.length, name]);
 
-  const handleImageSelect = (index: number) => {
+  const handleImageSelect = useCallback((index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Image selected for item:', name, 'index:', index);
     setCurrentImageIndex(index);
-  };
+  }, [name]);
 
   const handleCartToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
+      console.log('Cart toggle button clicked for item:', name, 'isInCart:', isInCart);
       try {
         if (isInCart) {
           await removeFromCart(id);
@@ -101,92 +129,92 @@ const ProductCard: React.FC<ProductCardProps> = ({
     [id, name, isInCart, addToCart, removeFromCart]
   );
 
-  const handleWhatsAppClick = (e: React.MouseEvent) => {
+  const handleWhatsAppClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('WhatsApp button clicked for item:', name);
     if (onWhatsAppClick) {
       onWhatsAppClick(name);
     }
-  };
+  }, [name, onWhatsAppClick]);
 
   if (!slug) {
     return null;
   }
 
   return (
-    <Link to={`/produto/${slug}`} className="block">
-      <Card
-        ref={cardRef}
-        className="group overflow-hidden card-hover glass-subtle border-0 relative animate-fade-in-up"
-      >
-        <div className="relative aspect-square overflow-hidden bg-muted/20">
-          <img
-            src={images[currentImageIndex]?.url || images[0]?.url}
-            alt={images[currentImageIndex]?.alt || name}
-            className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          {images.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </>
-          )}
-          {images.length > 1 && (
+    <Card
+      ref={cardRef}
+      className="group overflow-hidden card-hover glass-subtle border-0 relative animate-fade-in-up"
+    >
+      <div className="relative aspect-square overflow-hidden bg-muted/20">
+        <img
+          src={images[currentImageIndex]?.url || images[0]?.url}
+          alt={images[currentImageIndex]?.alt || name}
+          className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={nextImage}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={prevImage}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
             <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               {currentImageIndex + 1}/{images.length}
             </div>
-          )}
-          <div className="absolute top-3 left-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <button
-              onClick={handleCartToggle}
-              className={`w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-105 transition-all duration-200 ${
-                isInCart
-                  ? 'bg-emerald-500/90 text-white'
-                  : 'bg-white/80 text-gray-700 hover:bg-white'
-              }`}
-              title={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
-            >
-              <ShoppingCart className={`h-4 w-4 transition-all duration-200 ${isInCart ? 'fill-current' : ''}`} />
-            </button>
+          </>
+        )}
+        <div className="absolute top-3 left-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <button
+            onClick={handleCartToggle}
+            className={`w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-105 transition-all duration-200 ${
+              isInCart
+                ? 'bg-emerald-500/90 text-white'
+                : 'bg-white/80 text-gray-700 hover:bg-white'
+            }`}
+            title={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
+            aria-label={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
+          >
+            <ShoppingCart className={`h-4 w-4 transition-all duration-200 ${isInCart ? 'fill-current' : ''}`} />
+          </button>
+        </div>
+      </div>
+      {images.length > 1 && (
+        <div className="p-3 border-b bg-muted/20">
+          <div className="flex gap-2 overflow-x-auto">
+            {images.map((image, index) => (
+              <button
+                key={index}
+                onClick={(e) => handleImageSelect(index, e)}
+                className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                  index === currentImageIndex
+                    ? 'border-primary'
+                    : 'border-transparent hover:border-muted-foreground/30'
+                }`}
+                aria-label={`Select image ${index + 1}`}
+              >
+                <img
+                  src={image.url}
+                  alt={image.alt}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
           </div>
         </div>
-        {images.length > 1 && (
-          <div className="p-3 border-b bg-muted/20">
-            <div className="flex gap-2 overflow-x-auto">
-              {images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleImageSelect(index);
-                  }}
-                  className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                    index === currentImageIndex
-                      ? 'border-primary'
-                      : 'border-transparent hover:border-muted-foreground/30'
-                  }`}
-                >
-                  <img
-                    src={image.url}
-                    alt={image.alt}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        <CardContent className="p-5 space-y-3">
+      )}
+      <CardContent className="p-5 space-y-3">
+        <Link to={`/produto/${slug}`} className="block">
           <div className="flex items-start justify-between">
             <Badge variant="secondary" className="text-xs">
               {category}
@@ -200,25 +228,34 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   ? 'text-emerald-500 hover:text-emerald-600'
                   : 'text-muted-foreground hover:text-emerald-500'
               }`}
+              aria-label={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
             >
               <ShoppingCart className={`w-4 h-4 ${isInCart ? 'fill-current' : ''}`} />
             </Button>
           </div>
           <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-200">{name}</h3>
           <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
-          {onWhatsAppClick && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleWhatsAppClick}
-              className="w-full mt-2 hover:text-white"
-            >
-              Consultar no WhatsApp
-            </Button>
+          {price !== null && typeof price === 'number' ? (
+            <p className="text-lg font-bold text-primary">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">Preço indisponível</p>
           )}
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+        {onWhatsAppClick && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleWhatsAppClick}
+            className="w-full mt-2 hover:text-white"
+            aria-label="Consultar no WhatsApp"
+          >
+            Consultar no WhatsApp
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

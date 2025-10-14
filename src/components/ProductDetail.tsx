@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
-import { toast } from 'sonner';
+import { ArrowLeft, Share2, Star, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { ShoppingCart, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
+import { Separator } from '../components/ui/separator';
+import { useToast } from '../components/ui/use-toast';
+import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../context/CartContext';
-import { motion } from 'framer-motion';
 import { WHATSAPP_LINK } from '../constants';
 
 interface ProductImage {
@@ -21,19 +22,39 @@ interface Product {
   images: ProductImage[];
   category: string;
   slug: string;
+  price: number;
+  stock?: number;
+  features?: string[];
+  full_description?: string;
 }
 
-const ProductDetail: React.FC = () => {
+interface Review {
+  id: string;
+  user_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user: {
+    display_name: string;
+  };
+}
+
+const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { addToCart, removeFromCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const { addToCart, removeFromCart, cartCount } = useCart();
   const [isInCart, setIsInCart] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [userRating, setUserRating] = useState<number>(0);
+  const [userComment, setUserComment] = useState<string>('');
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndReviews = async () => {
       if (!slug) {
         console.error('Slug is undefined');
         setError('Slug do produto não fornecido.');
@@ -42,53 +63,116 @@ const ProductDetail: React.FC = () => {
       }
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch product
+        const { data: productData, error: productError } = await supabase
           .from('items')
-          .select('id, name, description, images, category, slug')
+          .select('id,name,description,images,category,slug,price,stock,features,full_description')
           .eq('slug', slug)
           .single();
-        if (error) throw error;
-        if (!data) throw new Error('Produto não encontrado.');
-        setProduct(data);
+        if (productError) {
+          console.error('Product fetch error:', productError.message, productError.code);
+          throw productError;
+        }
+        if (!productData) throw new Error('Produto não encontrado.');
+        console.log('Product fetched:', { id: productData.id, slug: productData.slug });
+        setProduct(productData);
+
+        // Fetch reviews without join
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('id,user_id,rating,comment,created_at')
+          .eq('item_id', productData.id)
+          .order('created_at', { ascending: false });
+        if (reviewsError) {
+          console.error('Reviews fetch error:', reviewsError.message, reviewsError.code);
+          throw reviewsError;
+        }
+
+        // Fetch user display names from profiles table
+        const userIds = reviewsData?.map(review => review.user_id) || [];
+        let formattedReviews: Review[] = [];
+        if (userIds.length > 0) {
+          const { data: usersData, error: usersError } = await supabase
+            .from('profiles')
+            .select('id,display_name')
+            .in('id', userIds);
+          if (usersError) {
+            console.error('Users fetch error:', usersError.message, usersError.code);
+            throw usersError;
+          }
+          // Fallback if usersData is empty
+          const usersMap = new Map(usersData?.map(user => [user.id, user.display_name]) || []);
+          formattedReviews = reviewsData?.map(review => ({
+            id: review.id,
+            user_id: review.user_id,
+            rating: review.rating,
+            comment: review.comment,
+            created_at: review.created_at,
+            user: {
+              display_name: usersMap.get(review.user_id) || 'Anônimo'
+            }
+          })) || [];
+        } else {
+          formattedReviews = reviewsData?.map(review => ({
+            id: review.id,
+            user_id: review.user_id,
+            rating: review.rating,
+            comment: review.comment,
+            created_at: review.created_at,
+            user: {
+              display_name: 'Anônimo'
+            }
+          })) || [];
+        }
+        setReviews(formattedReviews);
+
       } catch (err: any) {
-        console.error('Error fetching product:', err.message);
-        setError('Erro ao carregar o produto.');
-        toast.error('Erro ao carregar o produto.');
+        console.error('Error fetching data:', err.message, err.code);
+        setError('Erro ao carregar o produto ou avaliações.');
+        toast({ description: 'Erro ao carregar o produto ou avaliações.' });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProduct();
-  }, [slug]);
+    const checkAuthStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+
+    fetchProductAndReviews();
+    checkAuthStatus();
+  }, [slug, toast]);
 
   useEffect(() => {
-    const checkCart = async () => {
+    const checkStatus = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        console.log('Checking cart for user:', user?.id, 'item_id:', product?.id);
+        console.log('Checking status for user:', user?.id, 'item_id:', product?.id);
         if (user && product) {
-          const { data: cartItem, error } = await supabase
+          // Check cart with maybeSingle to handle empty results
+          const { data: cartItem, error: cartError } = await supabase
             .from('cart')
             .select('id')
             .eq('user_id', user.id)
             .eq('item_id', product.id)
-            .single();
-          if (error && error.code !== 'PGRST116') {
-            console.error('Cart query error:', error.message, error.code);
-            throw error;
+            .maybeSingle();
+          if (cartError && cartError.code !== 'PGRST116') {
+            console.error('Cart query error:', cartError.message, cartError.code);
+            throw cartError;
           }
           setIsInCart(!!cartItem);
         }
       } catch (error) {
         console.error('Error checking cart status:', error);
+        toast({ description: 'Erro ao verificar o status do carrinho.' });
       }
     };
 
     if (product) {
-      checkCart();
+      checkStatus();
     }
-  }, [product]);
+  }, [product, toast]);
 
   const handleCartToggle = async () => {
     if (!product) return;
@@ -96,150 +180,404 @@ const ProductDetail: React.FC = () => {
       if (isInCart) {
         await removeFromCart(product.id);
         setIsInCart(false);
-        toast.success(`${product.name} removido do carrinho`);
+        toast({ description: `${product.name} removido do carrinho` });
       } else {
-        await addToCart(product.id);
+        await addToCart(product.id, quantity);
         setIsInCart(true);
-        toast.success(`${product.name} adicionado ao carrinho`);
+        toast({ description: `${product.name} adicionado ao carrinho` });
       }
     } catch (error) {
       console.error('Error toggling cart item:', error);
-      toast.error('Erro ao atualizar o carrinho.');
+      toast({ description: 'Erro ao atualizar o carrinho.' });
     }
   };
 
-  const handleWhatsAppClick = () => {
+  const handleWhatsAppContact = () => {
     if (!product) return;
+    if (!isAuthenticated) {
+      toast({ description: 'Você precisa estar logado para enviar uma mensagem no WhatsApp.' });
+      return;
+    }
     const message = `Olá! Tenho interesse no produto: ${product.name}. Poderia me dar mais informações?`;
     const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
-  const nextImage = () => {
-    if (product && product.images.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
+  const handleShare = () => {
+    if (!product) return;
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: product.description,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({ description: 'Link copiado para área de transferência' });
     }
   };
 
-  const prevImage = () => {
-    if (product && product.images.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+  const handleReviewSubmit = async () => {
+    if (!product || !isAuthenticated) {
+      toast({ description: 'Você precisa estar logado para deixar uma avaliação.' });
+      return;
+    }
+    if (!userRating || userRating < 1 || userRating > 5) {
+      toast({ description: 'Por favor, selecione uma pontuação entre 1 e 5 estrelas.' });
+      return;
+    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ description: 'Usuário não autenticado.' });
+        return;
+      }
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          item_id: product.id,
+          user_id: user.id,
+          rating: userRating,
+          comment: userComment.trim() || null,
+        });
+      if (error) {
+        console.error('Review submit error:', error.message, error.code);
+        throw error;
+      }
+      toast({ description: 'Avaliação enviada com sucesso!' });
+      setUserRating(0);
+      setUserComment('');
+      // Refresh reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('reviews')
+        .select('id,user_id,rating,comment,created_at')
+        .eq('item_id', product.id)
+        .order('created_at', { ascending: false });
+      if (reviewsError) {
+        console.error('Reviews refresh error:', reviewsError.message, reviewsError.code);
+        throw reviewsError;
+      }
+
+      const userIds = reviewsData?.map(review => review.user_id) || [];
+      let formattedReviews: Review[] = [];
+      if (userIds.length > 0) {
+        const { data: usersData, error: usersError } = await supabase
+          .from('profiles')
+          .select('id,display_name')
+          .in('id', userIds);
+        if (usersError) {
+          console.error('Users refresh error:', usersError.message, usersError.code);
+          throw usersError;
+        }
+        const usersMap = new Map(usersData?.map(user => [user.id, user.display_name]) || []);
+        formattedReviews = reviewsData?.map(review => ({
+          id: review.id,
+          user_id: review.user_id,
+          rating: review.rating,
+          comment: review.comment,
+          created_at: review.created_at,
+          user: {
+            display_name: usersMap.get(review.user_id) || 'Anônimo'
+          }
+        })) || [];
+      } else {
+        formattedReviews = reviewsData?.map(review => ({
+          id: review.id,
+          user_id: review.user_id,
+          rating: review.rating,
+          comment: review.comment,
+          created_at: review.created_at,
+          user: {
+            display_name: 'Anônimo'
+          }
+        })) || [];
+      }
+      setReviews(formattedReviews);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast({ description: 'Erro ao enviar a avaliação.' });
     }
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 flex justify-center items-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-background flex justify-center items-center">
+        <ShoppingCart className="h-8 w-8 animate-spin text-background" />
       </div>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-muted-foreground">{error || 'Produto não encontrado.'}</p>
-        <Button asChild variant="outline" className="mt-4">
+      <div className="min-h-screen bg-background flex flex-col justify-center items-center">
+        <p className="muted-foreground mb-4">{error || 'Produto não encontrado.'}</p>
+        <Button asChild variant="outline">
           <Link to="/catalogo">Voltar ao Catálogo</Link>
         </Button>
       </div>
     );
   }
 
+  const fullDescription = product.full_description || product.description + ' Confeccionado em material de alta qualidade, ideal para decoração ou uso prático.';
+  const features = product.features || [
+    'Material: Cerâmica de alta qualidade',
+    'Acabamento fosco premium',
+    'Design exclusivo e artesanal',
+    'Resistente a altas temperaturas',
+    'Fácil limpeza'
+  ];
+  const originalPrice = product.price * 1.3;
+  const rating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
+  const reviewsCount = reviews.length;
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="container mx-auto px-4 sm:px-6 py-8"
-    >
-      <Button asChild variant="outline" className="mb-6">
-        <Link to="/catalogo">
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Voltar ao Catálogo
-        </Link>
-      </Button>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
-            <img
-              src={product.images[currentImageIndex]?.url || product.images[0]?.url}
-              alt={product.images[currentImageIndex]?.alt || product.name}
-              className="w-full h-full object-cover"
-            />
-            {product.images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center hover:bg-white hover:scale-105 transition-all duration-200"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center hover:bg-white hover:scale-105 transition-all duration-200"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm text-white text-sm px-2 py-1 rounded-full">
-                  {currentImageIndex + 1}/{product.images.length}
-                </div>
-              </>
-            )}
-          </div>
-          {product.images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                    index === currentImageIndex
-                      ? 'border-primary'
-                      : 'border-transparent hover:border-muted-foreground/30'
-                  }`}
-                >
-                  <img
-                    src={image.url}
-                    alt={image.alt}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="space-y-6">
-          <div>
-            <Badge variant="secondary" className="text-sm mb-2">
-              {product.category}
-            </Badge>
-            <h1 className="text-3xl font-bold eco-text-gradient">{product.name}</h1>
-          </div>
-          <p className="text-lg text-muted-foreground">{product.description}</p>
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={handleCartToggle}
-              className={isInCart ? 'bg-red-600 hover:bg-red-700' : 'eco-gradient text-white'}
+    <div className="min-h-screen bg-background">
+      <div className="border bg-background shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+            <Link to="/catalogo">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Link>
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleShare}
+              className="muted-foreground"
             >
-              <ShoppingCart className="h-5 w-5 mr-2" />
-              {isInCart ? 'Remover do Carrinho' : 'Adicionar ao Carrinho'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleWhatsAppClick}
-            >
-              Consultar no WhatsApp
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/carrinho">
-                Ver Carrinho ({cartCount})
-              </Link>
             </Button>
           </div>
         </div>
       </div>
-    </motion.div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            {product.images.length > 0 ? (
+              <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
+                <img
+                  src={product.images[0].url}
+                  alt={product.images[0].alt || product.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="relative aspect-square overflow-hidden rounded-lg shadow-md bg-background">
+                <img
+                  src="https://via.placeholder.com/600"
+                  alt="Placeholder"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            {product.images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300 transition-all duration-200"
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.alt}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <Badge variant="secondary" className="mb-3">
+                {product.category}
+              </Badge>
+              <h1 className="text-3xl font-bold text-muted-foreground mb-2">
+                {product.name}
+              </h1>
+              <p className="muted-foreground mb-4">{product.description}</p>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm font-medium">{rating}</span>
+                  <span className="text-sm text-gray-500">({reviewsCount} avaliações)</span>
+                </div>
+                <div className="text-sm text-green-600 font-medium">
+                  {product.stock} em estoque
+                </div>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl font-bold text-green-600">
+                    R$ {product.price.toFixed(2).replace('.', ',')}
+                  </span>
+                  <span className="text-lg text-gray-500 line-through">
+                    R$ {originalPrice.toFixed(2).replace('.', ',')}
+                  </span>
+                  <Badge variant="destructive">
+                    -{Math.round((1 - product.price / originalPrice) * 100)}%
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between mb-6">
+                  <span className="font-medium">Quantidade:</span>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <span className="w-12 text-center font-medium">{quantity}</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setQuantity(Math.min(product.stock || 15, quantity + 1))}
+                      disabled={quantity >= (product.stock || 15)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={handleWhatsAppContact}
+                    disabled={!isAuthenticated}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Consultar no WhatsApp
+                  </Button>
+                  <Button 
+                    variant={isInCart ? "destructive" : "outline"} 
+                    className="w-full"
+                    onClick={handleCartToggle}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    {isInCart ? 'Remover do Carrinho' : 'Adicionar ao Carrinho'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-3">Descrição do Produto</h3>
+                <p className="muted-foreground mb-4">{fullDescription}</p>
+                
+                <Separator className="my-4" />
+                
+                <h4 className="font-medium mb-3">Características:</h4>
+                <ul className="space-y-2">
+                  {features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-2 text-sm muted-foreground">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-3">Avaliações do Produto</h3>
+                {isAuthenticated ? (
+                  <div className="mb-6">
+                    <h4 className="font-medium mb-2">Deixe sua avaliação</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setUserRating(star)}
+                          className="focus:outline-none"
+                        >
+                          <Star
+                            className={`w-6 h-6 ${
+                              star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      value={userComment}
+                      onChange={(e) => setUserComment(e.target.value)}
+                      placeholder="Escreva sua avaliação aqui..."
+                      className="w-full p-2 border bg-background rounded-md text-sm muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
+                      rows={4}
+                    />
+                    <Button
+                      onClick={handleReviewSubmit}
+                      className="mt-3 text-muted-foreground bg-green-600 hover:bg-green-700"
+                    >
+                      Enviar Avaliação
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm muted-foreground mb-4">
+                    Faça login para deixar uma avaliação.
+                  </p>
+                )}
+                <Separator className="my-4" />
+                <h4 className="font-medium mb-3">Avaliações ({reviewsCount})</h4>
+                {reviews.length > 0 ? (
+                  reviews.map((review) => (
+                    <div key={review.id} className="mb-4">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">{review.user.display_name}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm muted-foreground">
+                        {review.comment || 'Sem comentário.'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(review.created_at).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm muted-foreground">Nenhuma avaliação ainda.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl mb-2">🚚</div>
+                  <h4 className="font-medium text-sm mb-1">Entrega Rápida</h4>
+                  <p className="text-xs muted-foreground">Em até 3 dias úteis</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl mb-2">🛡️</div>
+                  <h4 className="font-medium text-sm mb-1">Garantia</h4>
+                  <p className="text-xs muted-foreground">30 dias</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
