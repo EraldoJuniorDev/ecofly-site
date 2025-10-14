@@ -1189,7 +1189,7 @@ const AdminPage: React.FC = () => {
                               <div className="p-4">
                                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
-                                <div className="mt-2 text-sm">
+                                <div className="flex flex-row gap-1 mt-2 text-sm">
                                   {product.original_price ? (
                                     <>
                                       <p className="font-medium text-green-600">
