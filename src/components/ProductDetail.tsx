@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Share2, Star, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Share2, Star, Plus, Minus, ShoppingCart, Filter, ThumbsUp, MoreVertical } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Card, CardContent } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { useToast } from '../components/ui/use-toast';
 import { supabase } from '../lib/supabaseClient';
 import { useCart } from '../context/CartContext';
 import { WHATSAPP_LINK } from '../constants';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Progress } from '../components/ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Textarea } from '../components/ui/textarea';
 
 interface ProductImage {
   url: string;
@@ -37,6 +41,10 @@ interface Review {
   user: {
     display_name: string;
   };
+  avatar?: string;
+  images?: string[];
+  verified?: boolean;
+  helpful?: number;
 }
 
 const ProductDetail = () => {
@@ -51,6 +59,8 @@ const ProductDetail = () => {
   const [userComment, setUserComment] = useState<string>('');
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<'recent' | 'helpful' | 'rating-high' | 'rating-low'>('recent');
+  const [filterRating, setFilterRating] = useState<string>('all');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,7 +73,6 @@ const ProductDetail = () => {
       }
       setLoading(true);
       try {
-        // Fetch product
         const { data: productData, error: productError } = await supabase
           .from('items')
           .select('id,name,description,images,category,slug,price,stock,features,full_description')
@@ -77,7 +86,6 @@ const ProductDetail = () => {
         console.log('Product fetched:', { id: productData.id, slug: productData.slug });
         setProduct(productData);
 
-        // Fetch reviews without join
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('reviews')
           .select('id,user_id,rating,comment,created_at')
@@ -88,7 +96,6 @@ const ProductDetail = () => {
           throw reviewsError;
         }
 
-        // Fetch user display names from profiles table
         const userIds = reviewsData?.map(review => review.user_id) || [];
         let formattedReviews: Review[] = [];
         if (userIds.length > 0) {
@@ -100,7 +107,6 @@ const ProductDetail = () => {
             console.error('Users fetch error:', usersError.message, usersError.code);
             throw usersError;
           }
-          // Fallback if usersData is empty
           const usersMap = new Map(usersData?.map(user => [user.id, user.display_name]) || []);
           formattedReviews = reviewsData?.map(review => ({
             id: review.id,
@@ -110,7 +116,11 @@ const ProductDetail = () => {
             created_at: review.created_at,
             user: {
               display_name: usersMap.get(review.user_id) || 'Anônimo'
-            }
+            },
+            avatar: undefined,
+            images: [],
+            verified: false,
+            helpful: 0,
           })) || [];
         } else {
           formattedReviews = reviewsData?.map(review => ({
@@ -121,11 +131,14 @@ const ProductDetail = () => {
             created_at: review.created_at,
             user: {
               display_name: 'Anônimo'
-            }
+            },
+            avatar: undefined,
+            images: [],
+            verified: false,
+            helpful: 0,
           })) || [];
         }
         setReviews(formattedReviews);
-
       } catch (err: any) {
         console.error('Error fetching data:', err.message, err.code);
         setError('Erro ao carregar o produto ou avaliações.');
@@ -150,7 +163,6 @@ const ProductDetail = () => {
         const { data: { user } } = await supabase.auth.getUser();
         console.log('Checking status for user:', user?.id, 'item_id:', product?.id);
         if (user && product) {
-          // Check cart with maybeSingle to handle empty results
           const { data: cartItem, error: cartError } = await supabase
             .from('cart')
             .select('id')
@@ -247,7 +259,6 @@ const ProductDetail = () => {
       toast({ description: 'Avaliação enviada com sucesso!' });
       setUserRating(0);
       setUserComment('');
-      // Refresh reviews
       const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
         .select('id,user_id,rating,comment,created_at')
@@ -278,7 +289,11 @@ const ProductDetail = () => {
           created_at: review.created_at,
           user: {
             display_name: usersMap.get(review.user_id) || 'Anônimo'
-          }
+          },
+          avatar: undefined,
+          images: [],
+          verified: false,
+          helpful: 0,
         })) || [];
       } else {
         formattedReviews = reviewsData?.map(review => ({
@@ -289,7 +304,11 @@ const ProductDetail = () => {
           created_at: review.created_at,
           user: {
             display_name: 'Anônimo'
-          }
+          },
+          avatar: undefined,
+          images: [],
+          verified: false,
+          helpful: 0,
         })) || [];
       }
       setReviews(formattedReviews);
@@ -297,6 +316,56 @@ const ProductDetail = () => {
       console.error('Error submitting review:', error);
       toast({ description: 'Erro ao enviar a avaliação.' });
     }
+  };
+
+  const totalReviews = reviews.length;
+  const averageRating = totalReviews > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews : 0;
+  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => {
+    const count = reviews.filter(review => review.rating === rating).length;
+    const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+    return { rating, count, percentage };
+  });
+
+  const filteredReviews = filterRating === 'all' 
+    ? reviews 
+    : reviews.filter(review => review.rating === parseInt(filterRating));
+  const sortedReviews = [...filteredReviews].sort((a, b) => {
+    if (sortBy === 'recent') {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else if (sortBy === 'helpful') {
+      return (b.helpful || 0) - (a.helpful || 0);
+    } else if (sortBy === 'rating-high') {
+      return b.rating - a.rating;
+    } else {
+      return a.rating - b.rating;
+    }
+  });
+
+  const renderStars = (rating: number, size: 'sm' | 'md' = 'sm') => {
+    const starSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`${starSize} ${
+              star <= rating 
+                ? 'fill-yellow-400 text-yellow-400' 
+                : 'text-gray-300'
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   if (loading) {
@@ -319,10 +388,7 @@ const ProductDetail = () => {
   }
 
   const fullDescription = product.description;
- 
   const originalPrice = product.price * 1.3;
-  const rating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
-  const reviewsCount = reviews.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -395,9 +461,9 @@ const ProductDetail = () => {
               </h1>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium">{rating}</span>
-                  <span className="text-sm text-muted-foreground">({reviewsCount} avaliações)</span>
+                  {renderStars(averageRating, 'md')}
+                  <span className="text-sm font-medium">{averageRating.toFixed(1)}</span>
+                  <span className="text-sm text-muted-foreground">({totalReviews} avaliações)</span>
                 </div>
               </div>
             </div>
@@ -467,76 +533,6 @@ const ProductDetail = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-3">Avaliações do Produto</h3>
-                {isAuthenticated ? (
-                  <div className="mb-6">
-                    <h4 className="font-medium mb-2">Deixe sua avaliação</h4>
-                    <div className="flex items-center gap-2 mb-3">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          onClick={() => setUserRating(star)}
-                          className="focus:outline-none"
-                        >
-                          <Star
-                            className={`w-6 h-6 ${
-                              star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                            }`}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                    <textarea
-                      value={userComment}
-                      onChange={(e) => setUserComment(e.target.value)}
-                      placeholder="Escreva sua avaliação aqui..."
-                      className="w-full p-2 border bg-background rounded-md text-sm muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
-                      rows={4}
-                    />
-                    <Button
-                      onClick={handleReviewSubmit}
-                      className="mt-3 text-muted-foreground bg-green-600 hover:bg-green-700"
-                    >
-                      Enviar Avaliação
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="text-sm muted-foreground mb-4">
-                    Faça login para deixar uma avaliação.
-                  </p>
-                )}
-                <Separator className="my-4" />
-                <h4 className="font-medium mb-3">Avaliações ({reviewsCount})</h4>
-                {reviews.length > 0 ? (
-                  reviews.map((review) => (
-                    <div key={review.id} className="mb-4">
-                      <p className="text-sm font-medium text-muted-foreground mb-1">{review.user.display_name}</p>
-                      <div className="flex items-center gap-2 mb-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-4 h-4 ${
-                              star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-sm muted-foreground">
-                        {review.comment || 'Sem comentário.'}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(review.created_at).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm muted-foreground">Nenhuma avaliação ainda.</p>
-                )}
-              </CardContent>
-            </Card>
-
             <div className="grid grid-cols-2 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
@@ -554,6 +550,175 @@ const ProductDetail = () => {
               </Card>
             </div>
           </div>
+        </div>
+
+        <div className="mt-8 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Avaliações dos Clientes</span>
+                <Badge variant="secondary">
+                  {totalReviews} avaliações
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isAuthenticated ? (
+                <div id="review-form" className="mb-6 space-y-4">
+                  <h4 className="font-medium">Deixe sua avaliação</h4>
+                  <div className="flex items-center gap-2 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setUserRating(star)}
+                        className="focus:outline-none"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    value={userComment}
+                    onChange={(e) => setUserComment(e.target.value)}
+                    placeholder="Escreva sua avaliação aqui..."
+                    className="w-full p-2 border bg-background rounded-md text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
+                    rows={4}
+                  />
+                  <Button
+                    onClick={handleReviewSubmit}
+                    className="bg-green-600 hover:bg-blue-700 text-white"
+                  >
+                    Enviar Avaliação
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-6">
+                  Faça login para deixar uma avaliação.
+                </p>
+              )}
+              <Separator className="mb-6" />
+
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="text-center space-y-2">
+                  <div className="text-4xl font-bold">{averageRating.toFixed(1)}</div>
+                  {renderStars(averageRating, 'md')}
+                  <p className="text-gray-600 text-sm">Baseado em {totalReviews} avaliações</p>
+                </div>
+                <div className="space-y-2">
+                  {ratingDistribution.map(({ rating, count, percentage }) => (
+                    <div key={rating} className="flex items-center gap-3">
+                      <span className="text-sm font-medium w-8">{rating}★</span>
+                      <Progress value={percentage} className="flex-1 h-2" />
+                      <span className="text-sm text-gray-600 w-8">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator className="mb-6" />
+
+              <div className="flex flex-wrap items-center gap-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium">Filtrar por:</span>
+                  <Select value={filterRating} onValueChange={setFilterRating}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="5">5 estrelas</SelectItem>
+                      <SelectItem value="4">4 estrelas</SelectItem>
+                      <SelectItem value="3">3 estrelas</SelectItem>
+                      <SelectItem value="2">2 estrelas</SelectItem>
+                      <SelectItem value="1">1 estrela</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Ordenar por:</span>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                    <SelectTrigger className="w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="recent">Mais recentes</SelectItem>
+                      <SelectItem value="helpful">Mais úteis</SelectItem>
+                      <SelectItem value="rating-high">Maior nota</SelectItem>
+                      <SelectItem value="rating-low">Menor nota</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {sortedReviews.length > 0 ? (
+                  sortedReviews.map((review) => (
+                    <div key={review.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={review.avatar} />
+                          <AvatarFallback>
+                            {review.user.display_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium">{review.user.display_name}</h4>
+                                {review.verified && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Compra verificada
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {renderStars(review.rating)}
+                                <span className="text-sm text-gray-500">
+                                  {formatDate(review.created_at)}
+                                </span>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <p className="text-gray-700 leading-relaxed">{review.comment || 'Sem comentário.'}</p>
+                          {review.images && review.images.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto">
+                              {review.images.map((image, index) => (
+                                <img
+                                  key={index}
+                                  src={image}
+                                  alt={`Foto da avaliação ${index + 1}`}
+                                  className="w-20 h-20 object-cover rounded-lg border"
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma avaliação encontrada.</p>
+                )}
+              </div>
+
+              {sortedReviews.length < totalReviews && (
+                <div className="text-center pt-6">
+                  <Button variant="outline">
+                    Ver mais avaliações ({totalReviews - sortedReviews.length} restantes)
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

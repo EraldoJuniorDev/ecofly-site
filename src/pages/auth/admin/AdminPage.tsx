@@ -115,6 +115,13 @@ const AdminPage: React.FC = () => {
       setIsLoading(true);
       const { data, error } = await supabase.from("items").select("*");
       if (error) throw error;
+      console.log("Products fetched:", data);
+      // Validate product IDs
+      data?.forEach((product, index) => {
+        if (!product.id) {
+          console.warn(`Product at index ${index} is missing an ID:`, product);
+        }
+      });
       setProducts(data || []);
     } catch (err: any) {
       console.error("fetchProducts error:", err);
@@ -160,10 +167,10 @@ const AdminPage: React.FC = () => {
   // --- Add helpers ---
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
   const handleCategoryChange = (value: string) => {
-    setFormData((p) => ({ ...p, category: value }));
+    setFormData((prev) => ({ ...prev, category: value }));
   };
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -174,13 +181,13 @@ const AdminPage: React.FC = () => {
         return;
       }
     }
-    setFormData((p) => ({ ...p, images: [...p.images, ...files] }));
+    setFormData((prev) => ({ ...prev, images: [...prev.images, ...files] }));
     const newPreviews = files.map((f) => URL.createObjectURL(f));
-    setImagePreviews((p) => [...p, ...newPreviews]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
   };
   const handleRemoveImage = (index: number) => {
-    setFormData((p) => ({ ...p, images: p.images.filter((_, i) => i !== index) }));
-    setImagePreviews((p) => p.filter((_, i) => i !== index));
+    setFormData((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   // --- Add validation ---
@@ -221,7 +228,8 @@ const AdminPage: React.FC = () => {
       };
       const { error: insertError } = await supabase.from("items").insert([newProduct]);
       if (insertError) throw insertError;
-      toast({ description: "Produto adicionado com sucesso!" });
+      console.log(`Toast triggered for adding product: ${formData.name}`);
+      toast({ description: `Produto "${formData.name}" adicionado com sucesso!` });
       setFormData({ name: "", category: "", description: "", price: "", images: [] });
       setImagePreviews([]);
       fetchProducts();
@@ -235,11 +243,16 @@ const AdminPage: React.FC = () => {
 
   // --- Edit helpers ---
   const handleStartEdit = (product: any) => {
+    if (!product || !product.id) {
+      console.error("Invalid product for editing:", product);
+      toast({ description: "Erro: Produto inválido para edição." });
+      return;
+    }
     setEditingProduct(product);
     setEditForm({
-      name: product.name,
-      category: product.category,
-      description: product.description,
+      name: product.name || "",
+      category: product.category || "",
+      description: product.description || "",
       price: product.price?.toString() || "",
       images: product.images || [],
       newImages: [],
@@ -249,10 +262,10 @@ const AdminPage: React.FC = () => {
   };
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setEditForm((p) => ({ ...p, [name]: value }));
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
   const handleEditCategoryChange = (value: string) => {
-    setEditForm((p) => ({ ...p, category: value }));
+    setEditForm((prev) => ({ ...prev, category: value }));
   };
   const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -263,18 +276,18 @@ const AdminPage: React.FC = () => {
         return;
       }
     }
-    setEditForm((p) => ({ ...p, newImages: [...p.newImages, ...files] }));
+    setEditForm((prev) => ({ ...prev, newImages: [...prev.newImages, ...files] }));
     const newPreviews = files.map((f) => URL.createObjectURL(f));
-    setEditPreviews((p) => [...p, ...newPreviews]);
+    setEditPreviews((prev) => [...prev, ...newPreviews]);
   };
   const handleRemoveEditImage = (index: number) => {
     if (index < editForm.images.length) {
-      setEditForm((p) => ({ ...p, images: p.images.filter((_, i) => i !== index) }));
+      setEditForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
     } else {
       const newIdx = index - editForm.images.length;
-      setEditForm((p) => ({ ...p, newImages: p.newImages.filter((_, i) => i !== newIdx) }));
+      setEditForm((prev) => ({ ...prev, newImages: prev.newImages.filter((_, i) => i !== newIdx) }));
     }
-    setEditPreviews((p) => p.filter((_, i) => i !== index));
+    setEditPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleEditSubmit = async () => {
@@ -302,7 +315,8 @@ const AdminPage: React.FC = () => {
         })
         .eq("id", editingProduct.id);
       if (updateError) throw updateError;
-      toast({ description: "Produto atualizado com sucesso!" });
+      console.log(`Toast triggered for editing product: ${editForm.name}`);
+      toast({ description: `Produto "${editForm.name}" atualizado com sucesso!` });
       setEditingProduct(null);
       setEditForm({ name: "", category: "", description: "", price: "", images: [], newImages: [] });
       setEditPreviews([]);
@@ -317,6 +331,11 @@ const AdminPage: React.FC = () => {
 
   // --- Quick edit for list cards ---
   const openQuickEditFor = (product: any) => {
+    if (!product || !product.id) {
+      console.error("Invalid product for quick edit:", product);
+      toast({ description: "Erro: Produto inválido para edição rápida." });
+      return;
+    }
     setQuickEditProduct(product);
     setQuickEditForm({
       name: product.name || "",
@@ -329,7 +348,7 @@ const AdminPage: React.FC = () => {
 
   const handleQuickEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setQuickEditForm((p) => ({ ...p, [name]: value }));
+    setQuickEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleQuickEditSubmit = async () => {
@@ -352,7 +371,8 @@ const AdminPage: React.FC = () => {
         })
         .eq("id", quickEditProduct.id);
       if (error) throw error;
-      toast({ description: "Produto atualizado com sucesso!" });
+      console.log(`Toast triggered for quick editing product: ${quickEditForm.name}`);
+      toast({ description: `Produto "${quickEditForm.name}" atualizado com sucesso!` });
       setQuickEditProduct(null);
       setQuickEditForm({ name: "", category: "", description: "", price: "" });
       fetchProducts();
@@ -366,13 +386,21 @@ const AdminPage: React.FC = () => {
 
   // --- Delete (shared) ---
   const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || !deleteTarget.id) {
+      console.error("handleConfirmDelete: deleteTarget or deleteTarget.id is undefined", { deleteTarget });
+      toast({ description: "Erro: Nenhum produto selecionado para exclusão." });
+      setShowDeleteDialog(false);
+      setIsSubmitting(false);
+      return;
+    }
+    console.log(`Attempting to delete product: ${deleteTarget.name} (ID: ${deleteTarget.id})`, { deleteTarget });
     setShowDeleteDialog(false);
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from("items").delete().eq("id", deleteTarget.id);
       if (error) throw error;
-      toast({ description: "Produto excluído com sucesso!" });
+      console.log(`Toast triggered for deleting product: ${deleteTarget.name}`);
+      toast({ description: `Produto "${deleteTarget.name}" excluído com sucesso!` });
       setDeleteTarget(null);
       fetchProducts();
     } catch (err: any) {
@@ -631,7 +659,11 @@ const AdminPage: React.FC = () => {
                                   {imagePreviews.map((src, i) => (
                                     <div key={i} className="relative group/image">
                                       <img src={src} alt={`Preview ${i + 1}`} className="w-full h-32 object-cover rounded-lg shadow-sm" />
-                                      <button type="button" onClick={() => handleRemoveImage(i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover/image:opacity-100 transition-opacity duration-200">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveImage(i)}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover/image:opacity-100 transition-opacity duration-200"
+                                      >
                                         <X className="h-4 w-4" />
                                       </button>
                                     </div>
@@ -991,6 +1023,12 @@ const AdminPage: React.FC = () => {
                               <Button
                                 variant="destructive"
                                 onClick={() => {
+                                  if (!product || !product.id) {
+                                    console.error("Invalid product for deletion:", product);
+                                    toast({ description: "Erro: Produto inválido para exclusão." });
+                                    return;
+                                  }
+                                  console.log("Setting deleteTarget from delete tab:", product);
                                   setDeleteTarget(product);
                                   setShowDeleteDialog(true);
                                 }}
@@ -1097,7 +1135,7 @@ const AdminPage: React.FC = () => {
                                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
                                 <p className="text-sm font-medium text-green-600 mt-2">
-                                  R$ {product.price?.toFixed(2).replace('.', ',')}
+                                  R$ {product.price?.toFixed(2).replace(".", ",")}
                                 </p>
                                 <div className="flex justify-center items-center mt-4">
                                   <div className="flex items-center gap-5">
@@ -1113,6 +1151,12 @@ const AdminPage: React.FC = () => {
                                       className="border hover:bg-destructive"
                                       variant="ghost"
                                       onClick={() => {
+                                        if (!product || !product.id) {
+                                          console.error("Invalid product for deletion (grid):", product);
+                                          toast({ description: "Erro: Produto inválido para exclusão." });
+                                          return;
+                                        }
+                                        console.log("Setting deleteTarget from list tab (grid):", product);
                                         setDeleteTarget(product);
                                         setShowDeleteDialog(true);
                                       }}
@@ -1148,7 +1192,7 @@ const AdminPage: React.FC = () => {
                                     <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                     <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
                                     <p className="text-sm font-medium text-green-600">
-                                      R$ {product.price?.toFixed(2).replace('.', ',')}
+                                      R$ {product.price?.toFixed(2).replace(".", ",")}
                                     </p>
                                     <div className="mt-2 text-xs text-slate-500">{product.category}</div>
                                   </div>
@@ -1162,6 +1206,12 @@ const AdminPage: React.FC = () => {
                                     <Button
                                       variant="destructive"
                                       onClick={() => {
+                                        if (!product || !product.id) {
+                                          console.error("Invalid product for deletion (list):", product);
+                                          toast({ description: "Erro: Produto inválido para exclusão." });
+                                          return;
+                                        }
+                                        console.log("Setting deleteTarget from list tab (list):", product);
                                         setDeleteTarget(product);
                                         setShowDeleteDialog(true);
                                       }}
@@ -1200,7 +1250,7 @@ const AdminPage: React.FC = () => {
                               <Label>Categoria *</Label>
                               <Select
                                 value={quickEditForm.category}
-                                onValueChange={(v) => setQuickEditForm((p) => ({ ...p, category: String(v) }))}
+                                onValueChange={(v) => setQuickEditForm((prev) => ({ ...prev, category: String(v) }))}
                               >
                                 <SelectTrigger className="w-full">
                                   <SelectValue />
@@ -1300,7 +1350,7 @@ const AdminPage: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
             <p className="text-sm text-muted-foreground">
-              Tem certeza que deseja excluir o produto "{deleteTarget?.name}"?
+              Tem certeza que deseja excluir o produto "{deleteTarget?.name || 'Desconhecido'}"?
             </p>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
@@ -1317,7 +1367,7 @@ const AdminPage: React.FC = () => {
             <Button
               onClick={handleConfirmDelete}
               disabled={isSubmitting}
-              className="w-full sm:w-auto bg-green-700 text-white"
+              className="w-full sm:w-auto eco-gradient text-white font-semibold"
             >
               {isSubmitting ? "Excluindo..." : "Confirmar"}
             </Button>
