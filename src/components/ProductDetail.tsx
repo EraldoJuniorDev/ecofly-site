@@ -610,7 +610,7 @@ const ProductDetail = () => {
 
                 <div className="grid gap-3">
                   <Button 
-                    className="w-full text-muted-foreground bg-green-600 hover:bg-green-700"
+                    className="w-full foreground dark:text-muted-foreground  bg-green-600 hover:bg-green-700"
                     onClick={handleWhatsAppContact}
                     disabled={!isAuthenticated}
                   >
