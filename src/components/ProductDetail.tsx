@@ -67,6 +67,8 @@ const ProductDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { toast } = useToast();
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
@@ -190,6 +192,31 @@ const ProductDetail = () => {
       checkStatus();
     }
   }, [product, toast]);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!product) return;
+      setLoadingSuggestions(true);
+      try {
+        const { data: suggestionsData, error: suggestionsError } = await supabase
+          .from('items')
+          .select('id,name,description,images,category,slug,price,original_price,stock')
+          .eq('category', product.category)
+          .neq('id', product.id)
+          .limit(4);
+        if (suggestionsError) throw suggestionsError;
+        setSuggestedProducts(suggestionsData || []);
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    };
+
+    if (product) {
+      fetchSuggestions();
+    }
+  }, [product]);
 
   const handleCartToggle = async () => {
     if (!product) return;
@@ -452,7 +479,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border bg-background shadow-sm sticky top-0 z-50">
+      <div className="border bg-background shadow-sm top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
             <Link to="/catalogo">
@@ -806,8 +833,8 @@ const ProductDetail = () => {
                     disabled={submitting}
                   />
                   <div className="space-y-2">
-                    <div className={`border-2 border-dashed border-slate-300 300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/10 transition-all duration-300 cursor-pointer group ${submitting ? 'opacity-50 pointer-events-none' : ''}`}>
-                      <label htmlFor="media-upload" className="cursor-pointer block">
+                    <div className={`border-2 border-dashed border-slate-300 300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/10 transition-all duration-300 cursor-pointer group ${submitting ? 'opacity-50  pointer-events-none' : ''}`}>
+                      <label htmlFor="media-upload" className="-Cursor-pointer block">
                         <div className="space-4">
                           <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
                             <Upload className="h-8 w-8 text-white" />
@@ -884,6 +911,38 @@ const ProductDetail = () => {
           </Card>
         </div>
 
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Produtos Sugeridos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingSuggestions ? (
+                <p className="text-muted-foreground">Carregando sugestões...</p>
+              ) : suggestedProducts.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {suggestedProducts.map((suggestion) => (
+                    <SuggestionProductCard
+                      key={suggestion.id}
+                      id={suggestion.id}
+                      name={suggestion.name}
+                      category={suggestion.category}
+                      images={suggestion.images}
+                      description={suggestion.description}
+                      slug={suggestion.slug}
+                      price={suggestion.price}
+                      original_price={suggestion.original_price}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">Nenhuma sugestão disponível.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+
         {selectedMedia && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
             <div className="relative max-w-4xl w-full">
@@ -914,6 +973,219 @@ const ProductDetail = () => {
         )}
       </div>
     </div>
+  
+    
+  );
+};
+
+interface SuggestionProductCardProps {
+  id: number;
+  name: string;
+  category: string;
+  images: ProductImage[];
+  description: string;
+  slug: string;
+  price: number;
+  original_price: number | null;
+}
+
+const SuggestionProductCard: React.FC<SuggestionProductCardProps> = ({
+  id,
+  name,
+  category,
+  images,
+  description,
+  slug,
+  price,
+  original_price,
+}) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isInCart, setIsInCart] = useState(false);
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState<number>(0);
+  const { addToCart, removeFromCart } = useCart();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: cartItem } = await supabase
+            .from('cart')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('item_id', id)
+            .single();
+          setIsInCart(!!cartItem);
+        }
+
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('rating')
+          .eq('item_id', id);
+
+        if (!reviewsError && reviews && reviews.length > 0) {
+          const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+          const avg = total / reviews.length;
+          setAverageRating(avg);
+          setReviewCount(reviews.length);
+        } else {
+          setAverageRating(null);
+          setReviewCount(0);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do produto sugerido:', error);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleCartToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (isInCart) {
+        await removeFromCart(id);
+        setIsInCart(false);
+        toast({ description: `${name} removido do carrinho` });
+      } else {
+        await addToCart(id, 1);
+        setIsInCart(true);
+        toast({ description: `${name} adicionado ao carrinho` });
+      }
+    } catch (error) {
+      console.error('Error toggling cart item:', error);
+      toast({ description: 'Erro ao atualizar o carrinho.' });
+    }
+  };
+
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const message = `Olá! Tenho interesse no produto: ${name}. Poderia me dar mais informações?`;
+    const whatsappUrl = `${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  if (!slug) return null;
+
+  const hasDiscount = original_price !== null && original_price > price;
+  const discountPercent = hasDiscount ? Math.round(((original_price - price) / original_price) * 100) : 0;
+
+  return (
+    <Card className="group overflow-hidden card-hover glass-subtle border-0 relative animate-fade-in-up">
+      <div className="relative aspect-square overflow-hidden bg-muted/20">
+        <img
+          src={images[currentImageIndex]?.url || images[0]?.url || 'https://via.placeholder.com/300'}
+          alt={images[currentImageIndex]?.alt || name}
+          className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
+        />
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={nextImage}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={prevImage}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          </>
+        )}
+        {hasDiscount && (
+          <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-2 py-1 rounded-md shadow-md">
+            -{discountPercent}%
+          </div>
+        )}
+      </div>
+
+      <CardContent className="p-5 space-y-3">
+        <div className="flex items-start justify-between">
+          <Badge variant="secondary" className="text-xs">
+            {category}
+          </Badge>
+
+          {averageRating !== null ? (
+            <div className="flex items-center gap-1 text-yellow-500 text-sm mt-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${i <= Math.round(averageRating) ? 'fill-current' : 'opacity-30'}`}
+                />
+              ))}
+              <span className="text-muted-foreground text-xs ml-1">
+                ({reviewCount})
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">Sem avaliações</p>
+          )}
+        </div>
+
+        <Link to={`/produto/${slug}`} className="block">
+          <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-200">
+            {name}
+          </h3>
+
+          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+            {description}
+          </p>
+
+          <div className="flex items-center gap-2 mt-1">
+            {hasDiscount ? (
+              <>
+                <p className="text-2xl font-bold text-primary">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+                </p>
+                <p className="text-sm text-muted-foreground line-through">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(original_price!)}
+                </p>
+              </>
+            ) : (
+              <p className="text-lg font-bold text-primary">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+              </p>
+            )}
+          </div>
+        </Link>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleWhatsAppClick}
+            className="w-full hover:text-white"
+          >
+            Consultar no WhatsApp
+          </Button>
+          <Button
+            onClick={handleCartToggle}
+            variant="outline"
+            size="sm"
+            className={`hover:bg-emerald-400 transition-all duration-200 ${
+              isInCart
+                ? 'bg-emerald-500 text-white hover:text-emerald-600'
+                : 'text-muted-foreground hover:text-emerald-500'
+            }`}
+          >
+            <ShoppingCart className={`w-4 h-4 ${isInCart ? 'fill-current' : ''}`} />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
