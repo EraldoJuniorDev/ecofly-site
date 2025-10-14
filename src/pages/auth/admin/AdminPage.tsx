@@ -70,6 +70,7 @@ const AdminPage: React.FC = () => {
     category: "",
     description: "",
     price: "",
+    original_price: "",
     images: [] as File[],
   });
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -82,6 +83,7 @@ const AdminPage: React.FC = () => {
     category: "",
     description: "",
     price: "",
+    original_price: "",
     images: [] as ImageObj[],
     newImages: [] as File[],
   });
@@ -96,6 +98,7 @@ const AdminPage: React.FC = () => {
     category: "",
     description: "",
     price: "",
+    original_price: "",
   });
   const [showQuickEditDialog, setShowQuickEditDialog] = useState(false);
   const [showQuickEditConfirmDialog, setShowQuickEditConfirmDialog] = useState(false);
@@ -204,6 +207,16 @@ const AdminPage: React.FC = () => {
       toast({ description: "Por favor, insira um preço válido maior que zero." });
       return false;
     }
+    if (data.original_price) {
+      if (isNaN(Number(data.original_price)) || Number(data.original_price) <= 0) {
+        toast({ description: "O preço original deve ser maior que zero." });
+        return false;
+      }
+      if (Number(data.original_price) <= Number(data.price)) {
+        toast({ description: "O preço original deve ser maior que o preço com desconto." });
+        return false;
+      }
+    }
     return true;
   };
 
@@ -223,6 +236,7 @@ const AdminPage: React.FC = () => {
         category: formData.category,
         description: formData.description,
         price: Number(formData.price),
+        original_price: formData.original_price ? Number(formData.original_price) : null,
         images: imageObjs,
         slug,
       };
@@ -230,7 +244,7 @@ const AdminPage: React.FC = () => {
       if (insertError) throw insertError;
       console.log(`Toast triggered for adding product: ${formData.name}`);
       toast({ description: `Produto "${formData.name}" adicionado com sucesso!` });
-      setFormData({ name: "", category: "", description: "", price: "", images: [] });
+      setFormData({ name: "", category: "", description: "", price: "", original_price: "", images: [] });
       setImagePreviews([]);
       fetchProducts();
     } catch (err: any) {
@@ -254,6 +268,7 @@ const AdminPage: React.FC = () => {
       category: product.category || "",
       description: product.description || "",
       price: product.price?.toString() || "",
+      original_price: product.original_price?.toString() || "",
       images: product.images || [],
       newImages: [],
     });
@@ -310,6 +325,7 @@ const AdminPage: React.FC = () => {
           category: editForm.category,
           description: editForm.description,
           price: Number(editForm.price),
+          original_price: editForm.original_price ? Number(editForm.original_price) : null,
           images: updatedImages,
           slug,
         })
@@ -318,7 +334,7 @@ const AdminPage: React.FC = () => {
       console.log(`Toast triggered for editing product: ${editForm.name}`);
       toast({ description: `Produto "${editForm.name}" atualizado com sucesso!` });
       setEditingProduct(null);
-      setEditForm({ name: "", category: "", description: "", price: "", images: [], newImages: [] });
+      setEditForm({ name: "", category: "", description: "", price: "", original_price: "", images: [], newImages: [] });
       setEditPreviews([]);
       fetchProducts();
     } catch (err: any) {
@@ -342,6 +358,7 @@ const AdminPage: React.FC = () => {
       category: product.category || "",
       description: product.description || "",
       price: product.price?.toString() || "",
+      original_price: product.original_price?.toString() || "",
     });
     setShowQuickEditDialog(true);
   };
@@ -366,6 +383,7 @@ const AdminPage: React.FC = () => {
           category: quickEditForm.category,
           description: quickEditForm.description,
           price: Number(quickEditForm.price),
+          original_price: quickEditForm.original_price ? Number(quickEditForm.original_price) : null,
           images: quickEditProduct.images,
           slug,
         })
@@ -374,7 +392,7 @@ const AdminPage: React.FC = () => {
       console.log(`Toast triggered for quick editing product: ${quickEditForm.name}`);
       toast({ description: `Produto "${quickEditForm.name}" atualizado com sucesso!` });
       setQuickEditProduct(null);
-      setQuickEditForm({ name: "", category: "", description: "", price: "" });
+      setQuickEditForm({ name: "", category: "", description: "", price: "", original_price: "" });
       fetchProducts();
     } catch (err: any) {
       console.error("handleQuickEditSubmit error:", err);
@@ -428,6 +446,12 @@ const AdminPage: React.FC = () => {
       (p.description && String(p.description).toLowerCase().includes(q));
     return matchesCategory && matchesSearch;
   });
+
+  // Calculate discount percentage for display
+  const calculateDiscount = (price: number, original_price: number | null) => {
+    if (!original_price || original_price <= price) return null;
+    return Math.round((1 - price / original_price) * 100);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -631,15 +655,30 @@ const AdminPage: React.FC = () => {
                             </div>
 
                             <div>
-                              <Label htmlFor="price">Preço (R$) *</Label>
+                              <Label htmlFor="price">Preço com Desconto (R$) *</Label>
                               <Input
                                 id="price"
                                 name="price"
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="Digite o preço do produto"
+                                placeholder="Digite o preço com desconto"
                                 value={formData.price}
+                                onChange={handleInputChange}
+                                className="w-full"
+                              />
+                            </div>
+
+                            <div>
+                              <Label htmlFor="original_price">Preço Original (R$)</Label>
+                              <Input
+                                id="original_price"
+                                name="original_price"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="Digite o preço original (opcional)"
+                                value={formData.original_price}
                                 onChange={handleInputChange}
                                 className="w-full"
                               />
@@ -833,6 +872,7 @@ const AdminPage: React.FC = () => {
                             category: "",
                             description: "",
                             price: "",
+                            original_price: "",
                             images: [],
                             newImages: [],
                           });
@@ -871,7 +911,7 @@ const AdminPage: React.FC = () => {
                               </Select>
                             </div>
                             <div>
-                              <Label htmlFor="edit-price">Preço (R$) *</Label>
+                              <Label htmlFor="edit-price">Preço com Desconto (R$) *</Label>
                               <Input
                                 id="edit-price"
                                 name="price"
@@ -879,6 +919,20 @@ const AdminPage: React.FC = () => {
                                 step="0.01"
                                 min="0"
                                 value={editForm.price}
+                                onChange={handleEditInputChange}
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="edit-original_price">Preço Original (R$)</Label>
+                              <Input
+                                id="edit-original_price"
+                                name="original_price"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="Digite o preço original (opcional)"
+                                value={editForm.original_price}
                                 onChange={handleEditInputChange}
                                 className="w-full"
                               />
@@ -935,6 +989,7 @@ const AdminPage: React.FC = () => {
                                     category: "",
                                     description: "",
                                     price: "",
+                                    original_price: "",
                                     images: [],
                                     newImages: [],
                                   });
@@ -1134,9 +1189,25 @@ const AdminPage: React.FC = () => {
                               <div className="p-4">
                                 <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
-                                <p className="text-sm font-medium text-green-600 mt-2">
-                                  R$ {product.price?.toFixed(2).replace(".", ",")}
-                                </p>
+                                <div className="mt-2 text-sm">
+                                  {product.original_price ? (
+                                    <>
+                                      <p className="font-medium text-green-600">
+                                        R$ {product.price.toFixed(2).replace(".", ",")}
+                                      </p>
+                                      <p className="text-muted-foreground line-through">
+                                        R$ {product.original_price.toFixed(2).replace(".", ",")}
+                                      </p>
+                                      <p className="text-destructive">
+                                        -{calculateDiscount(product.price, product.original_price)}%
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <p className="font-medium text-green-600">
+                                      R$ {product.price.toFixed(2).replace(".", ",")}
+                                    </p>
+                                  )}
+                                </div>
                                 <div className="flex justify-center items-center mt-4">
                                   <div className="flex items-center gap-5">
                                     <Button
@@ -1191,9 +1262,25 @@ const AdminPage: React.FC = () => {
                                   <div>
                                     <h3 className="font-semibold text-slate-800 dark:text-slate-100">{product.name}</h3>
                                     <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{product.description}</p>
-                                    <p className="text-sm font-medium text-green-600">
-                                      R$ {product.price?.toFixed(2).replace(".", ",")}
-                                    </p>
+                                    <div className="text-sm">
+                                      {product.original_price ? (
+                                        <>
+                                          <p className="font-medium text-green-600">
+                                            R$ {product.price.toFixed(2).replace(".", ",")}
+                                          </p>
+                                          <p className="text-muted-foreground line-through">
+                                            R$ {product.original_price.toFixed(2).replace(".", ",")}
+                                          </p>
+                                          <p className="text-destructive">
+                                            -{calculateDiscount(product.price, product.original_price)}%
+                                          </p>
+                                        </>
+                                      ) : (
+                                        <p className="font-medium text-green-600">
+                                          R$ {product.price.toFixed(2).replace(".", ",")}
+                                        </p>
+                                      )}
+                                    </div>
                                     <div className="mt-2 text-xs text-slate-500">{product.category}</div>
                                   </div>
                                   <div className="flex gap-2">
@@ -1263,7 +1350,7 @@ const AdminPage: React.FC = () => {
                               </Select>
                             </div>
                             <div>
-                              <Label htmlFor="qe-price">Preço (R$) *</Label>
+                              <Label htmlFor="qe-price">Preço com Desconto (R$) *</Label>
                               <Input
                                 id="qe-price"
                                 name="price"
@@ -1271,6 +1358,20 @@ const AdminPage: React.FC = () => {
                                 step="0.01"
                                 min="0"
                                 value={quickEditForm.price}
+                                onChange={handleQuickEditChange}
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="qe-original_price">Preço Original (R$)</Label>
+                              <Input
+                                id="qe-original_price"
+                                name="original_price"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="Digite o preço original (opcional)"
+                                value={quickEditForm.original_price}
                                 onChange={handleQuickEditChange}
                                 className="w-full"
                               />
@@ -1291,7 +1392,7 @@ const AdminPage: React.FC = () => {
                                 onClick={() => {
                                   setShowQuickEditDialog(false);
                                   setQuickEditProduct(null);
-                                  setQuickEditForm({ name: "", category: "", description: "", price: "" });
+                                  setQuickEditForm({ name: "", category: "", description: "", price: "", original_price: "" });
                                 }}
                                 className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
                               >

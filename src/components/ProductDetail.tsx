@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Share2, Star, Plus, Minus, ShoppingCart, Filter, ThumbsUp, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Share2, Star, Plus, Minus, ShoppingCart, Filter, ThumbsUp, MoreVertical, X, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -27,6 +27,7 @@ interface Product {
   category: string;
   slug: string;
   price: number;
+  original_price: number | null;
   stock?: number;
   features?: string[];
   full_description?: string;
@@ -61,6 +62,10 @@ const ProductDetail = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'recent' | 'helpful' | 'rating-high' | 'rating-low'>('recent');
   const [filterRating, setFilterRating] = useState<string>('all');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,7 +80,7 @@ const ProductDetail = () => {
       try {
         const { data: productData, error: productError } = await supabase
           .from('items')
-          .select('id,name,description,images,category,slug,price,stock,features,full_description')
+          .select('id,name,description,images,category,slug,price,original_price,stock,features,full_description')
           .eq('slug', slug)
           .single();
         if (productError) {
@@ -88,7 +93,7 @@ const ProductDetail = () => {
 
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('reviews')
-          .select('id,user_id,rating,comment,created_at')
+          .select('id,user_id,rating,comment,created_at,images')
           .eq('item_id', productData.id)
           .order('created_at', { ascending: false });
         if (reviewsError) {
@@ -114,11 +119,11 @@ const ProductDetail = () => {
             rating: review.rating,
             comment: review.comment,
             created_at: review.created_at,
+            images: review.images || [],
             user: {
               display_name: usersMap.get(review.user_id) || 'Anônimo'
             },
             avatar: undefined,
-            images: [],
             verified: false,
             helpful: 0,
           })) || [];
@@ -129,11 +134,11 @@ const ProductDetail = () => {
             rating: review.rating,
             comment: review.comment,
             created_at: review.created_at,
+            images: review.images || [],
             user: {
               display_name: 'Anônimo'
             },
             avatar: undefined,
-            images: [],
             verified: false,
             helpful: 0,
           })) || [];
@@ -229,6 +234,36 @@ const ProductDetail = () => {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validTypes = ['image/jpeg', 'image/png', 'video/mp4', 'video/webm'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxFiles = 3;
+
+    const validFiles = files.filter(file => {
+      if (!validTypes.includes(file.type)) {
+        toast({ description: `Arquivo ${file.name} inválido. Use JPEG, PNG, MP4 ou WebM.` });
+        return false;
+      }
+      if (file.size > maxSize) {
+        toast({ description: `Arquivo ${file.name} excede 5MB.` });
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length + selectedFiles.length > maxFiles) {
+      toast({ description: `Você pode enviar até ${maxFiles} arquivos.` });
+      setSelectedFiles([...selectedFiles, ...validFiles].slice(0, maxFiles));
+    } else {
+      setSelectedFiles([...selectedFiles, ...validFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  };
+
   const handleReviewSubmit = async () => {
     if (!product || !isAuthenticated) {
       toast({ description: 'Você precisa estar logado para deixar uma avaliação.' });
@@ -238,83 +273,69 @@ const ProductDetail = () => {
       toast({ description: 'Por favor, selecione uma pontuação entre 1 e 5 estrelas.' });
       return;
     }
+    setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({ description: 'Usuário não autenticado.' });
-        return;
+        throw new Error('Usuário não autenticado');
       }
-      const { error } = await supabase
+
+      // Upload files to Supabase Storage
+      const uploadedUrls: string[] = [];
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+          console.log('Uploading file:', fileName, 'Type:', file.type, 'Size:', file.size);
+          const { data, error: uploadError } = await supabase.storage
+            .from('review-media')
+            .upload(fileName, file, { upsert: false });
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            toast({ description: `Erro ao fazer upload do arquivo ${file.name}: ${uploadError.message}` });
+            throw new Error(`Erro ao fazer upload do arquivo ${file.name}`);
+          }
+          console.log('File uploaded:', data?.path);
+          const { data: urlData } = supabase.storage
+            .from('review-media')
+            .getPublicUrl(fileName);
+          if (!urlData?.publicUrl) {
+            console.error('Failed to get public URL for file:', fileName);
+            toast({ description: `Erro ao obter URL do arquivo ${file.name}` });
+            throw new Error(`Erro ao obter URL do arquivo ${file.name}`);
+          }
+          console.log('Public URL:', urlData.publicUrl);
+          uploadedUrls.push(urlData.publicUrl);
+        }
+      }
+
+      // Insert review with file URLs
+      console.log('Inserting review:', { item_id: product.id, user_id: user.id, rating: userRating, comment: userComment, images: uploadedUrls });
+      const { data: insertData, error } = await supabase
         .from('reviews')
         .insert({
           item_id: product.id,
           user_id: user.id,
           rating: userRating,
           comment: userComment.trim() || null,
+          images: uploadedUrls.length > 0 ? uploadedUrls : [],
         });
       if (error) {
-        console.error('Review submit error:', error.message, error.code);
+        console.error('Review insert error:', error.message, 'Code:', error.code);
+        toast({ description: `Erro ao inserir avaliação: ${error.message}` });
         throw error;
       }
+      console.log('Review inserted:', insertData);
       toast({ description: 'Avaliação enviada com sucesso!' });
       setUserRating(0);
       setUserComment('');
-      const { data: reviewsData, error: reviewsError } = await supabase
-        .from('reviews')
-        .select('id,user_id,rating,comment,created_at')
-        .eq('item_id', product.id)
-        .order('created_at', { ascending: false });
-      if (reviewsError) {
-        console.error('Reviews refresh error:', reviewsError.message, reviewsError.code);
-        throw reviewsError;
-      }
-
-      const userIds = reviewsData?.map(review => review.user_id) || [];
-      let formattedReviews: Review[] = [];
-      if (userIds.length > 0) {
-        const { data: usersData, error: usersError } = await supabase
-          .from('profiles')
-          .select('id,display_name')
-          .in('id', userIds);
-        if (usersError) {
-          console.error('Users refresh error:', usersError.message, usersError.code);
-          throw usersError;
-        }
-        const usersMap = new Map(usersData?.map(user => [user.id, user.display_name]) || []);
-        formattedReviews = reviewsData?.map(review => ({
-          id: review.id,
-          user_id: review.user_id,
-          rating: review.rating,
-          comment: review.comment,
-          created_at: review.created_at,
-          user: {
-            display_name: usersMap.get(review.user_id) || 'Anônimo'
-          },
-          avatar: undefined,
-          images: [],
-          verified: false,
-          helpful: 0,
-        })) || [];
-      } else {
-        formattedReviews = reviewsData?.map(review => ({
-          id: review.id,
-          user_id: review.user_id,
-          rating: review.rating,
-          comment: review.comment,
-          created_at: review.created_at,
-          user: {
-            display_name: 'Anônimo'
-          },
-          avatar: undefined,
-          images: [],
-          verified: false,
-          helpful: 0,
-        })) || [];
-      }
-      setReviews(formattedReviews);
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      toast({ description: 'Erro ao enviar a avaliação.' });
+      setSelectedFiles([]);
+    } catch (error: any) {
+      console.error('Error submitting review:', error.message, 'Code:', error.code);
+      toast({ description: `Erro ao enviar a avaliação: ${error.message}` });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -368,6 +389,43 @@ const ProductDetail = () => {
     });
   };
 
+  const isVideo = (url: string) => {
+    return url.endsWith('.mp4') || url.endsWith('.webm');
+  };
+
+  const handleMediaClick = (url: string) => {
+    setSelectedMedia(url);
+  };
+
+  const closeLightbox = () => {
+    setSelectedMedia(null);
+  };
+
+  const handlePrevImage = () => {
+    if (product && product.images.length > 0) {
+      setCurrentImageIndex((prev) => 
+        prev === 0 ? product.images.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const handleNextImage = () => {
+    if (product && product.images.length > 0) {
+      setCurrentImageIndex((prev) => 
+        prev === product.images.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const handleDotClick = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
+  const calculateDiscount = (price: number, original_price: number | null) => {
+    if (!original_price || original_price <= price) return null;
+    return Math.round((1 - price / original_price) * 100);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex justify-center items-center">
@@ -387,8 +445,7 @@ const ProductDetail = () => {
     );
   }
 
-  const fullDescription = product.description;
-  const originalPrice = product.price * 1.3;
+  const discountPercentage = calculateDiscount(product.price, product.original_price);
 
   return (
     <div className="min-h-screen bg-background">
@@ -419,10 +476,46 @@ const ProductDetail = () => {
             {product.images.length > 0 ? (
               <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
                 <img
-                  src={product.images[0].url}
-                  alt={product.images[0].alt || product.name}
-                  className="w-full h-full object-cover"
+                  src={product.images[currentImageIndex].url}
+                  alt={product.images[currentImageIndex].alt || product.name}
+                  className="w-full h-full object-cover transition-opacity duration-300"
                 />
+                {product.images.length > 1 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white hover:bg-opacity-75"
+                      onClick={handlePrevImage}
+                      aria-label="Imagem anterior"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white hover:bg-opacity-75"
+                      onClick={handleNextImage}
+                      aria-label="Próxima imagem"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </Button>
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                      {product.images.map((_, index) => (
+                        <button
+                          key={index}
+                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                            index === currentImageIndex
+                              ? 'bg-white scale-125'
+                              : 'bg-gray-400 hover:bg-gray-200'
+                          }`}
+                          onClick={() => handleDotClick(index)}
+                          aria-label={`Ir para imagem ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="relative aspect-square overflow-hidden rounded-lg shadow-md bg-background">
@@ -433,22 +526,6 @@ const ProductDetail = () => {
                 />
               </div>
             )}
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300 transition-all duration-200"
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.alt}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           <div className="space-y-6">
@@ -456,7 +533,7 @@ const ProductDetail = () => {
               <Badge variant="secondary" className="mb-3">
                 {product.category}
               </Badge>
-              <h1 className="text-3xl font-bold text-muted-foreground mb-2">
+              <h1 className="text-3xl Capsule font-bold text-muted-foreground mb-2">
                 {product.name}
               </h1>
               <div className="flex items-center gap-4 mb-4">
@@ -471,7 +548,7 @@ const ProductDetail = () => {
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-3">Sobre do Produto:</h3>
-                <p className="muted-foreground mb-4">{fullDescription}</p>
+                <p className="muted-foreground mb-4">{product.description}</p>
               </CardContent>
             </Card>
 
@@ -481,12 +558,16 @@ const ProductDetail = () => {
                   <span className="text-3xl font-bold text-green-600">
                     R$ {product.price.toFixed(2).replace('.', ',')}
                   </span>
-                  <span className="text-lg text-muted-foreground line-through">
-                    R$ {originalPrice.toFixed(2).replace('.', ',')}
-                  </span>
-                  <Badge variant="destructive">
-                    -{Math.round((1 - product.price / originalPrice) * 100)}%
-                  </Badge>
+                  {product.original_price && product.original_price > product.price && (
+                    <>
+                      <span className="text-lg text-muted-foreground line-through">
+                        R$ {product.original_price.toFixed(2).replace('.', ',')}
+                      </span>
+                      <Badge variant="destructive">
+                        -{discountPercentage}%
+                      </Badge>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between mb-6">
@@ -572,6 +653,7 @@ const ProductDetail = () => {
                         key={star}
                         onClick={() => setUserRating(star)}
                         className="focus:outline-none"
+                        disabled={submitting}
                       >
                         <Star
                           className={`w-6 h-6 ${
@@ -587,12 +669,68 @@ const ProductDetail = () => {
                     placeholder="Escreva sua avaliação aqui..."
                     className="w-full p-2 border bg-background rounded-md text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
                     rows={4}
+                    disabled={submitting}
                   />
+                  <div className="space-y-2">
+                    <div className={`border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/10 transition-all duration-300 cursor-pointer group ${submitting ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <label htmlFor="media-upload" className="cursor-pointer block">
+                        <div className="space-y-4">
+                          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                            <Upload className="h-8 w-8 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-base sm:text-lg font-semibold">Adicionar Fotos ou Vídeos</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">JPEG, PNG, MP4, WebM até 5MB cada (máximo 3 arquivos)</p>
+                          </div>
+                        </div>
+                        <input
+                          id="media-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,video/mp4,video/webm"
+                          multiple
+                          onChange={handleFileChange}
+                          className="hidden"
+                          disabled={submitting}
+                        />
+                      </label>
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="relative">
+                            {file.type.startsWith('image/') ? (
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Prévia ${index + 1}`}
+                                className="w-20 h-20 object-cover rounded-lg border"
+                              />
+                            ) : (
+                              <video
+                                src={URL.createObjectURL(file)}
+                                controls
+                                className="w-20 h-20 object-cover rounded-lg border"
+                              />
+                            )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-0 right-0 w-6 h-6 p-0 flex items-center justify-center"
+                              onClick={() => removeFile(index)}
+                              disabled={submitting}
+                            >
+                              &times;
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <Button
                     onClick={handleReviewSubmit}
-                    className="bg-green-600 hover:bg-blue-700 text-white"
+                    className="bg-green-600 hover:bg-green-500 text-white"
+                    disabled={submitting}
                   >
-                    Enviar Avaliação
+                    {submitting ? 'Enviando...' : 'Enviar Avaliação'}
                   </Button>
                 </div>
               ) : (
@@ -606,14 +744,14 @@ const ProductDetail = () => {
                 <div className="text-center space-y-2">
                   <div className="text-4xl font-bold">{averageRating.toFixed(1)}</div>
                   {renderStars(averageRating, 'md')}
-                  <p className="text-gray-600 text-sm">Baseado em {totalReviews} avaliações</p>
+                  <p className="text-muted-foreground text-sm">Baseado em {totalReviews} avaliações</p>
                 </div>
                 <div className="space-y-2">
                   {ratingDistribution.map(({ rating, count, percentage }) => (
                     <div key={rating} className="flex items-center gap-3">
                       <span className="text-sm font-medium w-8">{rating}★</span>
                       <Progress value={percentage} className="flex-1 h-2" />
-                      <span className="text-sm text-gray-600 w-8">{count}</span>
+                      <span className="text-sm text-muted-foreground w-8">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -623,7 +761,7 @@ const ProductDetail = () => {
 
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
+                  <Filter className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Filtrar por:</span>
                   <Select value={filterRating} onValueChange={setFilterRating}>
                     <SelectTrigger className="w-32">
@@ -658,7 +796,7 @@ const ProductDetail = () => {
               <div className="space-y-6">
                 {sortedReviews.length > 0 ? (
                   sortedReviews.map((review) => (
-                    <div key={review.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                    <div key={review.id} className="border-b border-border last:border-0 pb-6 last:pb-0">
                       <div className="flex items-start gap-4">
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={review.avatar} />
@@ -666,7 +804,7 @@ const ProductDetail = () => {
                             {review.user.display_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 space-y-3">
+                        <div className="flex flex-col gap-3 flex-1 space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
@@ -679,25 +817,33 @@ const ProductDetail = () => {
                               </div>
                               <div className="flex items-center gap-3">
                                 {renderStars(review.rating)}
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-muted-foreground">
                                   {formatDate(review.created_at)}
                                 </span>
                               </div>
                             </div>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
                           </div>
-                          <p className="text-gray-700 leading-relaxed">{review.comment || 'Sem comentário.'}</p>
+                          <p className="text-muted-foreground leading-relaxed">{review.comment || 'Sem comentário.'}</p>
                           {review.images && review.images.length > 0 && (
                             <div className="flex gap-2 overflow-x-auto">
-                              {review.images.map((image, index) => (
-                                <img
-                                  key={index}
-                                  src={image}
-                                  alt={`Foto da avaliação ${index + 1}`}
-                                  className="w-20 h-20 object-cover rounded-lg border"
-                                />
+                              {review.images.map((url, index) => (
+                                <div key={index} className="relative">
+                                  {isVideo(url) ? (
+                                    <video
+                                      src={url}
+                                      controls
+                                      className="w-20 h-20 object-cover rounded-lg border cursor-pointer"
+                                      onClick={() => handleMediaClick(url)}
+                                    />
+                                  ) : (
+                                    <img
+                                      src={url}
+                                      alt={`Foto da avaliação ${index + 1}`}
+                                      className="w-20 h-20 object-cover rounded-lg border cursor-pointer"
+                                      onClick={() => handleMediaClick(url)}
+                                    />
+                                  )}
+                                </div>
                               ))}
                             </div>
                           )}
@@ -720,6 +866,35 @@ const ProductDetail = () => {
             </CardContent>
           </Card>
         </div>
+
+        {selectedMedia && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="relative max-w-4xl w-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 text-white"
+                onClick={closeLightbox}
+              >
+                <X className="w-6 h-6" />
+              </Button>
+              {isVideo(selectedMedia) ? (
+                <video
+                  src={selectedMedia}
+                  controls
+                  autoPlay
+                  className="w-full h-auto max-h-[80vh] object-contain"
+                />
+              ) : (
+                <img
+                  src={selectedMedia}
+                  alt="Media preview"
+                  className="w-full h-auto max-h-[80vh] object-contain"
+                />
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
