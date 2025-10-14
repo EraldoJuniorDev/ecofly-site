@@ -920,7 +920,7 @@ const ProductDetail = () => {
               {loadingSuggestions ? (
                 <p className="text-muted-foreground">Carregando sugestões...</p>
               ) : suggestedProducts.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid md:grid-cols-4 gap-4">
                   {suggestedProducts.map((suggestion) => (
                     <SuggestionProductCard
                       key={suggestion.id}
@@ -1162,7 +1162,7 @@ const SuggestionProductCard: React.FC<SuggestionProductCardProps> = ({
           </div>
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="flex justify-center items-center gap-1">
           <Button
             variant="outline"
             size="sm"
