@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
@@ -36,6 +36,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [isInCart, setIsInCart] = useState(false);
   const [price, setPrice] = useState<number | null>(null);
   const [originalPrice, setOriginalPrice] = useState<number | null>(null);
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [reviewCount, setReviewCount] = useState<number>(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const { addToCart, removeFromCart } = useCart();
 
@@ -47,47 +49,47 @@ const ProductCard: React.FC<ProductCardProps> = ({
     const fetchData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        console.log('Checking status for user:', user?.id, 'item_id:', id);
         if (user) {
-          // Check cart
-          const { data: cartItem, error: cartError } = await supabase
+          // Check if item is in cart
+          const { data: cartItem } = await supabase
             .from('cart')
             .select('id')
             .eq('user_id', user.id)
             .eq('item_id', id)
             .single();
-          if (cartError && cartError.code !== 'PGRST116') {
-            console.error('Cart query error:', cartError.message, cartError.code);
-            throw cartError;
-          }
           setIsInCart(!!cartItem);
         }
 
-        // Fetch price and original_price from items table
-        console.log('Fetching price for item ID:', id);
-        const { data: item, error: itemError } = await supabase
+        // Fetch price info
+        const { data: item } = await supabase
           .from('items')
           .select('price, original_price')
           .eq('id', id)
           .single();
 
-        if (itemError) {
-          console.error('Item query error:', itemError.message, itemError.code);
-          throw itemError;
-        }
-
-        if (!item || item.price === null) {
-          console.warn(`No price found for item ID: ${id}, name: ${name}`);
-          setPrice(null);
-        } else {
-          console.log(`Price fetched for item ID: ${id}, price: ${item.price}`);
+        if (item) {
           setPrice(item.price);
           setOriginalPrice(item.original_price ?? item.price);
         }
+
+        // Fetch ratings info
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('reviews') // 👉 ajuste o nome se sua tabela for 'avaliacoes'
+          .select('rating')
+          .eq('item_id', id);
+
+        if (!reviewsError && reviews && reviews.length > 0) {
+          const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+          const avg = total / reviews.length;
+          setAverageRating(avg);
+          setReviewCount(reviews.length);
+        } else {
+          setAverageRating(null);
+          setReviewCount(0);
+        }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Erro ao carregar dados do produto:', error);
         toast.error('Erro ao carregar informações do item.');
-        setPrice(null);
       }
     };
     fetchData();
@@ -131,16 +133,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleWhatsAppClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onWhatsAppClick) {
-      onWhatsAppClick(name);
-    }
+    if (onWhatsAppClick) onWhatsAppClick(name);
   }, [name, onWhatsAppClick]);
 
-  if (!slug) {
-    return null;
-  }
+  if (!slug) return null;
 
-  // Cálculo do desconto
   const hasDiscount =
     originalPrice !== null &&
     price !== null &&
@@ -160,26 +157,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
           alt={images[currentImageIndex]?.alt || name}
           className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         {images.length > 1 && (
           <>
             <button
               onClick={nextImage}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
-              aria-label="Next image"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
             <button
               onClick={prevImage}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-105"
-              aria-label="Previous image"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 text-gray-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              {currentImageIndex + 1}/{images.length}
-            </div>
           </>
         )}
         {hasDiscount && (
@@ -189,58 +180,49 @@ const ProductCard: React.FC<ProductCardProps> = ({
         )}
       </div>
 
-      {images.length > 1 && (
-        <div className="p-3 border-b bg-muted/20">
-          <div className="flex gap-2 overflow-x-auto">
-            {images.map((image, index) => (
-              <button
-                key={index}
-                onClick={(e) => handleImageSelect(index, e)}
-                className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
-                  index === currentImageIndex
-                    ? 'border-primary'
-                    : 'border-transparent hover:border-muted-foreground/30'
-                }`}
-              >
-                <img
-                  src={image.url}
-                  alt={image.alt}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <CardContent className="p-5 space-y-3">
-        <Link to={`/produto/${slug}`} className="block">
-          <div className="flex items-start justify-between">
-            <Badge variant="secondary" className="text-xs">
-              {category}
-            </Badge>
-            <Button
-              onClick={handleCartToggle}
-              variant="ghost"
-              size="sm"
-              className={`transition-all duration-200 ${
-                isInCart
-                  ? 'text-emerald-500 hover:text-emerald-600'
-                  : 'text-muted-foreground hover:text-emerald-500'
-              }`}
-            >
-              <ShoppingCart className={`w-4 h-4 ${isInCart ? 'fill-current' : ''}`} />
-            </Button>
-          </div>
+        <div className="flex items-start justify-between">
+          <Badge variant="secondary" className="text-xs">
+            {category}
+          </Badge>
 
-          <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-200">{name}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+          {/* ⭐ Avaliações */}
+          {averageRating !== null ? (
+            <div className="flex items-center gap-1 text-yellow-500 text-sm mt-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i <= Math.round(averageRating) ? 'fill-current' : 'opacity-30'
+                  }`}
+                />
+              ))}
+              <span className="text-muted-foreground text-xs ml-1">
+                ({reviewCount})
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">Sem avaliações</p>
+          )}
+        </div>
+
+        <Link to={`/produto/${slug}`} className="block">
+          <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-200">
+            {name}
+            
+          </h3>
+
+          
+
+          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+            {description}
+          </p>
 
           {price !== null ? (
             <div className="flex items-center gap-2 mt-1">
               {hasDiscount ? (
                 <>
-                  <p className="text-lg font-bold text-primary">
+                  <p className="text-2xl font-bold text-primary">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
                   </p>
                   <p className="text-sm text-muted-foreground line-through">
@@ -258,29 +240,35 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </Link>
 
-        {onWhatsAppClick && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleWhatsAppClick}
-            className="w-full mt-2 hover:text-white"
-          >
-            Consultar no WhatsApp
-          </Button>
-        )}
+        <div className='flex items-center gap-1'>
+          {onWhatsAppClick && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWhatsAppClick}
+              className="w-full hover:text-white"
+            >
+              Consultar no WhatsApp
+            </Button>
+          )}
+          
+            <Button
+              onClick={handleCartToggle}
+              variant="outline"
+              size="sm"
+              className={`hover:bg-emerald-400 transition-all duration-200 ${
+                isInCart
+                  ? 'bg-emerald-500 text-white hover:text-emerald-600'
+                  : 'text-muted-foreground hover:text-emerald-500'
+              }`}
+            >
+              <ShoppingCart className={`w-4 h-4  ${isInCart ? 'fill-current' : ''}`} />
+            </Button>
+        </div>
+
       </CardContent>
     </Card>
   );
 };
 
-export default React.memo(ProductCard, (prevProps, nextProps) => {
-  return (
-    prevProps.id === nextProps.id &&
-    prevProps.name === nextProps.name &&
-    prevProps.category === nextProps.category &&
-    prevProps.description === nextProps.description &&
-    prevProps.images.length === nextProps.images.length &&
-    prevProps.slug === nextProps.slug &&
-    prevProps.onWhatsAppClick === nextProps.onWhatsAppClick
-  );
-});
+export default React.memo(ProductCard);

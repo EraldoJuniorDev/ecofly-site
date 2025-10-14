@@ -347,8 +347,8 @@ const ProductDetail = () => {
     return { rating, count, percentage };
   });
 
-  const filteredReviews = filterRating === 'all' 
-    ? reviews 
+  const filteredReviews = filterRating === 'all'
+    ? reviews
     : reviews.filter(review => review.rating === parseInt(filterRating));
   const sortedReviews = [...filteredReviews].sort((a, b) => {
     if (sortBy === 'recent') {
@@ -369,11 +369,10 @@ const ProductDetail = () => {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`${starSize} ${
-              star <= rating 
-                ? 'fill-yellow-400 text-yellow-400' 
-                : 'text-gray-300'
-            }`}
+            className={`${starSize} ${star <= rating
+              ? 'fill-yellow-400 text-yellow-400'
+              : 'text-gray-300'
+              }`}
           />
         ))}
       </div>
@@ -403,7 +402,7 @@ const ProductDetail = () => {
 
   const handlePrevImage = () => {
     if (product && product.images.length > 0) {
-      setCurrentImageIndex((prev) => 
+      setCurrentImageIndex((prev) =>
         prev === 0 ? product.images.length - 1 : prev - 1
       );
     }
@@ -411,7 +410,7 @@ const ProductDetail = () => {
 
   const handleNextImage = () => {
     if (product && product.images.length > 0) {
-      setCurrentImageIndex((prev) => 
+      setCurrentImageIndex((prev) =>
         prev === product.images.length - 1 ? 0 : prev + 1
       );
     }
@@ -465,7 +464,7 @@ const ProductDetail = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-8 mb-4">
           <div className="space-y-4">
             {product.images.length > 0 ? (
               <div className="relative aspect-square overflow-hidden rounded-lg shadow-md">
@@ -498,11 +497,10 @@ const ProductDetail = () => {
                       {product.images.map((_, index) => (
                         <button
                           key={index}
-                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                            index === currentImageIndex
-                              ? 'bg-white scale-125'
-                              : 'bg-gray-400 hover:bg-gray-200'
-                          }`}
+                          className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentImageIndex
+                            ? 'bg-white scale-125'
+                            : 'bg-gray-400 hover:bg-gray-200'
+                            }`}
                           onClick={() => handleDotClick(index)}
                           aria-label={`Ir para imagem ${index + 1}`}
                         />
@@ -526,11 +524,10 @@ const ProductDetail = () => {
                   <button
                     key={index}
                     onClick={() => handleThumbnailClick(index)}
-                    className={`flex-shrink-0 w-20 h-20 border-2 rounded-md overflow-hidden transition-all ${
-                      index === currentImageIndex 
-                        ? 'border-primary opacity-100' 
-                        : 'border-gray-300 opacity-70 hover:opacity-100'
-                    }`}
+                    className={`flex-shrink-0 w-20 h-20 border-2 rounded-md overflow-hidden transition-all ${index === currentImageIndex
+                      ? 'border-primary opacity-100'
+                      : 'border-gray-300 opacity-70 hover:opacity-100'
+                      }`}
                   >
                     <img
                       src={image.url}
@@ -560,12 +557,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-3">Sobre do Produto:</h3>
-                <p className="muted-foreground mb-4">{product.description}</p>
-              </CardContent>
-            </Card>
+
 
             <Card>
               <CardContent className="p-6">
@@ -588,8 +580,8 @@ const ProductDetail = () => {
                 <div className="flex items-center justify-between mb-6">
                   <span className="font-medium">Quantidade:</span>
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       disabled={quantity <= 1}
@@ -597,8 +589,8 @@ const ProductDetail = () => {
                       <Minus className="w-4 h-4" />
                     </Button>
                     <span className="w-12 text-center font-medium">{quantity}</span>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setQuantity(Math.min(product.stock || 15, quantity + 1))}
                       disabled={quantity >= (product.stock || 15)}
@@ -609,7 +601,7 @@ const ProductDetail = () => {
                 </div>
 
                 <div className="grid gap-3">
-                  <Button 
+                  <Button
                     className="w-full foreground dark:text-muted-foreground  bg-green-600 hover:bg-green-700"
                     onClick={handleWhatsAppContact}
                     disabled={!isAuthenticated}
@@ -617,9 +609,9 @@ const ProductDetail = () => {
                     <ShoppingCart className="w-4 h-4 mr-2" />
                     Consultar no WhatsApp
                   </Button>
-                  <Button 
-                    variant={isInCart ? "destructive" : "outline"} 
-                    className="w-full"
+                  <Button
+                    variant={isInCart ? "destructive" : "outline"}
+                    className="w-full hover:text-muted dark:text-muted-foreground"
                     onClick={handleCartToggle}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
@@ -648,6 +640,13 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-3">Descrição do Produto:</h3>
+            <p className="muted-foreground mb-4">{product.description}</p>
+          </CardContent>
+        </Card>
+
         <div className="mt-8 space-y-6">
           <Card>
             <CardHeader>
@@ -659,7 +658,7 @@ const ProductDetail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              
+
               <Separator className="mb-6" />
 
               <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -792,9 +791,8 @@ const ProductDetail = () => {
                         disabled={submitting}
                       >
                         <Star
-                          className={`w-6 h-6 ${
-                            star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                          }`}
+                          className={`w-6 h-6 ${star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                            }`}
                         />
                       </button>
                     ))}

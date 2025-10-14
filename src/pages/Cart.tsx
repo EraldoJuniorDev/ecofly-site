@@ -98,15 +98,15 @@ const Cart = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="bg-orange-600 p-4">
+      <div className="rounded-lg border overflow-hidden">
+        <div className="bg-background p-4">
           <div className="flex items-center gap-3">
-            <div className="bg-white rounded-full p-2">
-              <ShoppingCart className="h-5 w-5 text-orange-600" />
+            <div className="rounded-full p-2">
+              <ShoppingCart className="h-5 w-5 text-emerald-500" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Meu Carrinho</h2>
-              <p className="text-orange-100 text-sm">
+              <h2 className="text-lg font-semibold">Meu Carrinho</h2>
+              <p className="text-sm">
                 Gerencie seus itens e finalize sua compra
               </p>
             </div>
@@ -119,16 +119,16 @@ const Cart = () => {
               {/* Cart Items */}
               <div className="space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                  <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
                     <img
                       src={item.image}
                       alt={item.name}
                       className="w-16 h-16 object-cover rounded-lg"
                     />
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.name}</h3>
+                      <h3 className="font-medium">{item.name}</h3>
                       <p className="text-sm text-gray-500">{item.category}</p>
-                      <p className="text-lg font-semibold text-orange-600">
+                      <p className="text-lg font-semibold">
                         {formatPrice(item.price)}
                       </p>
                       {!item.inStock && (
@@ -173,7 +173,7 @@ const Cart = () => {
 
               {/* Summary */}
               <div className="border-t pt-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="p-4 rounded-lg">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-semibold text-gray-900">
                       Total: {formatPrice(getTotal())}
@@ -185,7 +185,7 @@ const Cart = () => {
                       <Package className="h-4 w-4 mr-2" />
                       Calcular Frete
                     </Button>
-                    <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                    <Button className="w-full bg-green-600 text-muted dark:text-muted-foreground hover:bg-green-500">
                       <CreditCard className="h-4 w-4 mr-2" />
                       Finalizar Compra
                     </Button>
