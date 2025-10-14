@@ -318,14 +318,8 @@ const ProductDetail = () => {
     );
   }
 
-  const fullDescription = product.full_description || product.description + ' Confeccionado em material de alta qualidade, ideal para decoração ou uso prático.';
-  const features = product.features || [
-    'Material: Cerâmica de alta qualidade',
-    'Acabamento fosco premium',
-    'Design exclusivo e artesanal',
-    'Resistente a altas temperaturas',
-    'Fácil limpeza'
-  ];
+  const fullDescription = product.description;
+ 
   const originalPrice = product.price * 1.3;
   const rating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
   const reviewsCount = reviews.length;
@@ -333,7 +327,7 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="border bg-background shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
             <Link to="/catalogo">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -347,6 +341,7 @@ const ProductDetail = () => {
               onClick={handleShare}
               className="muted-foreground"
             >
+              <Share2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -398,18 +393,21 @@ const ProductDetail = () => {
               <h1 className="text-3xl font-bold text-muted-foreground mb-2">
                 {product.name}
               </h1>
-              <p className="muted-foreground mb-4">{product.description}</p>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                   <span className="text-sm font-medium">{rating}</span>
-                  <span className="text-sm text-gray-500">({reviewsCount} avaliações)</span>
-                </div>
-                <div className="text-sm text-green-600 font-medium">
-                  {product.stock} em estoque
+                  <span className="text-sm text-muted-foreground">({reviewsCount} avaliações)</span>
                 </div>
               </div>
             </div>
+
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-3">Sobre do Produto:</h3>
+                <p className="muted-foreground mb-4">{fullDescription}</p>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardContent className="p-6">
@@ -417,7 +415,7 @@ const ProductDetail = () => {
                   <span className="text-3xl font-bold text-green-600">
                     R$ {product.price.toFixed(2).replace('.', ',')}
                   </span>
-                  <span className="text-lg text-gray-500 line-through">
+                  <span className="text-lg text-muted-foreground line-through">
                     R$ {originalPrice.toFixed(2).replace('.', ',')}
                   </span>
                   <Badge variant="destructive">
@@ -450,7 +448,7 @@ const ProductDetail = () => {
 
                 <div className="grid gap-3">
                   <Button 
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full text-muted-foreground bg-green-600 hover:bg-green-700"
                     onClick={handleWhatsAppContact}
                     disabled={!isAuthenticated}
                   >
@@ -466,25 +464,6 @@ const ProductDetail = () => {
                     {isInCart ? 'Remover do Carrinho' : 'Adicionar ao Carrinho'}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-3">Descrição do Produto</h3>
-                <p className="muted-foreground mb-4">{fullDescription}</p>
-                
-                <Separator className="my-4" />
-                
-                <h4 className="font-medium mb-3">Características:</h4>
-                <ul className="space-y-2">
-                  {features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm muted-foreground">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
               </CardContent>
             </Card>
 
@@ -547,7 +526,7 @@ const ProductDetail = () => {
                       <p className="text-sm muted-foreground">
                         {review.comment || 'Sem comentário.'}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {new Date(review.created_at).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
