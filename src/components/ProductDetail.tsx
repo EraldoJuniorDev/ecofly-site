@@ -421,6 +421,10 @@ const ProductDetail = () => {
     setCurrentImageIndex(index);
   };
 
+  const handleThumbnailClick = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
   const calculateDiscount = (price: number, original_price: number | null) => {
     if (!original_price || original_price <= price) return null;
     return Math.round((1 - price / original_price) * 100);
@@ -457,16 +461,6 @@ const ProductDetail = () => {
               Voltar
             </Link>
           </Button>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleShare}
-              className="muted-foreground"
-            >
-              <Share2 className="w-4 h-4" />
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -526,6 +520,27 @@ const ProductDetail = () => {
                 />
               </div>
             )}
+            {product.images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleThumbnailClick(index)}
+                    className={`flex-shrink-0 w-20 h-20 border-2 rounded-md overflow-hidden transition-all ${
+                      index === currentImageIndex 
+                        ? 'border-primary opacity-100' 
+                        : 'border-gray-300 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.alt || `${product.name} - Miniatura ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-6">
@@ -537,7 +552,7 @@ const ProductDetail = () => {
                 {product.name}
               </h1>
               <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   {renderStars(averageRating, 'md')}
                   <span className="text-sm font-medium">{averageRating.toFixed(1)}</span>
                   <span className="text-sm text-muted-foreground">({totalReviews} avaliações)</span>
@@ -644,104 +659,11 @@ const ProductDetail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {isAuthenticated ? (
-                <div id="review-form" className="mb-6 space-y-4">
-                  <h4 className="font-medium">Deixe sua avaliação</h4>
-                  <div className="flex items-center gap-2 mb-3">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setUserRating(star)}
-                        className="focus:outline-none"
-                        disabled={submitting}
-                      >
-                        <Star
-                          className={`w-6 h-6 ${
-                            star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <Textarea
-                    value={userComment}
-                    onChange={(e) => setUserComment(e.target.value)}
-                    placeholder="Escreva sua avaliação aqui..."
-                    className="w-full p-2 border bg-background rounded-md text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
-                    rows={4}
-                    disabled={submitting}
-                  />
-                  <div className="space-y-2">
-                    <div className={`border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/10 transition-all duration-300 cursor-pointer group ${submitting ? 'opacity-50 pointer-events-none' : ''}`}>
-                      <label htmlFor="media-upload" className="cursor-pointer block">
-                        <div className="space-y-4">
-                          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                            <Upload className="h-8 w-8 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-base sm:text-lg font-semibold">Adicionar Fotos ou Vídeos</p>
-                            <p className="text-xs sm:text-sm text-muted-foreground">JPEG, PNG, MP4, WebM até 5MB cada (máximo 3 arquivos)</p>
-                          </div>
-                        </div>
-                        <input
-                          id="media-upload"
-                          type="file"
-                          accept="image/jpeg,image/png,video/mp4,video/webm"
-                          multiple
-                          onChange={handleFileChange}
-                          className="hidden"
-                          disabled={submitting}
-                        />
-                      </label>
-                    </div>
-                    {selectedFiles.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto">
-                        {selectedFiles.map((file, index) => (
-                          <div key={index} className="relative">
-                            {file.type.startsWith('image/') ? (
-                              <img
-                                src={URL.createObjectURL(file)}
-                                alt={`Prévia ${index + 1}`}
-                                className="w-20 h-20 object-cover rounded-lg border"
-                              />
-                            ) : (
-                              <video
-                                src={URL.createObjectURL(file)}
-                                controls
-                                className="w-20 h-20 object-cover rounded-lg border"
-                              />
-                            )}
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="absolute top-0 right-0 w-6 h-6 p-0 flex items-center justify-center"
-                              onClick={() => removeFile(index)}
-                              disabled={submitting}
-                            >
-                              &times;
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    onClick={handleReviewSubmit}
-                    className="bg-green-600 hover:bg-green-500 text-white"
-                    disabled={submitting}
-                  >
-                    {submitting ? 'Enviando...' : 'Enviar Avaliação'}
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground mb-6">
-                  Faça login para deixar uma avaliação.
-                </p>
-              )}
+              
               <Separator className="mb-6" />
 
               <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <div className="text-center space-y-2">
+                <div className="flex justify-center items-center flex-col text-center space-y-2">
                   <div className="text-4xl font-bold">{averageRating.toFixed(1)}</div>
                   {renderStars(averageRating, 'md')}
                   <p className="text-muted-foreground text-sm">Baseado em {totalReviews} avaliações</p>
@@ -855,6 +777,103 @@ const ProductDetail = () => {
                   <p className="text-sm text-muted-foreground">Nenhuma avaliação encontrada.</p>
                 )}
               </div>
+
+              <Separator className="my-6" />
+
+              {isAuthenticated ? (
+                <div id="review-form" className="mb-6 space-y-4">
+                  <h4 className="font-medium">Deixe sua avaliação</h4>
+                  <div className="flex items-center gap-2 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setUserRating(star)}
+                        className="focus:outline-none"
+                        disabled={submitting}
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= userRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    value={userComment}
+                    onChange={(e) => setUserComment(e.target.value)}
+                    placeholder="Escreva sua avaliação aqui..."
+                    className="w-full p-2 border bg-background rounded-md text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
+                    rows={4}
+                    disabled={submitting}
+                  />
+                  <div className="space-y-2">
+                    <div className={`border-2 border-dashed border-slate-300 300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/10 transition-all duration-300 cursor-pointer group ${submitting ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <label htmlFor="media-upload" className="cursor-pointer block">
+                        <div className="space-4">
+                          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                            <Upload className="h-8 w-8 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-base sm:text-lg font-semibold">Adicionar Fotos ou Vídeos</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">JPEG, PNG, MP4, WebM até 5MB cada (máximo 3 arquivos)</p>
+                          </div>
+                        </div>
+                        <input
+                          id="media-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,video/mp4,video/webm"
+                          multiple
+                          onChange={handleFileChange}
+                          className="hidden"
+                          disabled={submitting}
+                        />
+                      </label>
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="relative">
+                            {file.type.startsWith('image/') ? (
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Prévia ${index + 1}`}
+                                className="w-20 h-20 object-cover rounded-lg border"
+                              />
+                            ) : (
+                              <video
+                                src={URL.createObjectURL(file)}
+                                controls
+                                className="w-20 h-20 object-cover rounded-lg border"
+                              />
+                            )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-0 right-0 w-6 h-6 p-0 flex items-center justify-center"
+                              onClick={() => removeFile(index)}
+                              disabled={submitting}
+                            >
+                              &times;
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleReviewSubmit}
+                    className="bg-green-600 hover:bg-green-500 text-white"
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Enviando...' : 'Enviar Avaliação'}
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-6">
+                  Faça login para deixar uma avaliação.
+                </p>
+              )}
 
               {sortedReviews.length < totalReviews && (
                 <div className="text-center pt-6">

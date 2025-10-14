@@ -35,6 +35,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isInCart, setIsInCart] = useState(false);
   const [price, setPrice] = useState<number | null>(null);
+  const [originalPrice, setOriginalPrice] = useState<number | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const { addToCart, removeFromCart } = useCart();
 
@@ -62,23 +63,26 @@ const ProductCard: React.FC<ProductCardProps> = ({
           setIsInCart(!!cartItem);
         }
 
-        // Fetch price from items table
+        // Fetch price and original_price from items table
         console.log('Fetching price for item ID:', id);
         const { data: item, error: itemError } = await supabase
           .from('items')
-          .select('price')
+          .select('price, original_price')
           .eq('id', id)
           .single();
+
         if (itemError) {
           console.error('Item query error:', itemError.message, itemError.code);
           throw itemError;
         }
+
         if (!item || item.price === null) {
           console.warn(`No price found for item ID: ${id}, name: ${name}`);
           setPrice(null);
         } else {
           console.log(`Price fetched for item ID: ${id}, price: ${item.price}`);
           setPrice(item.price);
+          setOriginalPrice(item.original_price ?? item.price);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -91,26 +95,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const nextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Next image button clicked for item:', name);
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  }, [images.length, name]);
+  }, [images.length]);
 
   const prevImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Previous image button clicked for item:', name);
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length, name]);
+  }, [images.length]);
 
   const handleImageSelect = useCallback((index: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Image selected for item:', name, 'index:', index);
     setCurrentImageIndex(index);
-  }, [name]);
+  }, []);
 
   const handleCartToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
-      console.log('Cart toggle button clicked for item:', name, 'isInCart:', isInCart);
       try {
         if (isInCart) {
           await removeFromCart(id);
@@ -131,7 +131,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleWhatsAppClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('WhatsApp button clicked for item:', name);
     if (onWhatsAppClick) {
       onWhatsAppClick(name);
     }
@@ -140,6 +139,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
   if (!slug) {
     return null;
   }
+
+  // Cálculo do desconto
+  const hasDiscount =
+    originalPrice !== null &&
+    price !== null &&
+    originalPrice > price;
+  const discountPercent = hasDiscount
+    ? Math.round(((originalPrice! - price!) / originalPrice!) * 100)
+    : 0;
 
   return (
     <Card
@@ -174,21 +182,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           </>
         )}
-        <div className="absolute top-3 left-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button
-            onClick={handleCartToggle}
-            className={`w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-105 transition-all duration-200 ${
-              isInCart
-                ? 'bg-emerald-500/90 text-white'
-                : 'bg-white/80 text-gray-700 hover:bg-white'
-            }`}
-            title={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
-            aria-label={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
-          >
-            <ShoppingCart className={`h-4 w-4 transition-all duration-200 ${isInCart ? 'fill-current' : ''}`} />
-          </button>
-        </div>
+        {hasDiscount && (
+          <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-2 py-1 rounded-md shadow-md">
+            -{discountPercent}%
+          </div>
+        )}
       </div>
+
       {images.length > 1 && (
         <div className="p-3 border-b bg-muted/20">
           <div className="flex gap-2 overflow-x-auto">
@@ -201,7 +201,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     ? 'border-primary'
                     : 'border-transparent hover:border-muted-foreground/30'
                 }`}
-                aria-label={`Select image ${index + 1}`}
               >
                 <img
                   src={image.url}
@@ -213,6 +212,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
       )}
+
       <CardContent className="p-5 space-y-3">
         <Link to={`/produto/${slug}`} className="block">
           <div className="flex items-start justify-between">
@@ -228,28 +228,42 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   ? 'text-emerald-500 hover:text-emerald-600'
                   : 'text-muted-foreground hover:text-emerald-500'
               }`}
-              aria-label={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
             >
               <ShoppingCart className={`w-4 h-4 ${isInCart ? 'fill-current' : ''}`} />
             </Button>
           </div>
+
           <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-200">{name}</h3>
           <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
-          {price !== null && typeof price === 'number' ? (
-            <p className="text-lg font-bold text-primary">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
-            </p>
+
+          {price !== null ? (
+            <div className="flex items-center gap-2 mt-1">
+              {hasDiscount ? (
+                <>
+                  <p className="text-lg font-bold text-primary">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+                  </p>
+                  <p className="text-sm text-muted-foreground line-through">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(originalPrice!)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg font-bold text-primary">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+                </p>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">Preço indisponível</p>
           )}
         </Link>
+
         {onWhatsAppClick && (
           <Button
             variant="outline"
             size="sm"
             onClick={handleWhatsAppClick}
             className="w-full mt-2 hover:text-white"
-            aria-label="Consultar no WhatsApp"
           >
             Consultar no WhatsApp
           </Button>
