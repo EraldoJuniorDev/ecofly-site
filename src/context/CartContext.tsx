@@ -47,40 +47,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       setUserId(user.id);
-      console.log('Fetching data for user:', user.id);
 
-      // Fetch cart
+      // Carrinho
       const { data: cartData, error: cartError } = await supabase
         .from('cart')
         .select('quantity')
         .eq('user_id', user.id);
-      if (cartError) {
-        console.error('Error fetching cart:', cartError.message, cartError.code);
-        setCartCount(0);
-      } else {
-        const totalCartCount = cartData.reduce((sum, item) => sum + item.quantity, 0);
-        console.log('Cart count:', totalCartCount);
-        setCartCount(totalCartCount);
+      if (!cartError && cartData) {
+        const totalCart = cartData.reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(totalCart);
       }
 
-      // Fetch wishlist
+      // Wishlist
       const { data: wishlistData, error: wishlistError } = await supabase
         .from('wishlist')
         .select('id')
         .eq('user_id', user.id);
-      if (wishlistError) {
-        console.error('Error fetching wishlist:', wishlistError.message, wishlistError.code);
-        setWishlistCount(0);
-      } else {
-        console.log('Wishlist count:', wishlistData.length);
+      if (!wishlistError && wishlistData) {
         setWishlistCount(wishlistData.length);
       }
     };
 
     fetchUserAndData();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
       setUserId(session?.user?.id || null);
       fetchUserAndData();
     });
@@ -90,14 +80,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const addToCart = async (itemId: number, quantity: number = 1) => {
+  const addToCart = async (itemId: number, quantity: number = 1): Promise<void> => {
     if (!userId) {
-      toast.error('Por favor, faça login para adicionar itens ao carrinho.');
+      toast.error('Faça login para adicionar ao carrinho.');
       return;
     }
 
     try {
-      console.log('Adding to cart:', { userId, itemId, quantity });
       const { data: existingItem, error: fetchError } = await supabase
         .from('cart')
         .select('id, quantity')
@@ -105,46 +94,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('item_id', itemId)
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Cart fetch error:', fetchError.message, fetchError.code);
-        throw fetchError;
-      }
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
       if (existingItem) {
         const { error: updateError } = await supabase
           .from('cart')
           .update({ quantity: existingItem.quantity + quantity })
           .eq('id', existingItem.id);
-        if (updateError) {
-          console.error('Cart update error:', updateError.message, updateError.code);
-          throw updateError;
-        }
+        if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
           .from('cart')
           .insert({ user_id: userId, item_id: itemId, quantity });
-        if (insertError) {
-          console.error('Cart insert error:', insertError.message, insertError.code);
-          throw insertError;
-        }
+        if (insertError) throw insertError;
       }
 
-      setCartCount((prev) => prev + quantity);
+      setCartCount(prev => prev + quantity);
       toast.success('Item adicionado ao carrinho!');
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      console.error('Add to cart error:', error);
       toast.error('Erro ao adicionar item ao carrinho.');
     }
   };
 
-  const removeFromCart = async (itemId: number) => {
+  const removeFromCart = async (itemId: number): Promise<void> => {
     if (!userId) {
-      toast.error('Por favor, faça login para remover itens do carrinho.');
+      toast.error('Faça login para remover do carrinho.');
       return;
     }
 
     try {
-      console.log('Removing from cart:', { userId, itemId });
       const { data: item, error: fetchError } = await supabase
         .from('cart')
         .select('quantity')
@@ -152,38 +131,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('item_id', itemId)
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Cart fetch error:', fetchError.message, fetchError.code);
-        throw fetchError;
-      }
-
-      if (!item) {
-        console.warn('No cart item found for:', { userId, itemId });
-        return;
-      }
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+      if (!item) return;
 
       const { error: deleteError } = await supabase
         .from('cart')
         .delete()
         .eq('user_id', userId)
         .eq('item_id', itemId);
+      if (deleteError) throw deleteError;
 
-      if (deleteError) {
-        console.error('Cart delete error:', deleteError.message, deleteError.code);
-        throw deleteError;
-      }
-
-      setCartCount((prev) => prev - item.quantity);
+      setCartCount(prev => prev - item.quantity);
       toast.success('Item removido do carrinho!');
     } catch (error) {
-      console.error('Error removing from cart:', error);
+      console.error('Remove from cart error:', error);
       toast.error('Erro ao remover item do carrinho.');
     }
   };
 
-  const updateQuantity = async (itemId: number, quantity: number) => {
+  const updateQuantity = async (itemId: number, quantity: number): Promise<void> => {
     if (!userId) {
-      toast.error('Por favor, faça login para atualizar o carrinho.');
+      toast.error('Faça login para atualizar o carrinho.');
       return;
     }
     if (quantity < 1) {
@@ -192,146 +160,111 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      console.log('Updating cart quantity:', { userId, itemId, quantity });
       const { error } = await supabase
         .from('cart')
         .update({ quantity })
         .eq('user_id', userId)
         .eq('item_id', itemId);
-      if (error) {
-        console.error('Cart update error:', error.message, error.code);
-        throw error;
+      if (error) throw error;
+
+      // Atualiza apenas o total do carrinho
+      const { data: cartData } = await supabase
+        .from('cart')
+        .select('quantity')
+        .eq('user_id', userId);
+      if (cartData) {
+        const total = cartData.reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(total);
       }
-      setCartCount((prev) => {
-        const currentItem = cartCount - (prev || 0) + quantity;
-        return currentItem;
-      });
       toast.success('Quantidade atualizada!');
     } catch (error) {
-      console.error('Error updating quantity:', error);
+      console.error('Update quantity error:', error);
       toast.error('Erro ao atualizar quantidade.');
     }
   };
 
-  const addToWishlist = async (itemId: number) => {
-    if (!userId) {
-      toast.error('Por favor, faça login para adicionar aos favoritos.');
-      return;
-    }
+  const clearCart = async (): Promise<void> => {
+    if (!userId) return;
 
     try {
-      console.log('Adding to wishlist:', { userId, itemId });
       const { error } = await supabase
-        .from('wishlist')
-        .insert({ user_id: userId, item_id: itemId });
-      if (error) {
-        console.error('Wishlist insert error:', error.message, error.code);
-        throw error;
-      }
-      setWishlistCount((prev) => prev + 1);
-      toast.success('Item adicionado aos favoritos!');
+        .from('cart')
+        .delete()
+        .eq('user_id', userId);
+      if (error) throw error;
+
+      setCartCount(0);
+      toast.success('Carrinho limpo!');
     } catch (error) {
-      console.error('Error adding to wishlist:', error);
-      toast.error('Erro ao adicionar item aos favoritos.');
+      console.error('Clear cart error:', error);
+      toast.error('Erro ao limpar o carrinho.');
     }
   };
 
-  const removeFromWishlist = async (itemId: number) => {
+  const addToWishlist = async (itemId: number): Promise<void> => {
     if (!userId) {
-      toast.error('Por favor, faça login para remover dos favoritos.');
+      toast.error('Faça login para adicionar aos favoritos.');
       return;
     }
 
     try {
-      console.log('Removing from wishlist:', { userId, itemId });
+      const { error } = await supabase
+        .from('wishlist')
+        .insert({ user_id: userId, item_id: itemId });
+      if (error) throw error;
+
+      setWishlistCount(prev => prev + 1);
+      toast.success('Item adicionado aos favoritos!');
+    } catch (error) {
+      console.error('Add to wishlist error:', error);
+      toast.error('Erro ao adicionar aos favoritos.');
+    }
+  };
+
+  const removeFromWishlist = async (itemId: number): Promise<void> => {
+    if (!userId) return;
+
+    try {
       const { error } = await supabase
         .from('wishlist')
         .delete()
         .eq('user_id', userId)
         .eq('item_id', itemId);
-      if (error) {
-        console.error('Wishlist delete error:', error.message, error.code);
-        throw error;
-      }
-      setWishlistCount((prev) => prev - 1);
+      if (error) throw error;
+
+      setWishlistCount(prev => prev - 1);
       toast.success('Item removido dos favoritos!');
     } catch (error) {
-      console.error('Error removing from wishlist:', error);
-      toast.error('Erro ao remover item dos favoritos.');
+      console.error('Remove from wishlist error:', error);
+      toast.error('Erro ao remover dos favoritos.');
     }
   };
 
-  const moveToWishlist = async (itemId: number) => {
-    if (!userId) {
-      toast.error('Por favor, faça login para mover aos favoritos.');
-      return;
-    }
-
-    try {
-      console.log('Moving to wishlist:', { userId, itemId });
-      await addToWishlist(itemId);
-      await removeFromCart(itemId);
-    } catch (error) {
-      console.error('Error moving to wishlist:', error);
-      toast.error('Erro ao mover item para favoritos.');
-    }
+  const moveToWishlist = async (itemId: number): Promise<void> => {
+    await addToWishlist(itemId);
+    await removeFromCart(itemId);
   };
 
-  const moveToCart = async (itemId: number) => {
-    if (!userId) {
-      toast.error('Por favor, faça login para mover ao carrinho.');
-      return;
-    }
-
-    try {
-      console.log('Moving to cart:', { userId, itemId });
-      await addToCart(itemId);
-      await removeFromWishlist(itemId);
-    } catch (error) {
-      console.error('Error moving to cart:', error);
-      toast.error('Erro ao mover item para o carrinho.');
-    }
-  };
-
-  const clearCart = async () => {
-    if (!userId) {
-      toast.error('Por favor, faça login para limpar o carrinho.');
-      return;
-    }
-
-    try {
-      console.log('Clearing cart for user:', userId);
-      const { error } = await supabase
-        .from('cart')
-        .delete()
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Cart clear error:', error.message, error.code);
-        throw error;
-      }
-
-      setCartCount(0);
-      toast.success('Carrinho limpo com sucesso!');
-    } catch (error) {
-      console.error('Error clearing cart:', error);
-      toast.error('Erro ao limpar o carrinho.');
-    }
+  const moveToCart = async (itemId: number): Promise<void> => {
+    await addToCart(itemId);
+    await removeFromWishlist(itemId);
   };
 
   return (
-    <CartContext.Provider value={{
-      cartCount,
-      wishlistCount,
-      addToCart,
-      removeFromCart,
-      clearCart,
-      updateQuantity,
-      addToWishlist,
-      removeFromWishlist,
-      moveToWishlist,
-      moveToCart
-    }}>
+    <CartContext.Provider
+      value={{
+        cartCount,
+        wishlistCount,
+        addToCart,
+        removeFromCart,
+        clearCart,
+        updateQuantity,
+        addToWishlist,
+        removeFromWishlist,
+        moveToWishlist,
+        moveToCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
@@ -339,8 +272,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 };

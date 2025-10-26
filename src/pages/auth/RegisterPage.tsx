@@ -79,7 +79,7 @@ export default function RegisterPage() {
     }
   }
 
-  const handleGoBack = () => navigate('/home')
+  const handleGoBack = () => navigate('/login')
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
