@@ -119,7 +119,7 @@ const Catalog = () => {
         </div>
       )}
 
-      <div className="text-center mt-16 p-8 rounded-2xl eco-gradient text-white">
+      <div className="text-center mt-16 p-8 rounded-2xl bg-gradient-to-r from-emerald-700 to-green-700 text-white">
         <h2 className="text-2xl font-bold mb-4">Não encontrou o que procura?</h2>
         <p className="text-lg mb-6 opacity-90">
           Fazemos produtos personalizados sob encomenda!

@@ -51,7 +51,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'SET_USER_LOGGED_IN':
-      return { ...state, userLoggedIn: action.payload };
+      return { ...state, userLoggedIn: action.payload, items: action.payload ? state.items : [] };
     default:
       return state;
   }
@@ -116,6 +116,15 @@ const Cart: React.FC = () => {
     };
 
     fetchCartItems();
+
+    // Ouvir mudanças de sessão para atualizar login/logout
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      dispatch({ type: 'SET_USER_LOGGED_IN', payload: !!session?.user });
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const handleUpdateQuantity = async (itemId: number, quantity: number) => {
@@ -198,6 +207,7 @@ const Cart: React.FC = () => {
                         variant="ghost"
                         onClick={() => handleRemove(item.item_id)}
                         className="text-red-600 hover:text-red-700 p-1"
+                        disabled={!state.userLoggedIn}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -214,7 +224,7 @@ const Cart: React.FC = () => {
                           onClick={() =>
                             handleUpdateQuantity(item.item_id, item.quantity - 1)
                           }
-                          disabled={item.quantity <= 1}
+                          disabled={item.quantity <= 1 || !state.userLoggedIn}
                           className="h-7 w-7 p-0"
                         >
                           <Minus className="h-3 w-3" />
@@ -228,6 +238,7 @@ const Cart: React.FC = () => {
                           onClick={() =>
                             handleUpdateQuantity(item.item_id, item.quantity + 1)
                           }
+                          disabled={!state.userLoggedIn}
                           className="h-7 w-7 p-0"
                         >
                           <Plus className="h-3 w-3" />
@@ -250,11 +261,15 @@ const Cart: React.FC = () => {
                     <Button
                       variant="outline"
                       className="w-full hover:text-muted dark:hover:text-muted-foreground"
+                      disabled={!state.userLoggedIn}
                     >
                       <Package className="h-4 w-4 mr-2" />
                       Calcular Frete
                     </Button>
-                    <Button className="w-full bg-green-600 text-white hover:bg-green-500">
+                    <Button
+                      className="w-full bg-green-600 text-white hover:bg-green-500"
+                      disabled={!state.userLoggedIn}
+                    >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Finalizar Compra
                     </Button>

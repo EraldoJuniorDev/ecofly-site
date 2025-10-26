@@ -207,7 +207,7 @@ const Feedback = () => {
 
               <Button
                 type="submit"
-                className="w-full eco-gradient text-white hover:!bg-[linear-gradient(90deg,#16a34a,#22c55e)]"
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 hover:scale-[1.02] transform transition-all duration-300 text-white"
                 disabled={loading}
               >
                 <Send className="w-4 h-4 mr-2" />
@@ -253,7 +253,7 @@ const Feedback = () => {
             )}
           </div>
 
-          <Card className="eco-gradient text-white">
+          <Card className="bg-gradient-to-r from-emerald-700 to-green-700 text-white">
             <CardContent className="p-6 text-center">
               <h3 className="text-lg font-semibold mb-2">Satisfação Garantida</h3>
               <p className="text-sm opacity-90">

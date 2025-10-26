@@ -267,7 +267,7 @@ const Home = () => {
           )}
 
           <div className="text-center animate-scale-in">
-            <Button asChild size="lg" className="eco-gradient text-white btn-smooth">
+            <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 hover:scale-[1.02] transform transition-all duration-300 text-white btn-smooth">
               <Link to="/catalogo">
                 Ver Todos os Produtos
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -280,7 +280,7 @@ const Home = () => {
       <section className="py-16 md:py-24 animate-on-scroll">
         <div className="container px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="eco-gradient rounded-2xl p-8 md:p-12 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-700 to-green-700 rounded-2xl p-8 md:p-12 text-white relative overflow-hidden">
               <Leaf className="h-12 w-12 mx-auto mb-6 opacity-80 animate-float" />
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
                 Sustentabilidade em Cada Detalhe

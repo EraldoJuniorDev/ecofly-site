@@ -206,7 +206,7 @@ const Contact = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full eco-gradient text-white">
+                <Button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 hover:scale-[1.02] transform transition-all duration-300 text-white">
                   <Send className="w-4 h-4 mr-2" />
                   Enviar Mensagem
                 </Button>
@@ -215,7 +215,7 @@ const Contact = () => {
           </Card>
 
           {/* FAQ Quick Access */}
-          <Card className="mt-8 eco-gradient text-white">
+          <Card className="mt-8 bg-gradient-to-r from-emerald-700 to-green-700 text-white">
             <CardContent className="p-6 text-center">
               <h3 className="text-xl font-semibold mb-4">Dúvidas Frequentes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
