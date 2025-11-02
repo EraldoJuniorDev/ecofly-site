@@ -120,85 +120,96 @@ const Header = () => {
   const isActive = (href: string) => location.pathname === href
 
   // Componente do botão de perfil com dropdown
-  const ProfileButton = ({ mobile = false }: { mobile?: boolean }) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`
-          h-10 w-10 rounded-xl hover:bg-accent/80
-          group transition-all duration-200
-          ${mobile ? 'flex items-center gap-2 px-3 ml-1' : ''}
-        `}
-        >
-          <User className="h-5 w-5" />
-          {mobile && (
-            <span className="text-sm font-medium hidden sm:inline">
+  const ProfileButton = ({ mobile = false }: { mobile?: boolean }) => {
+    const [open, setOpen] = useState(false)
+
+    return (
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className={`
+            relative flex items-center h-10 px-3 rounded-xl
+            hover:bg-emerald-500/10 hover:text-emerald-600
+            focus-visible:ring-2 focus-visible:ring-emerald-500
+            transition-all duration-200
+            ${mobile ? 'w-full justify-start' : 'w-10'}
+          `}
+          >
+            <User className="h-5 w-5" />
+            {mobile && <span className="ml-2 text-sm font-medium">Minha Conta</span>}
+            <ChevronDown
+              className={`h-4 w-4 ml-2 transition-transform duration-300
+              ${open ? 'rotate-180' : ''}`}
+            />
+            <span className="sr-only">Menu do usuário</span>
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end" className="w-64 mt-2">
+          {/* Cabeçalho */}
+          <DropdownMenuLabel className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+              {user?.user_metadata?.display_name?.[0]?.toUpperCase() ||
+                user?.email?.[0]?.toUpperCase() ||
+                'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm truncate">
+                {user?.user_metadata?.display_name ||
+                  user?.email?.split('@')[0] ||
+                  'Usuário'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+
+          <DropdownMenuSeparator />
+
+          {/* Perfil */}
+          <DropdownMenuItem className="cursor-pointer hover:!bg-emerald-600 hover:!text-white focus:!bg-emerald-600 focus:!text-white transition-colors">
+            <Link to="/user" className="flex w-full items-center">
+              <User className="mr-2 h-4 w-4" />
               Perfil
-            </span>
-          )}
-          <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-200 group-data-[state=open]:rotate-180 opacity-0 group-hover:opacity-100" />
-          <span className="sr-only">Menu do usuário</span>
-        </Button>
-      </DropdownMenuTrigger>
+            </Link>
+          </DropdownMenuItem>
 
-      <DropdownMenuContent align="end" className="w-56 mt-1">
-        <DropdownMenuLabel className="flex items-center gap-3 p-3">
-          {/* Avatar com inicial */}
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-            {user?.user_metadata?.display_name?.[0]?.toUpperCase() ||
-              user?.email?.[0]?.toUpperCase() ||
-              'U'}
-          </div>
-
-          {/* Nome + Email */}
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">
-              {user?.user_metadata?.display_name ||
-                user?.email?.split('@')[0] ||
-                'Usuário'}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {user?.email || 'email@exemplo.com'}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuItem asChild>
-          <Link to="/user" className="w-full">
-            <User className="mr-2 h-4 w-4" />
-            Meu Perfil
-          </Link>
-        </DropdownMenuItem>
-
-        {isAdmin && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/admin" className="w-full text-emerald-600 font-medium">
-                <Settings className="mr-2 h-4 w-4" />
-                <span className="flex-1 text-left">Painel Admin</span>
-                <span className="ml-2 px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full font-medium">ADMIN</span>
+          {/* Admin */}
+          {isAdmin && (
+            <DropdownMenuItem
+              className="group cursor-pointer focus:!bg-emerald-600"
+              onSelect={(e) => e.preventDefault()} // impede fechamento ao clicar
+            >
+              <Link
+                to="/admin"
+                className="flex w-full items-center justify-between font-medium transition-colors
+                 group-hover:text-white
+                 group-focus:text-white"
+              >
+                <div className="flex items-center">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Painel Admin
+                </div>
               </Link>
             </DropdownMenuItem>
-          </>
-        )}
+          )}
 
-        <DropdownMenuSeparator />
+          <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          className="text-red-600 focus:bg-red-50 border-t"
-          onClick={() => setShowLogoutDialog(true)}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sair
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+          {/* Sair */}
+          <DropdownMenuItem
+            className="text-red-600 hover:bg-red-600 focus:bg-red-600 focus:text-muted dark:text-muted-foreground cursor-pointer"
+            onSelect={() => setShowLogoutDialog(true)}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
 
   return (
     <>
