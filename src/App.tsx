@@ -41,7 +41,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: JSX.Elem
           setIsAuthenticated(true);
           if (requireAdmin) {
             const { data: profile, error: profileError } = await supabase
-              .from('profiles')
+              .from('user_profiles')
               .select('role')
               .eq('id', session.user.id)
               .single();
@@ -72,7 +72,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: JSX.Elem
       setIsAuthenticated(!!session);
       if (event === 'SIGNED_IN' && session && requireAdmin) {
         supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('role')
           .eq('id', session.user.id)
           .single()

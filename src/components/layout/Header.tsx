@@ -49,7 +49,7 @@ const Header = () => {
       setUser(user)
       if (user) {
         const { data: profile, error: profileError } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('role')
           .eq('id', user.id)
           .single()
@@ -69,7 +69,7 @@ const Header = () => {
       setUser(session?.user || null)
       if (event === 'SIGNED_IN' && session?.user) {
         supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('role')
           .eq('id', session.user.id)
           .single()

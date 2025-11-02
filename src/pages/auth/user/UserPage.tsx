@@ -1,602 +1,685 @@
+// src/pages/auth/user/UserPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  ShoppingCart,
-  User,
-  Settings,
-  Trash2,
-  Pencil,
-  Lock,
-  Eye,
-  EyeOff,
-} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../../../lib/supabaseClient";
-import { toast } from "sonner";
-import { Button } from "../../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
 import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "../../../components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
+  User, ShoppingCart, Package, MapPin, Settings,
+  ArrowLeft, Pencil, Trash2, Plus, Minus, Clock,
+  Truck, CheckCircle, XCircle, Star, Lock, Bell,
+  Eye, EyeOff, Edit
+} from "lucide-react";
 
-const LOCAL_STORAGE_TAB_KEY = "user_active_tab";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogFooter
+} from "@/components/ui/dialog";
 
-const UserPage = () => {
+import { toast as sonnerToast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
+
+const TAB_KEY = "user_active_tab";
+type Tab = "profile" | "cart" | "orders" | "address" | "settings";
+
+interface Address {
+  id: string;
+  label: string;
+  recipient_name: string;
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  is_default: boolean;
+}
+
+interface Order {
+  id: string;
+  order_number: string;
+  created_at: string;
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  total: number;
+  items: any[];
+}
+
+interface Settings {
+  email_notifications: boolean;
+  order_updates: boolean;
+  promotions: boolean;
+  newsletter: boolean;
+}
+
+export default function UserPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window === "undefined") return "cart";
-    return localStorage.getItem(LOCAL_STORAGE_TAB_KEY) || "cart";
+  const [tab, setTab] = useState<Tab>(() => (localStorage.getItem(TAB_KEY) as Tab) || "profile");
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [userPhone, setUserPhone] = useState("");
+
+  // Perfil
+  const [editUser, setEditUser] = useState({ name: "", email: "", phone: "" });
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [pass, setPass] = useState({ password: "", confirm: "" });
+  const [seePwd, setSeePwd] = useState(false);
+  const [seeConfirm, setSeeConfirm] = useState(false);
+
+  // Carrinho
+  const [cart, setCart] = useState<any[]>([]);
+  const [showDeleteItem, setShowDeleteItem] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState("");
+
+  // Endereços
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [showAddr, setShowAddr] = useState(false);
+  const [showEditAddr, setShowEditAddr] = useState(false);
+  const [showDeleteAddr, setShowDeleteAddr] = useState(false);
+  const [addrToEdit, setAddrToEdit] = useState<Address | null>(null);
+  const [addrToDelete, setAddrToDelete] = useState("");
+  const [formAddr, setFormAddr] = useState<Partial<Address>>({
+    label: "Casa",
+    recipient_name: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    city: "",
+    state: "",
+    zip_code: "",
+    is_default: true
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [user, setUser] = useState(null);
-  const [cartItems, setCartItems] = useState([]);
-  const [editForm, setEditForm] = useState({ displayName: "", email: "" });
-  const [passwordForm, setPasswordForm] = useState({ password: "", confirmPassword: "" });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Persist active tab
+  // Pedidos
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  // Configurações
+  const [settings, setSettings] = useState<Settings>({
+    email_notifications: true,
+    order_updates: true,
+    promotions: false,
+    newsletter: true
+  });
+
+  // Carregar dados
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_TAB_KEY, activeTab);
-    } catch {
-      // Ignore
-    }
-  }, [activeTab]);
-
-  // Fetch user and cart data
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch user data
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast.error("Usuário não autenticado. Redirecionando para login...");
-          navigate("/login");
-          return;
-        }
-        setUser(user);
-        setEditForm({
-          displayName: user.user_metadata?.display_name || "",
-          email: user.email || "",
-        });
-
-        // Fetch cart items (assumes 'cart' table with columns: id, user_id, item_id, quantity)
-        const { data: cartData, error: cartError } = await supabase
-          .from("cart")
-          .select("*, items(name, images, category)")
-          .eq("user_id", user.id);
-        if (cartError) throw cartError;
-        setCartItems(cartData || []);
-      } catch (err) {
-        console.error("fetchData error:", err);
-        toast.error(err?.message || "Erro ao carregar dados do usuário");
-      } finally {
-        setIsLoading(false);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        sonnerToast.error("Faça login!");
+        navigate("/login");
+        return;
       }
-    };
-    fetchData();
+
+      setUserId(user.id);
+      const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "";
+      const email = user.email || "";
+      const phone = user.phone || user.user_metadata?.phone || "";
+      setUserPhone(phone);
+      setEditUser({ name, email, phone });
+      setFormAddr(prev => ({ ...prev, recipient_name: name }));
+
+      // Carrinho
+      const { data: cartData } = await supabase
+        .from("cart")
+        .select("*, items(name, images, price)")
+        .eq("user_id", user.id);
+      setCart(cartData || []);
+
+      // Endereços
+      const { data: addr } = await supabase
+        .from("user_addresses")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("is_default", { ascending: false });
+      setAddresses(addr || []);
+
+      // Pedidos
+      const { data: ord } = await supabase
+        .from("user_orders")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      setOrders(ord || []);
+
+      // Configs
+      const { data: cfg } = await supabase
+        .from("user_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      if (cfg) setSettings(cfg);
+      else await supabase.from("user_settings").insert({ user_id: user.id });
+
+      setLoading(false);
+    })();
   }, [navigate]);
 
-  const handleGoBack = () => navigate("/home");
+  useEffect(() => localStorage.setItem(TAB_KEY, tab), [tab]);
 
-  // Handle personal info edit
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditSubmit = async () => {
-    if (!editForm.displayName.trim() || !editForm.email.trim()) {
-      toast.error("Por favor, preencha todos os campos.");
+  // Perfil
+  const saveProfile = async () => {
+    if (!editUser.phone.match(/^\d{10,11}$/)) {
+      sonnerToast.error("Telefone inválido (10 ou 11 dígitos)");
       return;
     }
-    if (!editForm.email.includes("@")) {
-      toast.error("Por favor, insira um email válido.");
-      return;
-    }
-    setIsSubmitting(true);
+    setSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        email: editForm.email,
-        data: { display_name: editForm.displayName }
+      await supabase.auth.updateUser({
+        email: editUser.email,
+        data: { display_name: editUser.name, phone: editUser.phone }
       });
-      if (error) throw error;
-      toast.success("Informações pessoais atualizadas com sucesso!");
-      setShowEditDialog(false);
-      setUser((prev) => ({
-        ...prev,
-        email: editForm.email,
-        user_metadata: { ...prev.user_metadata, display_name: editForm.displayName },
-      }));
-    } catch (err) {
-      console.error("handleEditSubmit error:", err);
-      toast.error(err?.message || "Erro ao atualizar informações");
-    } finally {
-      setIsSubmitting(false);
+      await supabase.from("users").update({ phone: editUser.phone }).eq("id", userId);
+      setUserPhone(editUser.phone);
+      sonnerToast.success("Perfil salvo!");
+      setShowEditProfile(false);
+    } catch {
+      sonnerToast.error("Erro ao salvar");
     }
+    setSaving(false);
   };
 
-  // Handle password update
-  const handlePasswordInputChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handlePasswordSubmit = async () => {
-    if (!passwordForm.password.trim() || !passwordForm.confirmPassword.trim()) {
-      toast.error("Por favor, preencha todos os campos.");
+  const changePassword = async () => {
+    if (pass.password !== pass.confirm) {
+      sonnerToast.error("Senhas diferentes");
       return;
     }
-    if (passwordForm.password !== passwordForm.confirmPassword) {
-      toast.error("As senhas não coincidem.");
-      return;
-    }
-    if (passwordForm.password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
-    setIsSubmitting(true);
+    setSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: passwordForm.password,
-      });
-      if (error) throw error;
-      toast.success("Senha atualizada com sucesso!");
-      setShowPasswordDialog(false);
-      setPasswordForm({ password: "", confirmPassword: "" });
-    } catch (err) {
-      console.error("handlePasswordSubmit error:", err);
-      toast.error(err?.message || "Erro ao atualizar senha");
-    } finally {
-      setIsSubmitting(false);
+      await supabase.auth.updateUser({ password: pass.password });
+      sonnerToast.success("Senha alterada!");
+      setShowPass(false);
+      setPass({ password: "", confirm: "" });
+    } catch {
+      sonnerToast.error("Erro");
+    }
+    setSaving(false);
+  };
+
+  // Carrinho
+  const changeQty = async (id: string, qty: number) => {
+    if (qty < 1) return;
+    await supabase.from("cart").update({ quantity: qty }).eq("id", id);
+    setCart(c => c.map(i => i.id === id ? { ...i, quantity: qty } : i));
+  };
+
+  const removeItem = async () => {
+    await supabase.from("cart").delete().eq("id", deleteItemId);
+    setCart(c => c.filter(i => i.id !== deleteItemId));
+    setShowDeleteItem(false);
+    sonnerToast.success("Item removido!");
+  };
+
+  // Endereços
+  const searchCEP = async (cep: string) => {
+    if (cep.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setFormAddr(f => ({
+          ...f,
+          street: data.logradouro || "",
+          neighborhood: data.bairro || "",
+          city: data.localidade || "",
+          state: data.uf || ""
+        }));
+        sonnerToast.success("CEP encontrado! ✨");
+      } else {
+        sonnerToast.error("CEP não encontrado");
+      }
+    } catch {
+      sonnerToast.error("Erro na busca");
     }
   };
 
-  // Handle cart item deletion
-  const handleDeleteCartItem = async () => {
-    if (!deleteTarget) return;
-    setIsSubmitting(true);
+  const saveAddress = async () => {
+    if (formAddr.zip_code?.length !== 8) {
+      sonnerToast.error("CEP precisa ter 8 números");
+      return;
+    }
+
     try {
-      const { error } = await supabase
-        .from("cart")
-        .delete()
-        .eq("id", deleteTarget.id);
-      if (error) throw error;
-      toast.success("Item removido do carrinho com sucesso!");
-      setCartItems((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-      setShowDeleteDialog(false);
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error("handleDeleteCartItem error:", err);
-      toast.error(err?.message || "Erro ao remover item do carrinho");
-    } finally {
-      setIsSubmitting(false);
+      if (formAddr.is_default) {
+        await supabase.from("user_addresses").update({ is_default: false }).eq("user_id", userId);
+      }
+
+      const { data } = await supabase
+        .from("user_addresses")
+        .upsert({
+          ...(addrToEdit ? { id: addrToEdit.id } : {}),
+          user_id: userId,
+          ...formAddr,
+          recipient_name: formAddr.recipient_name || editUser.name
+        })
+        .select()
+        .single();
+
+      setAddresses(prev =>
+        addrToEdit
+          ? prev.map(a => a.id === data.id ? data : a)
+          : [...prev, data]
+      );
+
+      closeAddr();
+      sonnerToast.success(addrToEdit ? "Endereço atualizado!" : "Endereço salvo!");
+    } catch {
+      sonnerToast.error("Erro ao salvar");
     }
   };
 
-  // Handle logout
-  const handleLogout = async () => {
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast.success("Deslogado com sucesso!");
-      navigate("/login");
-    } catch (err) {
-      console.error("handleLogout error:", err);
-      toast.error(err?.message || "Erro ao deslogar");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const deleteAddress = async () => {
+    await supabase.from("user_addresses").delete().eq("id", addrToDelete);
+    setAddresses(a => a.filter(x => x.id !== addrToDelete));
+    setShowDeleteAddr(false);
+    sonnerToast.success("Endereço excluído!");
+  };
+
+  const setDefault = async (id: string) => {
+    await supabase.from("user_addresses").update({ is_default: false }).eq("user_id", userId);
+    await supabase.from("user_addresses").update({ is_default: true }).eq("id", id);
+    setAddresses(a => a.map(x => ({ ...x, is_default: x.id === id })));
+    sonnerToast.success("Padrão alterado! ⭐");
+  };
+
+  const openAdd = () => {
+    setFormAddr({
+      label: "Casa",
+      recipient_name: editUser.name,
+      street: "", number: "", complement: "",
+      neighborhood: "", city: "", state: "", zip_code: "",
+      is_default: addresses.length === 0
+    });
+    setShowAddr(true);
+  };
+
+  const openEdit = (a: Address) => {
+    setAddrToEdit(a);
+    setFormAddr(a);
+    setShowEditAddr(true);
+  };
+
+  const closeAddr = () => {
+    setShowAddr(false);
+    setShowEditAddr(false);
+    setShowDeleteAddr(false);
+    setAddrToEdit(null);
+  };
+
+  // Configs
+  const toggleSetting = async (key: keyof Settings) => {
+    const val = !settings[key];
+    setSettings(s => ({ ...s, [key]: val }));
+    await supabase.from("user_settings").update({ [key]: val }).eq("user_id", userId);
+    sonnerToast.success("Configuração salva!");
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  const nav = [
+    { id: "profile", label: "Perfil", icon: User, color: "blue" },
+    { id: "cart", label: "Carrinho", icon: ShoppingCart, color: "emerald" },
+    { id: "orders", label: "Pedidos", icon: Package, color: "purple" },
+    { id: "address", label: "Endereços", icon: MapPin, color: "orange" },
+    { id: "settings", label: "Configurações", icon: Settings, color: "red" }
+  ];
+
+  const statusBadge = (s: Order["status"]) => {
+    const map: Record<string, { icon: any; color: string; text: string }> = {
+      pending: { icon: Clock, color: "bg-yellow-500", text: "Pendente" },
+      processing: { icon: Package, color: "bg-blue-500", text: "Processando" },
+      shipped: { icon: Truck, color: "bg-primary", text: "Enviado" },
+      delivered: { icon: CheckCircle, color: "bg-green-500", text: "Entregue" },
+      cancelled: { icon: XCircle, color: "bg-destructive", text: "Cancelado" }
+    };
+    const { icon: Icon, color, text } = map[s];
+    return <Badge className={`${color} text-white`}><Icon className="w-3 h-3 mr-1" />{text}</Badge>;
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="bg-white/80 dark:bg-background backdrop-blur-sm border-b border-slate-200/60 dark:border-slate-700/40 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleGoBack}
-                className="flex items-center gap-2 text-slate-600 dark:text-slate-200 hover:text-emerald-600 transition-colors duration-300 group"
-              >
-                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
-                <span className="font-medium">Voltar</span>
-              </motion.button>
-              <div className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
-              <h1 className="text-2xl font-bold eco-text-gradient">Área do Usuário</h1>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* HEADER */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate("/home")}
+              className="flex items-center gap-2 text-muted-foreground hover:text-emerald-600">
+              <ArrowLeft className="h-5 w-5" /> Voltar
+            </motion.button>
+            <div className="h-6 w-px bg-border" />
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+              Área do Usuário
+            </h1>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Page content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 p-6 shadow-sm"
-            >
-              <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-                <User className="h-5 w-5 text-emerald-500" />
-                Navegação
-              </h3>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* SIDEBAR */}
+          <aside>
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-card rounded-2xl border p-6 shadow-sm">
+              <h3 className="font-bold flex items-center gap-2 mb-4"><User className="h-5 w-5 text-emerald-500" /> Navegação</h3>
               <nav className="space-y-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveTab("cart")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === "cart"
-                      ? "bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-                      : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
-                  }`}
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                  <span className="font-medium">Carrinho</span>
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveTab("info")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === "info"
-                      ? "bg-blue-100/80 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                      : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
-                  }`}
-                >
-                  <User className="h-5 w-5" />
-                  <span className="font-medium">Informações Pessoais</span>
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveTab("settings")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === "settings"
-                      ? "bg-red-100/80 dark:bg-red-900/30 text-destructive dark:text-red-400"
-                      : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-700 hover:text-slate-800 dark:hover:text-slate-50"
-                  }`}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="font-medium">Configurações da Conta</span>
-                </motion.button>
+                {nav.map(item => {
+                  const Icon = item.icon;
+                  const active = tab === item.id;
+                  return (
+                    <motion.button key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => setTab(item.id as Tab)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl ${active ? `bg-${item.color}-100/70 text-${item.color}-600 shadow-sm` : "hover:bg-muted"}`}>
+                      <Icon className="h-5 w-5" /><span className="font-medium">{item.label}</span>
+                    </motion.button>
+                  );
+                })}
               </nav>
             </motion.div>
-          </div>
+          </aside>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
+          {/* CONTEÚDO */}
+          <main className="lg:col-span-3">
             <AnimatePresence mode="wait">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                <h2 className="text-2xl font-bold">Minha Conta</h2>
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(String(v))} className="space-y-6">
-                  {/* Cart Tab */}
-                  <TabsContent value="cart">
-                    <motion.div
-                      key="cart"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-4 sm:p-6"
-                    >
+              <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                {/* PERFIL */}
+                {tab === "profile" && (
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 eco-gradient rounded-xl">
-                          <ShoppingCart className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl sm:text-2xl font-bold">Carrinho de Compras</h2>
-                          <p className="text-sm sm:text-base text-muted-foreground">Gerencie os itens no seu carrinho</p>
-                        </div>
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-600"><User className="h-6 w-6 text-white" /></div>
+                        <div><h2 className="text-2xl font-bold">Perfil</h2><p className="text-muted-foreground">Seus dados</p></div>
                       </div>
-                      {isLoading ? (
-                        <p className="text-muted-foreground">Carregando carrinho...</p>
-                      ) : cartItems.length === 0 ? (
-                        <div className="text-center py-12 text-muted-foreground">Seu carrinho está vazio.</div>
-                      ) : (
+                      {loading ? <p>Carregando...</p> : (
+                        <div className="space-y-5">
+                          <div><Label>Nome</Label><p className="text-lg font-medium">{editUser.name}</p></div>
+                          <div><Label>E-mail</Label><p className="text-lg font-medium">{editUser.email}</p></div>
+                          <div><Label>Telefone</Label><p className="text-lg font-medium">{userPhone || "Não informado"}</p></div>
+                          <Button onClick={() => setShowEditProfile(true)} className="w-full bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+                            <Pencil className="h-4 w-4 mr-2" /> Editar Perfil
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* CARRINHO */}
+                {tab === "cart" && (
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-600"><ShoppingCart className="h-6 w-6 text-white" /></div>
+                        <h2 className="text-2xl font-bold">Carrinho</h2>
+                      </div>
+                      {cart.length === 0 ? <p className="text-center py-12 text-muted-foreground">Vazio</p> : (
                         <div className="space-y-4">
-                          {cartItems.map((item) => (
-                            <motion.div
-                              key={item.id}
-                              initial={{ opacity: 0, x: -8 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="flex items-start gap-4 p-4 border rounded-lg"
-                            >
-                              <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                                <img
-                                  src={item.items?.images?.[0]?.url}
-                                  alt={item.items?.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
+                          {cart.map(item => (
+                            <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
+                              <img src={item.items?.images?.[0]?.url || "https://via.placeholder.com/80"} alt={item.items.name} className="w-20 h-20 rounded object-cover" />
                               <div className="flex-1">
-                                <div className="flex flex-col gap-3 items-start justify-between">
-                                  <div>
-                                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">{item.items?.name}</h3>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300">{item.items?.category}</p>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300">Quantidade: {item.quantity}</p>
-                                  </div>
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() => {
-                                      setDeleteTarget(item);
-                                      setShowDeleteDialog(true);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <h3 className="font-semibold">{item.items.name}</h3>
+                                <p className="text-sm text-muted-foreground">R$ {item.items.price.toFixed(2)}</p>
                               </div>
-                            </motion.div>
+                              <div className="flex items-center gap-2">
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity - 1)}><Minus className="h-4 w-4" /></Button>
+                                <span className="w-8 text-center">{item.quantity}</span>
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                              </div>
+                              <Button size="icon" variant="ghost" onClick={() => { setDeleteItemId(item.id); setShowDeleteItem(true); }}>
+                                <Trash2 className="h-5 w-5 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="border-t pt-4">
+                            <div className="flex justify-between text-2xl font-bold">
+                              <span>Total</span>
+                              <span className="text-emerald-600">
+                                R$ {cart.reduce((s, i) => s + (i.items.price * i.quantity), 0).toFixed(2)}
+                              </span>
+                            </div>
+                            <Button className="w-full mt-4 bg-gradient-to-r from-emerald-500 to-blue-600 text-white text-lg py-6">
+                              Finalizar Compra
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* PEDIDOS */}
+                {tab === "orders" && (
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-6">
+                      <h2 className="text-2xl font-bold mb-6">Pedidos</h2>
+                      {orders.length === 0 ? <p className="text-center py-12 text-muted-foreground">Nenhum pedido</p> : (
+                        <div className="space-y-4">
+                          {orders.map(o => (
+                            <div key={o.id} className="border rounded-lg p-4">
+                              <div className="flex justify-between mb-2">
+                                <div><p className="font-bold">{o.order_number}</p><p className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleDateString("pt-BR")}</p></div>
+                                {statusBadge(o.status)}
+                              </div>
+                              <div className="flex justify-between">
+                                <p className="text-sm text-muted-foreground">{o.items?.length || 0} itens</p>
+                                <p className="font-bold text-xl text-emerald-600">R$ {o.total.toFixed(2)}</p>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
-                      <Dialog open={showDeleteDialog && Boolean(deleteTarget)} onOpenChange={setShowDeleteDialog}>
-                        <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader className="text-center sm:text-left mb-4">
-                            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Confirmar Remoção</DialogTitle>
-                            <p className="text-sm text-muted-foreground">Tem certeza que deseja remover o item "{deleteTarget?.items?.name}" do carrinho?</p>
-                          </DialogHeader>
-                          <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => {
-                                setShowDeleteDialog(false);
-                                setDeleteTarget(null);
-                              }}
-                              className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
-                            >
-                              Cancelar
-                            </Button>
-                            <Button
-                              onClick={handleDeleteCartItem}
-                              disabled={isSubmitting}
-                              className="w-full sm:w-auto bg-green-700 text-white"
-                            >
-                              {isSubmitting ? "Removendo..." : "Confirmar"}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </motion.div>
-                  </TabsContent>
+                    </CardContent>
+                  </Card>
+                )}
 
-                  {/* Personal Info Tab */}
-                  <TabsContent value="info">
-                    <motion.div
-                      key="info"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-4 sm:p-6"
-                    >
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 eco-gradient rounded-xl">
-                          <User className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl sm:text-2xl font-bold">Informações Pessoais</h2>
-                          <p className="text-sm sm:text-base text-muted-foreground">Visualize e edite suas informações pessoais</p>
-                        </div>
+                {/* ENDEREÇOS */}
+                {tab === "address" && (
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between mb-6">
+                        <h2 className="text-2xl font-bold">Endereços</h2>
+                        <Button onClick={openAdd} className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+                          <Plus className="h-4 w-4 mr-2" /> Novo
+                        </Button>
                       </div>
-                      {isLoading ? (
-                        <p className="text-muted-foreground">Carregando informações...</p>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center border p-4 rounded-lg">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Nome de Exibição</p>
-                              <p className="font-semibold text-slate-800 dark:text-slate-100">{user?.user_metadata?.display_name}</p>
+                      {addresses.length === 0 ? <p className="text-center py-12 text-muted-foreground">Nenhum endereço</p> : (
+                        <div className="grid gap-4">
+                          {addresses.map(a => (
+                            <div key={a.id} className="border rounded-xl p-5 hover:border-emerald-500 transition">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="font-bold">{a.label}</h3>
+                                    {a.is_default && <Badge className="bg-emerald-500 text-white"><Star className="h-3 w-3 mr-1 fill-current" /> Padrão</Badge>}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">{a.recipient_name}</p>
+                                  <p className="text-sm">{a.street}, {a.number}{a.complement && ` - ${a.complement}`}</p>
+                                  <p className="text-sm">{a.neighborhood} • {a.city}/{a.state} • CEP {a.zip_code.replace(/(\d{5})(\d{3})/, "$1-$2")}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  {!a.is_default && <Button size="sm" variant="outline" onClick={() => setDefault(a.id)}>Padrão</Button>}
+                                  <Button size="icon" variant="ghost" onClick={() => openEdit(a)}><Edit className="h-4 w-4 text-blue-600" /></Button>
+                                  <Button size="icon" variant="ghost" onClick={() => { setAddrToDelete(a.id); setShowDeleteAddr(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex justify-between items-center border p-4 rounded-lg">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Email</p>
-                              <p className="font-semibold text-slate-800 dark:text-slate-100">{user?.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex justify-end">
-                            <Button
-                              onClick={() => setShowEditDialog(true)}
-                              className="eco-gradient text-white"
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Editar
-                            </Button>
-                          </div>
+                          ))}
                         </div>
                       )}
-                      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-                        <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader className="text-center sm:text-left mb-4">
-                            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Editar Informações</DialogTitle>
-                            <p className="text-sm text-muted-foreground">Atualize suas informações pessoais.</p>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="displayName">Nome de Exibição</Label>
-                              <Input
-                                id="displayName"
-                                name="displayName"
-                                value={editForm.displayName}
-                                onChange={handleEditInputChange}
-                                className="w-full"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="email">Email</Label>
-                              <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                value={editForm.email}
-                                onChange={handleEditInputChange}
-                                className="w-full"
-                              />
-                            </div>
-                            <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
-                              <Button
-                                variant="ghost"
-                                onClick={() => setShowEditDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
-                              >
-                                Cancelar
-                              </Button>
-                              <Button
-                                onClick={handleEditSubmit}
-                                disabled={isSubmitting}
-                                className="w-full sm:w-auto eco-gradient text-white font-semibold"
-                              >
-                                {isSubmitting ? "Salvando..." : "Salvar"}
-                              </Button>
-                            </DialogFooter>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </motion.div>
-                  </TabsContent>
+                    </CardContent>
+                  </Card>
+                )}
 
-                  {/* Account Settings Tab */}
-                  <TabsContent value="settings">
-                    <motion.div
-                      key="settings"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-4 sm:p-6"
-                    >
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 eco-gradient rounded-xl">
-                          <Settings className="h-6 w-6 text-white" />
+                {/* CONFIGURAÇÕES */}
+                {tab === "settings" && (
+                  <Card className="rounded-2xl">
+                    <CardContent className="p-6">
+                      <h2 className="text-2xl font-bold mb-6">Configurações</h2>
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="font-semibold flex items-center gap-2 mb-3"><Lock className="h-5 w-5" /> Segurança</h3>
+                          <Button onClick={() => setShowPass(true)} className="w-full justify-start bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+                            Alterar Senha
+                          </Button>
                         </div>
                         <div>
-                          <h2 className="text-xl sm:text-2xl font-bold">Configurações da Conta</h2>
-                          <p className="text-sm sm:text-base text-muted-foreground">Gerencie as configurações da sua conta</p>
+                          <h3 className="font-semibold flex items-center gap-2 mb-3"><Bell className="h-5 w-5" /> Notificações</h3>
+                          <div className="space-y-3">
+                            {Object.entries(settings).map(([k, v]) => (
+                              <div key={k} className="flex justify-between items-center">
+                                <Label className="cursor-pointer capitalize">{k.replace(/_/g, " ")}</Label>
+                                <Switch checked={v} onCheckedChange={() => toggleSetting(k as keyof Settings)} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="pt-4 border-t">
+                          <Button onClick={logout} className="w-full bg-destructive text-white">Sair da Conta</Button>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <Button
-                          onClick={() => setShowPasswordDialog(true)}
-                          className="eco-gradient text-white w-full sm:w-auto"
-                        >
-                          <Lock className="h-4 w-4 mr-2" />
-                          Alterar Senha
-                        </Button>
-                        <Button
-                          onClick={handleLogout}
-                          disabled={isSubmitting}
-                          className="bg-red-600 text-white w-full sm:w-auto hover:bg-red-700"
-                        >
-                          {isSubmitting ? "Deslogando..." : "Sair da Conta"}
-                        </Button>
-                      </div>
-                      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-                        <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-[90vw] max-w-[500px] min-w-[280px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card dark:bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader className="text-center sm:text-left mb-4">
-                            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">Alterar Senha</DialogTitle>
-                            <p className="text-sm text-muted-foreground">Digite sua nova senha.</p>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="password">Nova Senha</Label>
-                              <div className="relative">
-                                <Input
-                                  id="password"
-                                  name="password"
-                                  type={showPassword ? "text" : "password"}
-                                  value={passwordForm.password}
-                                  onChange={handlePasswordInputChange}
-                                  className="w-full"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-gray-500 dark:text-slate-300 hover:text-gray-700 dark:hover:text-slate-100 hover:bg-gray-200 dark:hover:bg-slate-700/50 transition-colors duration-500"
-                                >
-                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
-                              </div>
-                            </div>
-                            <div>
-                              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                              <div className="relative">
-                                <Input
-                                  id="confirmPassword"
-                                  name="confirmPassword"
-                                  type={showConfirmPassword ? "text" : "password"}
-                                  value={passwordForm.confirmPassword}
-                                  onChange={handlePasswordInputChange}
-                                  className="w-full"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-gray-500 dark:text-slate-300 hover:text-gray-700 dark:hover:text-slate-100 hover:bg-gray-200 dark:hover:bg-slate-700/50 transition-colors duration-500"
-                                >
-                                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
-                              </div>
-                            </div>
-                            <DialogFooter className="flex flex-col sm:flex-row justify-end gap-3">
-                              <Button
-                                variant="ghost"
-                                onClick={() => setShowPasswordDialog(false)}
-                                className="w-full sm:w-auto text-slate-600 dark:text-slate-200 hover:bg-destructive border"
-                              >
-                                Cancelar
-                              </Button>
-                              <Button
-                                onClick={handlePasswordSubmit}
-                                disabled={isSubmitting}
-                                className="w-full sm:w-auto eco-gradient text-white font-semibold"
-                              >
-                                {isSubmitting ? "Salvando..." : "Salvar"}
-                              </Button>
-                            </DialogFooter>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </motion.div>
-                  </TabsContent>
-                </Tabs>
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
             </AnimatePresence>
-          </div>
+          </main>
         </div>
       </div>
+
+      {/* DIÁLOGOS */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Perfil</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Nome</Label><Input value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} /></div>
+            <div><Label>E-mail</Label><Input type="email" value={editUser.email} onChange={e => setEditUser({ ...editUser, email: e.target.value })} /></div>
+            <div><Label>Telefone</Label><Input value={editUser.phone} onChange={e => setEditUser({ ...editUser, phone: e.target.value.replace(/\D/g, "").slice(0,11) })} maxLength={11} placeholder="11999999999" /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowEditProfile(false)}>Cancelar</Button>
+            <Button onClick={saveProfile} disabled={saving} className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPass} onOpenChange={setShowPass}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nova Senha</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Label>Senha</Label>
+              <Input type={seePwd ? "text" : "password"} value={pass.password} onChange={e => setPass({ ...pass, password: e.target.value })} />
+              <Button size="icon" variant="ghost" className="absolute right-2 top-8" onClick={() => setSeePwd(!seePwd)}>{seePwd ? <EyeOff /> : <Eye />}</Button>
+            </div>
+            <div className="relative">
+              <Label>Confirmar</Label>
+              <Input type={seeConfirm ? "text" : "password"} value={pass.confirm} onChange={e => setPass({ ...pass, confirm: e.target.value })} />
+              <Button size="icon" variant="ghost" className="absolute right-2 top-8" onClick={() => setSeeConfirm(!seeConfirm)}>{seeConfirm ? <EyeOff /> : <Eye />}</Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowPass(false)}>Cancelar</Button>
+            <Button onClick={changePassword} disabled={saving} className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+              {saving ? "Alterando..." : "Alterar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteItem} onOpenChange={setShowDeleteItem}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Remover item?</DialogTitle></DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowDeleteItem(false)}>Cancelar</Button>
+            <Button onClick={removeItem} className="bg-destructive text-white">Remover</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddr || showEditAddr} onOpenChange={closeAddr}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>{showEditAddr ? "Editar" : "Novo"} Endereço</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>CEP *</Label>
+              <Input
+                placeholder="00000000"
+                value={formAddr.zip_code || ""}
+                onChange={e => {
+                  const cep = e.target.value.replace(/\D/g, "").slice(0, 8);
+                  setFormAddr({ ...formAddr, zip_code: cep });
+                  searchCEP(cep);
+                }}
+              />
+            </div>
+            <div>
+              <Label>Nome</Label>
+              <Input value={formAddr.label || ""} onChange={e => setFormAddr({ ...formAddr, label: e.target.value })} />
+            </div>
+            <div className="col-span-2">
+              <Label>Rua</Label>
+              <Input value={formAddr.street || ""} onChange={e => setFormAddr({ ...formAddr, street: e.target.value })} />
+            </div>
+            <div>
+              <Label>Número</Label>
+              <Input value={formAddr.number || ""} onChange={e => setFormAddr({ ...formAddr, number: e.target.value })} />
+            </div>
+            <div>
+              <Label>Complemento</Label>
+              <Input value={formAddr.complement || ""} onChange={e => setFormAddr({ ...formAddr, complement: e.target.value })} />
+            </div>
+            <div className="col-span-2">
+              <Label>Bairro</Label>
+              <Input value={formAddr.neighborhood || ""} onChange={e => setFormAddr({ ...formAddr, neighborhood: e.target.value })} />
+            </div>
+            <div>
+              <Label>Cidade</Label>
+              <Input value={formAddr.city || ""} onChange={e => setFormAddr({ ...formAddr, city: e.target.value })} />
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <Input value={formAddr.state || ""} onChange={e => setFormAddr({ ...formAddr, state: e.target.value })} maxLength={2} />
+            </div>
+            <div className="col-span-2">
+              <Label>Destinatário</Label>
+              <Input value={formAddr.recipient_name || ""} onChange={e => setFormAddr({ ...formAddr, recipient_name: e.target.value })} />
+            </div>
+            <div className="col-span-2 flex items-center gap-3">
+              <Switch checked={!!formAddr.is_default} onCheckedChange={v => setFormAddr({ ...formAddr, is_default: v })} />
+              <Label className="cursor-pointer">Endereço padrão</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={closeAddr}>Cancelar</Button>
+            <Button onClick={saveAddress} className="bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+              {showEditAddr ? "Salvar Alterações" : "Adicionar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteAddr} onOpenChange={setShowDeleteAddr}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Excluir endereço?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Esta ação não pode ser desfeita.</p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowDeleteAddr(false)}>Cancelar</Button>
+            <Button onClick={deleteAddress} className="bg-destructive text-white">Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default UserPage;
+}

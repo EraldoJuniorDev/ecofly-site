@@ -77,7 +77,7 @@ const Cart: React.FC = () => {
         dispatch({ type: 'SET_USER_LOGGED_IN', payload: true });
 
         const { data: cartData, error: cartError } = await supabase
-          .from('cart')
+          .from('user_cart')
           .select(`
             id,
             user_id,
@@ -109,7 +109,7 @@ const Cart: React.FC = () => {
 
         dispatch({ type: 'SET_ITEMS', payload: formattedCartItems });
       } catch (error) {
-        console.error('Error fetching cart:', error);
+        console.error('Error fetching user_cart:', error);
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }

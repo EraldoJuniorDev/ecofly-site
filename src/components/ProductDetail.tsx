@@ -107,7 +107,7 @@ const ProductDetail = () => {
         let formattedReviews: Review[] = [];
         if (userIds.length > 0) {
           const { data: usersData, error: usersError } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .select('id,display_name')
             .in('id', userIds);
           if (usersError) {
