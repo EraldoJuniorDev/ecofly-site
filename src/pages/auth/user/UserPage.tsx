@@ -3,12 +3,14 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  User, ShoppingCart, Package, MapPin, Settings,
+  User, ShoppingCart, Package, MapPin,
   ArrowLeft, Pencil, Trash2, Plus, Minus, Clock,
-  Truck, CheckCircle, XCircle, Star, Lock, Bell,
+  Truck, CheckCircle, XCircle, Star,
   Eye, EyeOff, Edit, Camera, X as XIcon
 } from "lucide-react";
-
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +25,7 @@ import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 
 const TAB_KEY = "user_active_tab";
-type Tab = "profile" | "cart" | "orders" | "address" | "settings";
+type Tab = "profile" | "cart" | "orders" | "address";
 
 interface Address {
   id: string;
@@ -48,13 +50,6 @@ interface Order {
   items: any[];
 }
 
-interface Settings {
-  email_notifications: boolean;
-  order_updates: boolean;
-  promotions: boolean;
-  newsletter: boolean;
-}
-
 export default function UserPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>(() => (localStorage.getItem(TAB_KEY) as Tab) || "profile");
@@ -66,10 +61,14 @@ export default function UserPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Perfil
-  const [editUser, setEditUser] = useState({ name: "", email: "", phone: "" });
+  const [editUser, setEditUser] = useState({ name: "", email: "", phone: "", birthDate: "" });
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [pass, setPass] = useState({ password: "", confirm: "" });
+  const [pass, setPass] = useState({
+    current: "",
+    password: "",
+    confirm: ""
+  });
   const [seePwd, setSeePwd] = useState(false);
   const [seeConfirm, setSeeConfirm] = useState(false);
 
@@ -94,14 +93,6 @@ export default function UserPage() {
   // Pedidos
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // Configurações
-  const [settings, setSettings] = useState<Settings>({
-    email_notifications: true,
-    order_updates: true,
-    promotions: false,
-    newsletter: true
-  });
-
   // ========== CARREGAMENTO ==========
   useEffect(() => {
     (async () => {
@@ -117,33 +108,37 @@ export default function UserPage() {
       const email = user.email || "";
       const phone = user.phone?.replace("+55", "") || user.user_metadata?.phone || "";
       setUserPhone(phone);
-      setEditUser({ name, email, phone });
+      setEditUser({ name, email, phone, birthDate: "" });
       setFormAddr(prev => ({ ...prev, recipient_name: name }));
 
       // Foto de perfil
       const { data: profile } = await supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url, display_name, phone, birth_date")
         .eq("id", user.id)
         .single();
+
+      setEditUser({
+        name: profile?.display_name || name,
+        email,
+        phone: profile?.phone?.replace("+55", "") || phone,
+        birthDate: profile?.birth_date || "",
+      });
 
       if (profile?.avatar_url) {
         const { data } = supabase.storage.from("profile_pics").getPublicUrl(profile.avatar_url);
         setProfilePic(data.publicUrl + `?t=${Date.now()}`);
       }
 
-      const [cartRes, addrRes, ordRes, cfgRes] = await Promise.all([
+      const [cartRes, addrRes, ordRes] = await Promise.all([
         supabase.from("cart").select("*, items(name, images, price)").eq("user_id", user.id),
         supabase.from("user_addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false }),
-        supabase.from("user_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("user_settings").select("*").eq("user_id", user.id).single()
+        supabase.from("user_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
       ]);
 
       setCart(cartRes.data || []);
       setAddresses(addrRes.data || []);
       setOrders(ordRes.data || []);
-      if (cfgRes.data) setSettings(cfgRes.data);
-      else await supabase.from("user_settings").insert({ user_id: user.id });
 
       setLoading(false);
     })();
@@ -151,7 +146,7 @@ export default function UserPage() {
 
   useEffect(() => localStorage.setItem(TAB_KEY, tab), [tab]);
 
-  // ========== FOTO DE PERFIL (SÓ NO MODAL) ==========
+  // ========== FOTO DE PERFIL ==========
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -209,31 +204,52 @@ export default function UserPage() {
       await supabase.from("profiles").upsert({
         id: userId,
         display_name: editUser.name,
-        phone: `+55${phoneRaw}`
+        phone: `+55${phoneRaw}`,
+        birth_date: editUser.birthDate || null,
       });
-      setUserPhone(phoneRaw);
-      sonnerToast.success("Perfil atualizado!");
-      setShowEditProfile(false);
-    } catch {
-      sonnerToast.error("Erro ao salvar");
+      sonnerToast.success("Perfil atualizado com sucesso!");
+    } catch (err) {
+      console.error(err);
+      sonnerToast.error("Erro ao salvar perfil");
     }
     setSaving(false);
   };
 
   const changePassword = async () => {
-    if (pass.password !== pass.confirm) return sonnerToast.error("Senhas diferentes");
-    if (pass.password.length < 6) return sonnerToast.error("Mínimo 6 caracteres");
+    if (!pass.current || !pass.password || !pass.confirm)
+      return sonnerToast.error("Preencha todos os campos.");
+    if (pass.password !== pass.confirm)
+      return sonnerToast.error("As novas senhas não coincidem.");
+    if (pass.password.length < 6)
+      return sonnerToast.error("A nova senha deve ter pelo menos 6 caracteres.");
 
     setSaving(true);
     try {
-      await supabase.auth.updateUser({ password: pass.password });
-      sonnerToast.success("Senha alterada!");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("Usuário não autenticado.");
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: pass.current,
+      });
+      if (signInError) {
+        sonnerToast.error("Senha atual incorreta.");
+        setSaving(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: pass.password });
+      if (error) throw error;
+
+      sonnerToast.success("Senha alterada com sucesso!");
+      setPass({ current: "", password: "", confirm: "" });
       setShowPass(false);
-      setPass({ password: "", confirm: "" });
-    } catch {
-      sonnerToast.error("Erro ao alterar");
+    } catch (err: any) {
+      console.error(err);
+      sonnerToast.error(err.message || "Erro ao alterar a senha.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   // ========== CARRINHO ==========
@@ -340,26 +356,12 @@ export default function UserPage() {
     setFormAddr({ label: "Casa", recipient_name: editUser.name, is_default: true });
   };
 
-  // ========== CONFIGURAÇÕES ==========
-  const toggleSetting = async (key: keyof Settings) => {
-    const val = !settings[key];
-    setSettings(s => ({ ...s, [key]: val }));
-    await supabase.from("user_settings").update({ [key]: val }).eq("user_id", userId);
-    sonnerToast.success("Salvo!");
-  };
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
-
   // ========== UI ==========
   const nav = [
     { id: "profile", label: "Perfil", icon: User },
     { id: "cart", label: "Carrinho", icon: ShoppingCart },
     { id: "orders", label: "Pedidos", icon: Package },
-    { id: "address", label: "Endereços", icon: MapPin },
-    { id: "settings", label: "Configurações", icon: Settings }
+    { id: "address", label: "Endereços", icon: MapPin }
   ];
 
   const statusBadge = (s: Order["status"]) => {
@@ -408,11 +410,10 @@ export default function UserPage() {
                   return (
                     <motion.button key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={() => setTab(item.id as Tab)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                        active
-                          ? `bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm`
-                          : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-900/20"
-                      }`}>
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active
+                        ? `bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm`
+                        : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-900/20"
+                        }`}>
                       <Icon className="h-5 w-5" />
                       <span className="font-medium">{item.label}</span>
                     </motion.button>
@@ -429,17 +430,51 @@ export default function UserPage() {
                 {/* PERFIL */}
                 {tab === "profile" && (
                   <Card className="rounded-2xl border shadow-sm">
-                    <CardContent className="p-8">
+                    <CardContent className="block p-8 sm:flex sm:flex-row sm:justify-around">
+                      {/* Cabeçalho do perfil */}
                       <div className="flex flex-col items-center text-center mb-8">
-                        <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-emerald-100 dark:ring-emerald-900/50 shadow-lg">
-                          {profilePic ? (
-                            <img src={profilePic} alt="Perfil" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-5xl font-bold">
-                              {editUser.name.charAt(0).toUpperCase()}
-                            </div>
+                        <div className="relative group">
+                          <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-emerald-100 dark:ring-emerald-900/50 shadow-lg">
+                            {profilePic ? (
+                              <img
+                                src={profilePic}
+                                alt="Perfil"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-5xl font-bold">
+                                {editUser.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute bottom-1 right-1 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                          >
+                            <Camera className="h-4 w-4" />
+                          </button>
+
+                          {profilePic && (
+                            <button
+                              type="button"
+                              onClick={removeProfilePic}
+                              className="absolute top-1 right-1 p-2 rounded-full bg-destructive text-white hover:bg-red-700 transition"
+                            >
+                              <XIcon className="h-4 w-4" />
+                            </button>
                           )}
                         </div>
+
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                        />
+
                         <h2 className="text-2xl font-bold mt-4">{editUser.name}</h2>
                         <p className="text-sm text-muted-foreground">{editUser.email}</p>
                       </div>
@@ -447,17 +482,81 @@ export default function UserPage() {
                       {loading ? (
                         <p className="text-center py-8">Carregando...</p>
                       ) : (
-                        <div className="space-y-6">
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            saveProfile();
+                          }}
+                          className="space-y-6"
+                        >
                           <div>
-                            <Label>Telefone</Label>
-                            <p className="text-lg font-medium">
-                              {userPhone ? `(${userPhone.slice(0,2)}) ${userPhone.slice(2,7)}-${userPhone.slice(7)}` : "Não informado"}
-                            </p>
+                            <Label htmlFor="name">Nome Completo*</Label>
+                            <Input
+                              id="name"
+                              value={editUser.name || ""}
+                              onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
+                              placeholder="Digite seu nome completo"
+                            />
                           </div>
-                          <Button onClick={() => setShowEditProfile(true)} className="w-full eco-gradient text-white font-semibold">
-                            <Pencil className="h-4 w-4 mr-2" /> Editar Perfil
-                          </Button>
-                        </div>
+
+                          <div>
+                            <Label htmlFor="phone">Telefone*</Label>
+                            <Input
+                              id="phone"
+                              value={editUser.phone || ""}
+                              onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
+                              placeholder="(00) 00000-0000"
+                            />
+                          </div>
+
+                          <div className="relative">
+                            <Label htmlFor="birthDate">Data de Nascimento</Label>
+                            <DatePicker
+                              selected={editUser.birthDate ? new Date(editUser.birthDate) : null}
+                              onChange={(date: Date | null) => {
+                                const formatted = date ? date.toISOString().split("T")[0] : "";
+                                setEditUser({ ...editUser, birthDate: formatted });
+                              }}
+                              dateFormat="dd/MM/yyyy"
+                              placeholderText="Selecione sua data"
+                              className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-background  dark:border-gray-600 dark:text-white"
+                              wrapperClassName="w-full"
+                              showPopperArrow={false}
+                              locale="pt-BR"
+                              maxDate={new Date()}
+                            />
+                            <Calendar className="absolute right-3 top-9 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+                            <Button
+                              type="submit"
+                              disabled={saving}
+                              className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                            >
+                              {saving ? "Salvando..." : "Salvar Alterações"}
+                            </Button>
+
+                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full sm:w-auto border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                                onClick={() => setShowPass(true)}
+                              >
+                                Alterar Senha
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                className="w-full sm:w-auto"
+                                onClick={() => sonnerToast("Funcionalidade de apagar conta em breve.")}
+                              >
+                                Apagar Conta
+                              </Button>
+                            </div>
+                          </div>
+                        </form>
                       )}
                     </CardContent>
                   </Card>
@@ -483,12 +582,12 @@ export default function UserPage() {
                                 <p className="text-sm text-muted-foreground">R$ {item.items.price.toFixed(2)}</p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity - 1)}><Minus /></Button>
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity - 1)} className="hover:text-muted dark:hover:text-muted-foreground"><Minus /></Button>
                                 <span className="w-8 text-center font-medium">{item.quantity}</span>
-                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity + 1)}><Plus /></Button>
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity + 1)} className="hover:text-muted dark:hover:text-muted-foreground"><Plus /></Button>
                               </div>
-                              <Button size="icon" variant="ghost" onClick={() => { setDeleteItemId(item.id); setShowDeleteItem(true); }}>
-                                <Trash2 className="h-5 w-5 text-destructive" />
+                              <Button size="icon" variant="destructive" onClick={() => { setDeleteItemId(item.id); setShowDeleteItem(true); }}>
+                                <Trash2 className="h-5 w-5" />
                               </Button>
                             </div>
                           ))}
@@ -568,7 +667,7 @@ export default function UserPage() {
                                   <p className="text-sm">{a.neighborhood} • {a.city}/{a.state} • CEP {a.zip_code.replace(/(\d{5})(\d{3})/, "$1-$2")}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                  {!a.is_default && <Button className=" hover:text-muted dark:hover:text-muted-foreground" size="sm" variant="outline" onClick={() => setDefault(a.id)}>Definir como Padrão</Button>}
+                                  {!a.is_default && <Button size="sm" variant="outline" onClick={() => setDefault(a.id)}>Definir como Padrão</Button>}
                                   <Button size="icon" variant="ghost" onClick={() => openEdit(a)}><Edit className="h-4 w-4" /></Button>
                                   <Button size="icon" variant="destructive" onClick={() => { setAddrToDelete(a.id); setShowDeleteAddr(true); }}>
                                     <Trash2 className="h-4 w-4" />
@@ -582,37 +681,6 @@ export default function UserPage() {
                     </CardContent>
                   </Card>
                 )}
-
-                {/* CONFIGURAÇÕES */}
-                {tab === "settings" && (
-                  <Card className="rounded-2xl border shadow-sm">
-                    <CardContent className="p-8">
-                      <h2 className="text-2xl font-bold mb-8">Configurações</h2>
-                      <div className="space-y-8">
-                        <div>
-                          <h3 className="font-semibold flex items-center gap-2 mb-4"><Lock className="h-5 w-5" /> Segurança</h3>
-                          <Button onClick={() => setShowPass(true)} className="w-full justify-start eco-gradient text-white">
-                            Alterar Senha
-                          </Button>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold flex items-center gap-2 mb-4"><Bell className="h-5 w-5" /> Notificações</h3>
-                          <div className="space-y-4">
-                            {Object.entries(settings).map(([k, v]) => (
-                              <div key={k} className="flex justify-between items-center">
-                                <Label className="cursor-pointer capitalize">{k.replace(/_/g, " ")}</Label>
-                                <Switch checked={v} onCheckedChange={() => toggleSetting(k as keyof Settings)} />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="pt-6 border-t">
-                          <Button onClick={logout} variant="destructive" className="w-full">Sair da Conta</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
               </motion.div>
             </AnimatePresence>
           </main>
@@ -620,111 +688,59 @@ export default function UserPage() {
       </div>
 
       {/* ========== MODAIS ========== */}
-
-      {/* Editar Perfil (COM FOTO) */}
-      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar Perfil</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* FOTO */}
-            <div className="flex flex-col items-center">
-              <div className="relative group">
-                <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-emerald-100 dark:ring-emerald-900/50">
-                  {profilePic ? (
-                    <img src={profilePic} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-4xl font-bold">
-                      {editUser.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 bg-emerald-500 text-white p-2 rounded-full shadow-lg"
-                  disabled={saving}
-                >
-                  <Camera className="h-5 w-5" />
-                </motion.button>
-                {profilePic && (
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    type="button"
-                    onClick={removeProfilePic}
-                    className="absolute top-0 right-0 bg-red-500 text-white p-1.5 rounded-full shadow-lg"
-                  >
-                    <XIcon className="h-4 w-4" />
-                  </motion.button>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Clique na câmera para alterar</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </div>
-
-            {/* CAMPOS */}
-            <div>
-              <Label>Nome</Label>
-              <Input value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} />
-            </div>
-            <div>
-              <Label>E-mail</Label>
-              <Input type="email" value={editUser.email} readOnly />
-            </div>
-            <div>
-              <Label>Telefone</Label>
-              <Input
-                value={editUser.phone}
-                onChange={e => setEditUser({ ...editUser, phone: e.target.value.replace(/\D/g, "").slice(0,11) })}
-                placeholder="11999999999"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowEditProfile(false)}>Cancelar</Button>
-            <Button onClick={saveProfile} disabled={saving} className="eco-gradient text-white">
-              {saving ? "Salvando..." : "Salvar Alterações"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Alterar Senha */}
       <Dialog open={showPass} onOpenChange={setShowPass}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Nova Senha</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="relative">
-              <Label>Senha</Label>
-              <Input type={seePwd ? "text" : "password"} value={pass.password} onChange={e => setPass({ ...pass, password: e.target.value })} />
-              <Button size="icon" variant="ghost" className="absolute right-2 top-8" onClick={() => setSeePwd(!seePwd)}>
-                {seePwd ? <EyeOff /> : <Eye />}
-              </Button>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              Alterar Senha
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="current">Senha Atual*</Label>
+              <Input
+                id="current"
+                type={seePwd ? "text" : "password"}
+                placeholder="Digite sua senha atual"
+                value={pass.current || ""}
+                onChange={(e) => setPass({ ...pass, current: e.target.value })}
+                className="mt-1"
+              />
             </div>
-            <div className="relative">
-              <Label>Confirmar</Label>
-              <Input type={seeConfirm ? "text" : "password"} value={pass.confirm} onChange={e => setPass({ ...pass, confirm: e.target.value })} />
-              <Button size="icon" variant="ghost" className="absolute right-2 top-8" onClick={() => setSeeConfirm(!seeConfirm)}>
-                {seeConfirm ? <EyeOff /> : <Eye />}
-              </Button>
+
+            <div>
+              <Label htmlFor="new">Nova Senha*</Label>
+              <Input
+                id="new"
+                type={seePwd ? "text" : "password"}
+                placeholder="Nova senha"
+                value={pass.password}
+                onChange={(e) => setPass({ ...pass, password: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="confirm">Confirmar Nova Senha*</Label>
+              <Input
+                id="confirm"
+                type={seeConfirm ? "text" : "password"}
+                placeholder="Confirme a nova senha"
+                value={pass.confirm}
+                onChange={(e) => setPass({ ...pass, confirm: e.target.value })}
+                className="mt-1"
+              />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowPass(false)}>Cancelar</Button>
-            <Button onClick={changePassword} disabled={saving} className="eco-gradient text-white">
-              {saving ? "Alterando..." : "Alterar"}
+
+          <DialogFooter className="flex justify-end gap-3">
+            <Button variant="destructive" onClick={() => setShowPass(false)} className="hover:text-muted dark:hover:text-muted-foreground">
+              Cancelar
+            </Button>
+            <Button onClick={changePassword} className="eco-gradient text-white">
+              {saving ? "Salvando..." : "Salvar Senha"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -749,7 +765,7 @@ export default function UserPage() {
             <div>
               <Label>CEP *</Label>
               <Input placeholder="00000000" value={formAddr.zip_code || ""} onChange={e => {
-                const cep = e.target.value.replace(/\D/g, "").slice(0,8);
+                const cep = e.target.value.replace(/\D/g, "").slice(0, 8);
                 setFormAddr({ ...formAddr, zip_code: cep });
                 searchCEP(cep);
               }} />

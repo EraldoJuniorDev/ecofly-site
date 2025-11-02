@@ -184,7 +184,10 @@ const Header = () => {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem asChild>
-            <Link to="/user" className="flex items-center cursor-pointer">
+            <Link
+              to="/user"
+              className="flex items-center cursor-pointer hover:text-white focus:text-white transition-colors"
+            >
               <User className="mr-2 h-4 w-4" />
               Perfil
             </Link>
@@ -192,7 +195,10 @@ const Header = () => {
 
           {isAdmin && (
             <DropdownMenuItem asChild>
-              <Link to="/admin" className="flex items-center justify-between cursor-pointer">
+              <Link
+                to="/admin"
+                className="flex items-center justify-between cursor-pointer hover:text-white focus:text-white transition-colors"
+              >
                 <div className="flex items-center">
                   <Settings className="mr-2 h-4 w-4" />
                   Painel Admin
@@ -238,9 +244,8 @@ const Header = () => {
               <Link
                 key={item.href}
                 to={item.href}
-                className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary relative ${
-                  isActive(item.href) ? 'text-primary border-b-2 border-primary pb-1' : 'text-muted-foreground'
-                }`}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary relative ${isActive(item.href) ? 'text-primary border-b-2 border-primary pb-1' : 'text-muted-foreground'
+                  }`}
               >
                 {React.cloneElement(item.icon, { className: 'h-4 w-4' })}
                 {item.label}
@@ -297,11 +302,10 @@ const Header = () => {
                       <SheetClose asChild key={item.href}>
                         <Link
                           to={item.href}
-                          className={`flex items-center justify-between px-4 py-3 rounded-lg transition ${
-                            isActive(item.href)
+                          className={`flex items-center justify-between px-4 py-3 rounded-lg transition ${isActive(item.href)
                               ? 'bg-emerald-100 text-emerald-700 font-medium'
                               : 'text-muted-foreground hover:bg-accent'
-                          }`}
+                            }`}
                         >
                           <span className="flex items-center gap-3">
                             {React.cloneElement(item.icon, {
