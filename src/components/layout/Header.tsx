@@ -1,3 +1,4 @@
+// src/components/Header.tsx
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
@@ -43,49 +44,62 @@ const Header = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [loadingLogout, setLoadingLogout] = useState(false)
+  const [profilePic, setProfilePic] = useState<string | null>(null)
   const location = useLocation()
   const { cartCount } = useCart()
 
+  // Carrega usuário + foto
   useEffect(() => {
     const getUser = async () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) {
-        console.error('Error fetching user:', userError)
+      if (userError || !user) {
         setUser(null)
         setIsAdmin(false)
+        setProfilePic(null)
         return
       }
+
       setUser(user)
-      if (user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        if (profileError) {
-          console.error('Error fetching profile:', profileError)
-          setIsAdmin(false)
-        } else {
-          setIsAdmin(profile?.role === 'admin')
-        }
-      } else {
-        setIsAdmin(false)
+
+      // Busca foto de perfil
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('avatar_url, role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.avatar_url) {
+        const { data } = supabase.storage
+          .from('profile_pics')
+          .getPublicUrl(profile.avatar_url)
+        setProfilePic(data.publicUrl + `?t=${Date.now()}`)
       }
+
+      setIsAdmin(profile?.role === 'admin')
     }
+
     getUser()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null)
-      if (event === 'SIGNED_IN' && session?.user) {
-        supabase
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const loggedUser = session?.user || null
+      setUser(loggedUser)
+
+      if (loggedUser) {
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
+          .select('avatar_url, role')
+          .eq('id', loggedUser.id)
           .single()
-          .then(({ data: profile, error }) => {
-            setIsAdmin(profile?.role === 'admin')
-          })
-      } else if (event === 'SIGNED_OUT') {
+
+        if (profile?.avatar_url) {
+          const { data } = supabase.storage.from('profile_pics').getPublicUrl(profile.avatar_url)
+          setProfilePic(data.publicUrl + `?t=${Date.now()}`)
+        } else {
+          setProfilePic(null)
+        }
+        setIsAdmin(profile?.role === 'admin')
+      } else {
+        setProfilePic(null)
         setIsAdmin(false)
       }
     })
@@ -97,13 +111,10 @@ const Header = () => {
     setLoadingLogout(true)
     try {
       await supabase.auth.signOut()
-      setUser(null)
-      setIsAdmin(false)
       toast.success("Logout realizado com sucesso!")
       setShowLogoutDialog(false)
     } catch (error) {
-      console.error("Erro ao sair:", error)
-      toast.error("Erro ao sair. Tente novamente.")
+      toast.error("Erro ao sair.")
     } finally {
       setLoadingLogout(false)
     }
@@ -119,75 +130,69 @@ const Header = () => {
 
   const isActive = (href: string) => location.pathname === href
 
-  // Componente do botão de perfil com dropdown
+  // Componente do botão de perfil com foto
   const ProfileButton = ({ mobile = false }: { mobile?: boolean }) => {
     const [open, setOpen] = useState(false)
+    const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Usuário'
 
     return (
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className={`
-            relative flex items-center h-10 px-3 rounded-xl
-            hover:bg-emerald-500/10 hover:text-emerald-600
-            focus-visible:ring-2 focus-visible:ring-emerald-500
-            transition-all duration-200
-            ${mobile ? 'w-full justify-start' : 'w-10'}
-          `}
+            className={`flex items-center gap-2 h-10 px-3 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600 transition-all ${mobile ? 'w-full justify-start' : ''}`}
           >
-            <User className="h-5 w-5" />
-            {mobile && <span className="ml-2 text-sm font-medium">Minha Conta</span>}
-            <ChevronDown
-              className={`h-4 w-4 ml-2 transition-transform duration-300
-              ${open ? 'rotate-180' : ''}`}
-            />
-            <span className="sr-only">Menu do usuário</span>
+            <div className="relative">
+              {profilePic ? (
+                <img
+                  src={profilePic}
+                  alt="Perfil"
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/20"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                  {displayName[0].toUpperCase()}
+                </div>
+              )}
+            </div>
+            {!mobile && (
+              <span className="text-sm font-medium truncate max-w-32">
+                {displayName}
+              </span>
+            )}
+            <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-64 mt-2">
-          {/* Cabeçalho */}
           <DropdownMenuLabel className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-              {user?.user_metadata?.display_name?.[0]?.toUpperCase() ||
-                user?.email?.[0]?.toUpperCase() ||
-                'U'}
+            <div className="relative">
+              {profilePic ? (
+                <img src={profilePic} alt="Perfil" className="w-11 h-11 rounded-full object-cover ring-2 ring-emerald-500/30" />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg">
+                  {displayName[0].toUpperCase()}
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate">
-                {user?.user_metadata?.display_name ||
-                  user?.email?.split('@')[0] ||
-                  'Usuário'}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user?.email}
-              </p>
+              <p className="font-semibold text-sm truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           </DropdownMenuLabel>
 
           <DropdownMenuSeparator />
 
-          {/* Perfil */}
-          <DropdownMenuItem className="cursor-pointer hover:!bg-emerald-600 hover:!text-white focus:!bg-emerald-600 focus:!text-white transition-colors">
-            <Link to="/user" className="flex w-full items-center">
+          <DropdownMenuItem asChild>
+            <Link to="/user" className="flex items-center cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               Perfil
             </Link>
           </DropdownMenuItem>
 
-          {/* Admin */}
           {isAdmin && (
-            <DropdownMenuItem
-              className="group cursor-pointer focus:!bg-emerald-600"
-              onSelect={(e) => e.preventDefault()} // impede fechamento ao clicar
-            >
-              <Link
-                to="/admin"
-                className="flex w-full items-center justify-between font-medium transition-colors
-                 group-hover:text-white
-                 group-focus:text-white"
-              >
+            <DropdownMenuItem asChild>
+              <Link to="/admin" className="flex items-center justify-between cursor-pointer">
                 <div className="flex items-center">
                   <Settings className="mr-2 h-4 w-4" />
                   Painel Admin
@@ -198,9 +203,8 @@ const Header = () => {
 
           <DropdownMenuSeparator />
 
-          {/* Sair */}
           <DropdownMenuItem
-            className="text-red-600 hover:bg-red-600 focus:bg-red-600 focus:text-muted dark:text-muted-foreground cursor-pointer"
+            className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer"
             onSelect={() => setShowLogoutDialog(true)}
           >
             <LogOut className="mr-2 h-4 w-4" />
@@ -213,10 +217,10 @@ const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur transition-colors duration-500">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between px-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition">
             <img
               src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico"
               alt="Logo"
@@ -228,27 +232,24 @@ const Header = () => {
             </div>
           </Link>
 
-          {/* Menu Desktop */}
+          {/* Desktop Menu */}
           <nav className="hidden lg:flex items-center space-x-6">
             {menuItems.slice(0, 4).map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary relative ${isActive(item.href)
-                  ? 'text-primary border-b-2 border-primary pb-1'
-                  : 'text-muted-foreground'
-                  }`}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary relative ${
+                  isActive(item.href) ? 'text-primary border-b-2 border-primary pb-1' : 'text-muted-foreground'
+                }`}
               >
-                {React.cloneElement(item.icon, {
-                  className: 'h-4 w-4',
-                })}
+                {React.cloneElement(item.icon, { className: 'h-4 w-4' })}
                 {item.label}
               </Link>
             ))}
           </nav>
 
-          {/* Ações Desktop */}
-          <div className="hidden lg:flex items-center gap-2">
+          {/* Desktop Actions */}
+          <div className="hidden lg:flex items-center gap-3">
             {user ? (
               <>
                 <ProfileButton />
@@ -256,7 +257,7 @@ const Header = () => {
                   <Button variant="ghost" size="icon" className="relative">
                     <ShoppingCart className="h-5 w-5 text-emerald-500" />
                     {cartCount > 0 && (
-                      <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs text-white">
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs text-white bg-emerald-600">
                         {cartCount}
                       </Badge>
                     )}
@@ -265,7 +266,7 @@ const Header = () => {
               </>
             ) : (
               <Link to="/login">
-                <Button variant="ghost" size="icon" title="Entrar">
+                <Button variant="ghost" size="icon">
                   <LogIn className="h-5 w-5" />
                 </Button>
               </Link>
@@ -274,53 +275,42 @@ const Header = () => {
           </div>
 
           {/* Mobile */}
-          {/* Mobile - Perfil + Tema + Menu */}
           <div className="flex items-center gap-2 lg:hidden">
-            {user && <ProfileButton mobile={false} />}
-
+            {user && <ProfileButton mobile />}
             <ThemeToggle />
 
-            {/* Menu hambúrguer */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Menu className="h-6 w-6" />
-                  <span className="sr-only">Abrir menu</span>
                 </Button>
               </SheetTrigger>
-
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetContent side="right" className="w-[300px]">
                 <div className="flex flex-col h-full">
-                  <div className="flex items-center space-x-2 py-4">
-                    <img
-                      src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico"
-                      alt="Logo"
-                      className="w-8 h-8"
-                    />
+                  <div className="flex items-center space-x-2 py-4 border-b">
+                    <img src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico" alt="Logo" className="w-8 h-8" />
                     <span className="text-lg font-bold eco-text-gradient">ECOFLY</span>
                   </div>
 
-                  <nav className="flex flex-col space-y-3 mt-8">
+                  <nav className="flex flex-col space-y-2 mt-6">
                     {menuItems.map((item) => (
                       <SheetClose asChild key={item.href}>
                         <Link
                           to={item.href}
-                          className={`text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg flex items-center justify-between ${isActive(item.href)
-                            ? 'text-primary bg-primary/10'
-                            : 'text-muted-foreground hover:bg-accent'
-                            }`}
+                          className={`flex items-center justify-between px-4 py-3 rounded-lg transition ${
+                            isActive(item.href)
+                              ? 'bg-emerald-100 text-emerald-700 font-medium'
+                              : 'text-muted-foreground hover:bg-accent'
+                          }`}
                         >
-                          <span className="flex items-center gap-2">
+                          <span className="flex items-center gap-3">
                             {React.cloneElement(item.icon, {
-                              className: `h-4 w-4 ${item.href === '/carrinho' && cartCount > 0
-                                ? 'text-emerald-500'
-                                : ''
-                                }`,
+                              className: `h-5 w-5 ${item.href === '/carrinho' && cartCount > 0 ? 'text-emerald-600' : ''}`,
                             })}
                             {item.label}
                           </span>
                           {item.href === '/carrinho' && cartCount > 0 && (
-                            <Badge className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+                            <Badge className="bg-emerald-600 text-white text-xs h-5 w-5 flex items-center justify-center">
                               {cartCount}
                             </Badge>
                           )}
@@ -330,12 +320,9 @@ const Header = () => {
 
                     {!user && (
                       <SheetClose asChild>
-                        <Link
-                          to="/login"
-                          className="text-base font-medium text-muted-foreground hover:text-primary px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-accent"
-                        >
-                          <LogIn className="h-4 w-4" />
-                          Entrar
+                        <Link to="/login" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent">
+                          <LogIn className="h-5 w-5" />
+                          <span>Entrar</span>
                         </Link>
                       </SheetClose>
                     )}
@@ -347,24 +334,16 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Dialog de logout */}
+      {/* Logout Dialog */}
       <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmar saída</DialogTitle>
-            <DialogDescription>
-              Tem certeza de que deseja sair da sua conta?
-            </DialogDescription>
+            <DialogDescription>Tem certeza que deseja sair?</DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowLogoutDialog(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleLogout}
-              disabled={loadingLogout}
-            >
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLogoutDialog(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleLogout} disabled={loadingLogout}>
               {loadingLogout ? 'Saindo...' : 'Sair'}
             </Button>
           </DialogFooter>
