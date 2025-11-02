@@ -77,7 +77,7 @@ const Cart: React.FC = () => {
         dispatch({ type: 'SET_USER_LOGGED_IN', payload: true });
 
         const { data: cartData, error: cartError } = await supabase
-          .from('user_cart')
+          .from('cart')
           .select(`
             id,
             user_id,
@@ -251,7 +251,7 @@ const Cart: React.FC = () => {
 
               <div className="border-t pt-6">
                 <div className="p-4 rounded-lg">
-                  <div className="flex flex-col sm:flex-row justify-between items-center mb-4 text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row justify-end items-end mb-4 text-center sm:text-left">
                     <span className="text-lg font-semibold mb-2 sm:mb-0">
                       Total: {formatPrice(getTotal())}
                     </span>

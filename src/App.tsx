@@ -19,8 +19,6 @@ import { CartProvider } from './context/CartContext';
 import { supabase } from './lib/supabaseClient';
 import RegisterPage from './pages/auth/RegisterPage';
 
-console.log('App component loading...');
-
 const ProtectedRoute = ({ children, requireAdmin = false }: { children: JSX.Element; requireAdmin?: boolean }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -28,79 +26,60 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: JSX.Elem
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log('Checking authentication in ProtectedRoute...');
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('Session:', session, 'Session Error:', sessionError);
-        if (sessionError) {
-          console.error('Session error:', sessionError);
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
           setIsAuthenticated(false);
           setIsAdmin(false);
           return;
         }
-        if (session) {
-          setIsAuthenticated(true);
-          if (requireAdmin) {
-            const { data: profile, error: profileError } = await supabase
-              .from('user_profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
-            console.log('Profile:', profile, 'Profile Error:', profileError);
-            if (profileError && profileError.code !== 'PGRST116') {
-              console.error('Profile error:', profileError);
-              setIsAdmin(false);
-            } else {
-              setIsAdmin(profile?.role === 'admin');
-            }
-          } else {
-            setIsAdmin(false);
-          }
-        } else {
-          setIsAuthenticated(false);
-          setIsAdmin(false);
+
+        setIsAuthenticated(true);
+
+        if (requireAdmin) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+            .then(({ data, error }) => {
+              if (error) return { data: null };
+              return { data };
+            });
+
+          setIsAdmin(profile?.role === 'admin');
         }
       } catch (error) {
-        console.error('Error in ProtectedRoute:', error);
+        console.error('Auth check error:', error);
         setIsAuthenticated(false);
         setIsAdmin(false);
       }
     };
+
     checkAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session);
-      setIsAuthenticated(!!session);
-      if (event === 'SIGNED_IN' && session && requireAdmin) {
-        supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profile, error: profileError }) => {
-            console.log('Profile after auth change:', profile, 'Profile Error:', profileError);
-            if (profileError && profileError.code !== 'PGRST116') {
-              console.error('Profile error:', profileError);
-            }
-            setIsAdmin(profile?.role === 'admin');
-          });
-      } else if (event === 'SIGNED_OUT') {
+      setIsAuthenticated(!!session?.user);
+      if (event === 'SIGNED_OUT') {
         setIsAdmin(false);
       }
     });
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => authListener.subscription.unsubscribe();
   }, [requireAdmin]);
 
-  console.log('ProtectedRoute rendering:', { isAuthenticated, isAdmin, requireAdmin });
-
   if (isAuthenticated === null || (requireAdmin && isAdmin === null)) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Verificando acesso...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated || (requireAdmin && !isAdmin)) {
-    console.log('Redirecting to /login due to:', { isAuthenticated, isAdmin, requireAdmin });
     return <Navigate to="/login" replace />;
   }
 
@@ -108,8 +87,6 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: JSX.Elem
 };
 
 function App() {
-  console.log('App component rendered');
-
   return (
     <ThemeProvider defaultTheme="system" storageKey="ecofly-ui-theme">
       <CartProvider>

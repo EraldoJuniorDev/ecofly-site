@@ -10,12 +10,14 @@ import {
   ShoppingBag,
   MessageSquare,
   Phone,
+  ChevronDown,
+  Settings,
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet'
 import { Badge } from '../ui/badge'
 import ThemeToggle from './ThemeToggle'
-import { useCart } from '../../context/CartContext' // Correct import
+import { useCart } from '../../context/CartContext'
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
 import {
@@ -26,6 +28,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from '../ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -34,9 +44,8 @@ const Header = () => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [loadingLogout, setLoadingLogout] = useState(false)
   const location = useLocation()
-  const { cartCount } = useCart() // Correct variable
+  const { cartCount } = useCart()
 
-  // Fetch user and role
   useEffect(() => {
     const getUser = async () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -49,7 +58,7 @@ const Header = () => {
       setUser(user)
       if (user) {
         const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single()
@@ -69,29 +78,21 @@ const Header = () => {
       setUser(session?.user || null)
       if (event === 'SIGNED_IN' && session?.user) {
         supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('role')
           .eq('id', session.user.id)
           .single()
-          .then(({ data: profile, error: profileError }) => {
-            if (profileError) {
-              console.error('Error fetching profile on auth change:', profileError)
-              setIsAdmin(false)
-            } else {
-              setIsAdmin(profile?.role === 'admin')
-            }
+          .then(({ data: profile, error }) => {
+            setIsAdmin(profile?.role === 'admin')
           })
       } else if (event === 'SIGNED_OUT') {
         setIsAdmin(false)
       }
     })
 
-    return () => {
-      authListener.subscription.unsubscribe()
-    }
+    return () => authListener.subscription.unsubscribe()
   }, [])
 
-  // Logout with confirmation dialog
   const handleLogout = async () => {
     setLoadingLogout(true)
     try {
@@ -118,9 +119,89 @@ const Header = () => {
 
   const isActive = (href: string) => location.pathname === href
 
+  // Componente do botão de perfil com dropdown
+  const ProfileButton = ({ mobile = false }: { mobile?: boolean }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`
+          h-10 w-10 rounded-xl hover:bg-accent/80
+          group transition-all duration-200
+          ${mobile ? 'flex items-center gap-2 px-3 ml-1' : ''}
+        `}
+        >
+          <User className="h-5 w-5" />
+          {mobile && (
+            <span className="text-sm font-medium hidden sm:inline">
+              Perfil
+            </span>
+          )}
+          <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-200 group-data-[state=open]:rotate-180 opacity-0 group-hover:opacity-100" />
+          <span className="sr-only">Menu do usuário</span>
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-56 mt-1">
+        <DropdownMenuLabel className="flex items-center gap-3 p-3">
+          {/* Avatar com inicial */}
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+            {user?.user_metadata?.display_name?.[0]?.toUpperCase() ||
+              user?.email?.[0]?.toUpperCase() ||
+              'U'}
+          </div>
+
+          {/* Nome + Email */}
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm truncate">
+              {user?.user_metadata?.display_name ||
+                user?.email?.split('@')[0] ||
+                'Usuário'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {user?.email || 'email@exemplo.com'}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem asChild>
+          <Link to="/user" className="w-full">
+            <User className="mr-2 h-4 w-4" />
+            Meu Perfil
+          </Link>
+        </DropdownMenuItem>
+
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin" className="w-full text-emerald-600 font-medium">
+                <Settings className="mr-2 h-4 w-4" />
+                <span className="flex-1 text-left">Painel Admin</span>
+                <span className="ml-2 px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full font-medium">ADMIN</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          className="text-red-600 focus:bg-red-50 border-t"
+          onClick={() => setShowLogoutDialog(true)}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
   return (
     <>
-      {/* Header principal */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur transition-colors duration-500">
         <div className="container flex h-16 items-center justify-between px-4">
           {/* Logo */}
@@ -142,14 +223,13 @@ const Header = () => {
               <Link
                 key={item.href}
                 to={item.href}
-                className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary relative ${
-                  isActive(item.href)
-                    ? 'text-primary border-b-2 border-primary pb-1'
-                    : 'text-muted-foreground'
-                }`}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary relative ${isActive(item.href)
+                  ? 'text-primary border-b-2 border-primary pb-1'
+                  : 'text-muted-foreground'
+                  }`}
               >
                 {React.cloneElement(item.icon, {
-                  className: 'h-4 w-4 text-muted-foreground hover:text-primary',
+                  className: 'h-4 w-4',
                 })}
                 {item.label}
               </Link>
@@ -160,76 +240,40 @@ const Header = () => {
           <div className="hidden lg:flex items-center gap-2">
             {user ? (
               <>
-                <Link to={isAdmin ? '/admin' : '/user'}>
-                  <Button variant="ghost" size="icon" title={isAdmin ? 'Painel Admin' : 'Perfil'}>
-                    <User className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                <ProfileButton />
+                <Link to="/carrinho">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <ShoppingCart className="h-5 w-5 text-emerald-500" />
+                    {cartCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs text-white">
+                        {cartCount}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowLogoutDialog(true)}
-                  title="Sair"
-                >
-                  <LogOut className="h-5 w-5 text-red-500 hover:text-red-400" />
-                </Button>
               </>
             ) : (
               <Link to="/login">
                 <Button variant="ghost" size="icon" title="Entrar">
-                  <LogIn className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                  <LogIn className="h-5 w-5" />
                 </Button>
               </Link>
             )}
-
-            {/* Carrinho */}
-            <Link to="/carrinho">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5 text-emerald-500" />
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs text-white">
-                    {cartCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
-
             <ThemeToggle />
           </div>
 
           {/* Mobile */}
+          {/* Mobile - Perfil + Tema + Menu */}
           <div className="flex items-center gap-2 lg:hidden">
-            {user ? (
-              <>
-                <Link to={isAdmin ? '/admin' : '/user'}>
-                  <Button variant="ghost" size="icon" title={isAdmin ? 'Painel Admin' : 'Perfil'}>
-                    <User className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowLogoutDialog(true)}
-                  title="Sair"
-                >
-                  <LogOut className="h-5 w-5 text-red-500 hover:text-red-400" />
-                </Button>
-              </>
-            ) : (
-              <Link to="/login">
-                <Button variant="ghost" size="icon" title="Entrar">
-                  <LogIn className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                </Button>
-              </Link>
-            )}
+            {user && <ProfileButton mobile={false} />}
 
             <ThemeToggle />
 
-            {/* Menu hambúrguer mobile */}
+            {/* Menu hambúrguer */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6 text-muted-foreground" />
+                  <Menu className="h-6 w-6" />
                   <span className="sr-only">Abrir menu</span>
                 </Button>
               </SheetTrigger>
@@ -250,19 +294,17 @@ const Header = () => {
                       <SheetClose asChild key={item.href}>
                         <Link
                           to={item.href}
-                          className={`text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg flex items-center justify-between ${
-                            isActive(item.href)
-                              ? 'text-primary bg-primary/10'
-                              : 'text-muted-foreground hover:bg-accent'
-                          }`}
+                          className={`text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg flex items-center justify-between ${isActive(item.href)
+                            ? 'text-primary bg-primary/10'
+                            : 'text-muted-foreground hover:bg-accent'
+                            }`}
                         >
                           <span className="flex items-center gap-2">
                             {React.cloneElement(item.icon, {
-                              className: `h-4 w-4 ${
-                                item.href === '/carrinho' && cartCount > 0
-                                  ? 'text-emerald-500'
-                                  : 'text-muted-foreground hover:text-primary'
-                              }`,
+                              className: `h-4 w-4 ${item.href === '/carrinho' && cartCount > 0
+                                ? 'text-emerald-500'
+                                : ''
+                                }`,
                             })}
                             {item.label}
                           </span>
@@ -274,20 +316,15 @@ const Header = () => {
                         </Link>
                       </SheetClose>
                     ))}
-                    {user && (
+
+                    {!user && (
                       <SheetClose asChild>
                         <Link
-                          to={isAdmin ? '/admin' : '/user'}
-                          className={`text-base font-medium transition-colors hover:text-primary px-4 py-2 rounded-lg flex items-center justify-between ${
-                            isActive(isAdmin ? '/admin' : '/user')
-                              ? 'text-primary bg-primary/10'
-                              : 'text-muted-foreground hover:bg-accent'
-                          }`}
+                          to="/login"
+                          className="text-base font-medium text-muted-foreground hover:text-primary px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-accent"
                         >
-                          <span className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                            {isAdmin ? 'Painel Admin' : 'Perfil'}
-                          </span>
+                          <LogIn className="h-4 w-4" />
+                          Entrar
                         </Link>
                       </SheetClose>
                     )}
@@ -299,7 +336,7 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Dialog de confirmação de logout */}
+      {/* Dialog de logout */}
       <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
@@ -317,7 +354,7 @@ const Header = () => {
               onClick={handleLogout}
               disabled={loadingLogout}
             >
-              {loadingLogout ? 'Saindo...' : 'Confirmar'}
+              {loadingLogout ? 'Saindo...' : 'Sair'}
             </Button>
           </DialogFooter>
         </DialogContent>
