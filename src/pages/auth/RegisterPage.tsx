@@ -114,18 +114,24 @@ export default function RegisterPage() {
   const handleGoogleRegister = async () => {
     setIsGoogleLoading(true)
     try {
-      const origin = window.location.origin
-      const redirectTo = `${origin}/auth/callback`
+      // Detecta automaticamente o ambiente
+      const isProduction = import.meta.env.PROD
+      const baseUrl = isProduction
+        ? import.meta.env.VITE_APP_URL  // Vercel: https://ecofly-site.vercel.app
+        : window.location.origin        // Local: localhost ou IP
 
-      console.log('OAuth redirectTo:', redirectTo)
+      const redirectTo = `${baseUrl}/auth/callback`
+
+      console.log('Google OAuth (Register) → redirectTo:', redirectTo) // Debug no F12
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo }
       })
+
       if (error) throw error
     } catch (error: any) {
-      console.error('Erro no Google OAuth:', error)
+      console.error('Erro no Google OAuth (registro):', error)
       toast.error(error.message || 'Falha ao registrar com Google')
       setIsGoogleLoading(false)
     }

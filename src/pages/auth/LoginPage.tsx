@@ -80,10 +80,15 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true)
     try {
-      const origin = window.location.origin // Detecta localhost ou IP
-      const redirectTo = `${origin}/auth/callback`
+      // Usa variável de ambiente em produção, ou origin atual em dev
+      const isProduction = import.meta.env.PROD
+      const baseUrl = isProduction
+        ? import.meta.env.VITE_APP_URL
+        : window.location.origin
 
-      console.log('OAuth redirectTo:', redirectTo) // Debug
+      const redirectTo = `${baseUrl}/auth/callback`
+
+      console.log('Google OAuth → redirectTo:', redirectTo)
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -91,7 +96,7 @@ export default function LoginPage() {
       })
       if (error) throw error
     } catch (error: any) {
-      console.error('Erro no Google OAuth:', error)
+      console.error('Erro Google OAuth:', error)
       toast.error(error.message || 'Falha ao conectar com Google')
       setIsGoogleLoading(false)
     }
