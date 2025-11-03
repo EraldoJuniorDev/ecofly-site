@@ -16,37 +16,43 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // CRIA/ATUALIZA PERFIL AO LOGAR COM GOOGLE
+  // CRIA PERFIL AUTOMATICAMENTE AO LOGAR COM GOOGLE
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          console.log('Usuário logado com Google:', session.user.email)
+          const user = session.user
+
+          const displayName = 
+            user.user_metadata.full_name || 
+            user.user_metadata.name || 
+            user.email?.split('@')[0] || 
+            'Usuário'
 
           const profileData = {
-            id: session.user.id,
-            email: session.user.email!,
-            display_name: 
-              session.user.user_metadata.full_name || 
-              session.user.user_metadata.name || 
-              session.user.email?.split('@')[0],
-            avatar_url: session.user.user_metadata.picture || session.user.user_metadata.avatar_url,
-            phone: session.user.user_metadata.phone,
-            role: 'user',
-            birth_date: null as null | Date,
+            id: user.id,
+            email: user.email!,
+            display_name: displayName,
+            avatar_url: user.user_metadata.picture || user.user_metadata.avatar_url || null,
+            phone: user.user_metadata.phone || null,
+            role: 'user' as const,
+            birth_date: null as null | string,
             updated_at: new Date().toISOString(),
           }
 
-          // CORRETO: upsert SEM { onConflict: 'id' }
+          // UPSERT COM CONFLITO RESOLVIDO
           const { error } = await supabase
             .from('profiles')
-            .upsert(profileData)  // ← Funciona por PK + UNIQUE(id)
+            .upsert(profileData, { 
+              onConflict: 'id', 
+              ignoreDuplicates: false  // FORÇA ATUALIZAÇÃO
+            })
 
           if (error) {
-            console.error('Erro ao salvar perfil:', error)
+            console.error('Erro ao salvar perfil (Google):', error)
             toast.error('Erro ao salvar perfil do usuário')
           } else {
-            toast.success('Login com Google realizado com sucesso!')
+            toast.success('Login com Google concluído!')
             navigate('/')
           }
         }
@@ -73,7 +79,7 @@ export default function LoginPage() {
       toast.success('Login realizado com sucesso!')
       navigate('/')
     } catch (error: any) {
-      toast.error(error.message)
+      toast.error(error.message || 'Falha no login')
     } finally {
       setIsSubmitting(false)
     }
@@ -89,11 +95,13 @@ export default function LoginPage() {
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo }
+        options: { 
+          redirectTo,
+          queryParams: { access_type: 'offline', prompt: 'consent' }
+        }
       })
       if (error) throw error
     } catch (error: any) {
-      console.error('Erro no Google OAuth:', error)
       toast.error(error.message || 'Falha ao conectar com Google')
       setIsGoogleLoading(false)
     }
@@ -103,61 +111,46 @@ export default function LoginPage() {
   const handleRegister = () => navigate('/register')
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
-      <div className="w-full max-w-md relative z-10 animate-fade-in">
+    <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <Button
-            variant="ghost"
-            onClick={handleGoBack}
-            className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-700/30 transition-all duration-300"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
+          <Button variant="ghost" onClick={handleGoBack}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
           </Button>
         </div>
 
-        <Card className="bg-white dark:bg-background border border-gray-200 dark:border-white/10 shadow-2xl animate-slide-up transition-colors duration-500">
+        <Card className="shadow-2xl">
           <CardHeader className="text-center pb-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse-glow">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6">
               <LogIn className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent pb-1">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
               Login
             </h1>
-            <p className="text-gray-700 dark:text-slate-200 mt-2 transition-colors duration-500">
-              Entre com suas credenciais para acessar o sistema
+            <p className="text-gray-600 dark:text-slate-300 mt-2">
+              Entre com suas credenciais
             </p>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-emerald-500" />
-                  <span>Email</span>
-                </Label>
+                <Label>Email</Label>
                 <Input
-                  id="email"
                   type="email"
-                  placeholder="Digite seu email"
+                  placeholder="seu@email.com"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   required
                 />
               </div>
 
-              {/* Senha */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2">
-                  <Lock className="h-4 w-4 text-emerald-500" />
-                  <span>Senha</span>
-                </Label>
+                <Label>Senha</Label>
                 <div className="relative">
                   <Input
-                    id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Digite sua senha"
+                    placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     required
@@ -167,50 +160,43 @@ export default function LoginPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              {/* Botão Login */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white h-12"
               >
-                {isSubmitting ? 'Entrando...' : (
-                  <>
-                    <LogIn className="h-5 w-5 mr-2" />
-                    Entrar
-                  </>
-                )}
+                {isSubmitting ? 'Entrando...' : 'Entrar'}
               </Button>
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300 dark:border-white/20"></div>
+                  <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-white dark:bg-background px-2 text-gray-500 dark:text-slate-400">ou</span>
+                  <span className="bg-white px-2 text-gray-500">ou</span>
                 </div>
               </div>
 
-              {/* Google */}
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleGoogleLogin}
                 disabled={isGoogleLoading}
-                className="w-full h-12 flex items-center justify-center space-x-2"
+                className="w-full h-12"
               >
                 {isGoogleLoading ? (
-                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    <Chrome className="h-5 w-5" />
-                    <span>Continuar com Google</span>
+                    <Chrome className="h-5 w-5 mr-2" />
+                    Continuar com Google
                   </>
                 )}
               </Button>
