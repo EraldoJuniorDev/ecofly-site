@@ -1,3 +1,4 @@
+// src/pages/LoginPage.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Chrome } from 'lucide-react'
@@ -15,29 +16,35 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // CRIA PERFIL NO FRONTEND AO LOGAR COM GOOGLE
+  // CRIA/ATUALIZA PERFIL AO LOGAR COM GOOGLE
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('Usuário logado com Google:', session.user.email)
 
+          const profileData = {
+            id: session.user.id,
+            email: session.user.email!,
+            display_name: 
+              session.user.user_metadata.full_name || 
+              session.user.user_metadata.name || 
+              session.user.email?.split('@')[0],
+            avatar_url: session.user.user_metadata.picture || session.user.user_metadata.avatar_url,
+            phone: session.user.user_metadata.phone,
+            role: 'user',
+            birth_date: null as null | Date,
+            updated_at: new Date().toISOString(),
+          }
+
+          // CORRETO: upsert SEM { onConflict: 'id' }
           const { error } = await supabase
             .from('profiles')
-            .upsert({
-              id: session.user.id,
-              email: session.user.email,
-              display_name: 
-                session.user.user_metadata.full_name || 
-                session.user.user_metadata.name || 
-                session.user.email?.split('@')[0],
-              avatar_url: session.user.user_metadata.picture,
-              role: 'user'
-            }, { onConflict: 'id' })
+            .upsert(profileData)  // ← Funciona por PK + UNIQUE(id)
 
           if (error) {
             console.error('Erro ao salvar perfil:', error)
-            toast.error('Erro ao salvar perfil')
+            toast.error('Erro ao salvar perfil do usuário')
           } else {
             toast.success('Login com Google realizado com sucesso!')
             navigate('/')
@@ -79,8 +86,6 @@ export default function LoginPage() {
         ? import.meta.env.VITE_APP_URL 
         : window.location.origin
       const redirectTo = `${baseUrl}/auth/callback`
-
-      console.log('Google OAuth → redirectTo:', redirectTo)
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -183,7 +188,6 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              {/* Divider */}
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300 dark:border-white/20"></div>
@@ -211,7 +215,6 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              {/* Link para registro */}
               <div className="text-center mt-6">
                 <p className="text-sm">Não tem conta?</p>
                 <Button variant="link" onClick={handleRegister} className="text-emerald-500">

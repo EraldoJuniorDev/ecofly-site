@@ -30,6 +30,7 @@ interface Profile {
   display_name?: string | null;
   phone?: string | null;
   birth_date?: string | null;
+  role?: string | null;
 }
 
 interface Address {
@@ -121,25 +122,32 @@ export default function UserPage() {
         setUserId(user.id);
 
         // Dados básicos do auth
-        const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "Usuário";
+        const name = user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário";
         const email = user.email || "";
         const phone = user.phone?.replace("+55", "") || "";
         setUserPhone(phone);
         setEditUser({ name, email, phone, birthDate: "" });
         setFormAddr(prev => ({ ...prev, recipient_name: name }));
 
-        // Perfil do banco
+        // CORREÇÃO: .maybeSingle() → permite 0 rows (perfil pode não existir ainda)
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("avatar_url, display_name, phone, birth_date")
+          .select("avatar_url, display_name, phone, birth_date, role")
           .eq("id", user.id)
-          .single<Profile>();
+          .maybeSingle<Profile>();
 
         if (profileError && profileError.code !== 'PGRST116') {
           console.error("Erro ao carregar perfil:", profileError);
         }
 
-        const safeProfile = profile ?? {};
+        // Fallback seguro: se perfil não existir, use dados do auth
+        const safeProfile = profile ?? {
+          display_name: name,
+          phone: phone,
+          birth_date: null,
+          avatar_url: null,
+          role: 'user'
+        };
 
         setEditUser(prev => ({
           name: safeProfile.display_name || name,
@@ -190,15 +198,24 @@ export default function UserPage() {
     const filePath = `${userId}/${userId}.${fileExt}`;
 
     try {
-      const { error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("profile_pics")
         .upload(filePath, file, { upsert: true });
 
-      if (error) throw error;
+      if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from("profile_pics").getPublicUrl(filePath);
 
-      await supabase.from("profiles").upsert({ id: userId, avatar_url: filePath });
+      // UPDATE (perfil já existe via trigger)
+      const { error: dbError } = await supabase
+        .from("profiles")
+        .update({ 
+          avatar_url: filePath,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", userId);
+
+      if (dbError) throw dbError;
 
       setProfilePic(`${data.publicUrl}?t=${Date.now()}`);
       sonnerToast.success("Foto atualizada!");
@@ -213,7 +230,14 @@ export default function UserPage() {
     setSaving(true);
     try {
       await supabase.storage.from("profile_pics").remove([`${userId}/${userId}.*`]);
-      await supabase.from("profiles").update({ avatar_url: null }).eq("id", userId);
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null, updated_at: new Date().toISOString() })
+        .eq("id", userId);
+
+      if (error) throw error;
+
       setProfilePic(null);
       sonnerToast.success("Foto removida");
     } catch {
@@ -231,12 +255,19 @@ export default function UserPage() {
     setSaving(true);
     try {
       await supabase.auth.updateUser({ phone: `+55${phoneRaw}` });
-      await supabase.from("profiles").upsert({
-        id: userId,
-        display_name: editUser.name,
-        phone: `+55${phoneRaw}`,
-        birth_date: editUser.birthDate || null,
-      });
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          display_name: editUser.name,
+          phone: `+55${phoneRaw}`,
+          birth_date: editUser.birthDate || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
       sonnerToast.success("Perfil atualizado com sucesso!");
     } catch (err: any) {
       sonnerToast.error(err.message || "Erro ao salvar perfil");

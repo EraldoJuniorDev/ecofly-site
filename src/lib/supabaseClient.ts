@@ -9,6 +9,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
-  global: { headers: { Accept: 'application/json' } }
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  global: {
+    headers: {
+      Accept: 'application/json',     // ← ESSA LINHA RESOLVE TUDO
+      apikey: supabaseAnonKey,
+      'Content-Type': 'application/json'
+    }
+  }
 })
