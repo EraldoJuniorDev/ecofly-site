@@ -22,50 +22,8 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // CRIA PERFIL AUTOMATICAMENTE AO REGISTRAR COM GOOGLE
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const user = session.user
-
-          const displayName = 
-            user.user_metadata.full_name || 
-            user.user_metadata.name || 
-            user.email?.split('@')[0] || 
-            'Usuário'
-
-          const profileData = {
-            id: user.id,
-            email: user.email!,
-            display_name: displayName,
-            avatar_url: user.user_metadata.picture || user.user_metadata.avatar_url || null,
-            phone: user.user_metadata.phone || null,
-            role: 'user' as const,
-            birth_date: null as null | string,
-            updated_at: new Date().toISOString(),
-          }
-
-          const { error } = await supabase
-            .from('profiles')
-            .upsert(profileData, { 
-              onConflict: 'id', 
-              ignoreDuplicates: false  // FORÇA ATUALIZAÇÃO
-            })
-
-          if (error) {
-            console.error('Erro ao salvar perfil (Google):', error)
-            toast.error('Erro ao salvar perfil')
-          } else {
-            toast.success('Registro com Google concluído!')
-            navigate('/')
-          }
-        }
-      }
-    )
-
-    return () => listener.subscription.unsubscribe()
-  }, [navigate])
+  // REMOVA O onAuthStateChange DO REGISTERPAGE
+  // O upsert será feito DIRETAMENTE no signUp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,33 +43,38 @@ export default function RegisterPage() {
 
     setIsSubmitting(true)
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        options: { data: { display_name: formData.username } }
+        options: { 
+          data: { display_name: formData.username },
+          // Desativa login automático para evitar recursão
+          // Mas como confirmação está OFF, ele loga mesmo assim
+        }
       })
 
-      if (authError) throw authError
+      if (error) throw error
 
-      if (authData.user) {
-        const { error: dbError } = await supabase
+      if (data.user) {
+        // CRIE O PERFIL AQUI, ANTES DO LOGIN AUTOMÁTICO
+        const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
-            id: authData.user.id,
+            id: data.user.id,
             email: formData.email,
             display_name: formData.username,
             role: 'user',
             updated_at: new Date().toISOString(),
           }, { 
             onConflict: 'id', 
-            ignoreDuplicates: false  // FORÇA ATUALIZAÇÃO
+            ignoreDuplicates: false 
           })
 
-        if (dbError) throw dbError
-      }
+        if (profileError) throw profileError
 
-      toast.success('Registro realizado! Verifique seu email.')
-      navigate('/login')
+        toast.success('Cadastro realizado com sucesso!')
+        navigate('/') // vai direto pra home (já logado)
+      }
     } catch (error: any) {
       toast.error(error.message || 'Falha no registro')
     } finally {
@@ -122,17 +85,11 @@ export default function RegisterPage() {
   const handleGoogleRegister = async () => {
     setIsGoogleLoading(true)
     try {
-      const baseUrl = import.meta.env.PROD 
-        ? import.meta.env.VITE_APP_URL 
-        : window.location.origin
-      const redirectTo = `${baseUrl}/auth/callback`
+      const redirectTo = `${import.meta.env.PROD ? import.meta.env.VITE_APP_URL : location.origin}/auth/callback`
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { 
-          redirectTo,
-          queryParams: { access_type: 'offline', prompt: 'consent' }
-        }
+        options: { redirectTo }
       })
       if (error) throw error
     } catch (error: any) {
@@ -146,11 +103,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <Button variant="ghost" onClick={handleGoBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
-          </Button>
-        </div>
+        <Button variant="ghost" onClick={handleGoBack} className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+        </Button>
 
         <Card className="shadow-2xl">
           <CardHeader className="text-center pb-8">
@@ -160,9 +115,6 @@ export default function RegisterPage() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
               Registrar
             </h1>
-            <p className="text-gray-600 dark:text-slate-300 mt-2">
-              Crie sua conta agora
-            </p>
           </CardHeader>
 
           <CardContent>
@@ -194,7 +146,6 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     required
@@ -216,7 +167,6 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     required
@@ -236,7 +186,7 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white h-12"
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-white h-12"
               >
                 {isSubmitting ? 'Registrando...' : 'Registrar'}
               </Button>

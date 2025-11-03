@@ -1,4 +1,4 @@
-// src/pages/LoginPage.tsx
+// src/pages/auth/LoginPage.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Chrome } from 'lucide-react'
@@ -16,45 +16,44 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // CRIA PERFIL AUTOMATICAMENTE AO LOGAR COM GOOGLE
+  // FUNÇÃO PARA CRIAR/ATUALIZAR PERFIL (USADA NO GOOGLE)
+  const createOrUpdateProfile = async (user: any) => {
+    const displayName =
+      user.user_metadata.full_name ||
+      user.user_metadata.name ||
+      user.email?.split('@')[0] ||
+      'Usuário'
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(
+        {
+          id: user.id,
+          email: user.email!,
+          display_name: displayName,
+          avatar_url: user.user_metadata.picture || user.user_metadata.avatar_url || null,
+          phone: user.user_metadata.phone || null,
+          role: 'user',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id', ignoreDuplicates: false }
+      )
+
+    if (error) {
+      console.error('Erro ao criar/atualizar perfil:', error)
+      toast.error('Erro ao salvar perfil')
+    } else {
+      toast.success('Login com Google concluído!')
+      navigate('/')
+    }
+  }
+
+  // DETECTA LOGIN COM GOOGLE E CRIA PERFIL
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          const user = session.user
-
-          const displayName = 
-            user.user_metadata.full_name || 
-            user.user_metadata.name || 
-            user.email?.split('@')[0] || 
-            'Usuário'
-
-          const profileData = {
-            id: user.id,
-            email: user.email!,
-            display_name: displayName,
-            avatar_url: user.user_metadata.picture || user.user_metadata.avatar_url || null,
-            phone: user.user_metadata.phone || null,
-            role: 'user' as const,
-            birth_date: null as null | string,
-            updated_at: new Date().toISOString(),
-          }
-
-          // UPSERT COM CONFLITO RESOLVIDO
-          const { error } = await supabase
-            .from('profiles')
-            .upsert(profileData, { 
-              onConflict: 'id', 
-              ignoreDuplicates: false  // FORÇA ATUALIZAÇÃO
-            })
-
-          if (error) {
-            console.error('Erro ao salvar perfil (Google):', error)
-            toast.error('Erro ao salvar perfil do usuário')
-          } else {
-            toast.success('Login com Google concluído!')
-            navigate('/')
-          }
+          await createOrUpdateProfile(session.user)
         }
       }
     )
@@ -65,7 +64,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.email.trim() || !formData.password.trim()) {
-      toast.error('Por favor, preencha todos os campos.')
+      toast.error('Preencha todos os campos.')
       return
     }
 
@@ -88,17 +87,11 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true)
     try {
-      const baseUrl = import.meta.env.PROD 
-        ? import.meta.env.VITE_APP_URL 
-        : window.location.origin
-      const redirectTo = `${baseUrl}/auth/callback`
+      const redirectTo = `${import.meta.env.PROD ? import.meta.env.VITE_APP_URL : location.origin}/auth/callback`
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { 
-          redirectTo,
-          queryParams: { access_type: 'offline', prompt: 'consent' }
-        }
+        options: { redirectTo }
       })
       if (error) throw error
     } catch (error: any) {
@@ -127,9 +120,6 @@ export default function LoginPage() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
               Login
             </h1>
-            <p className="text-gray-600 dark:text-slate-300 mt-2">
-              Entre com suas credenciais
-            </p>
           </CardHeader>
 
           <CardContent>
