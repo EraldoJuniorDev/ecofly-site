@@ -55,6 +55,8 @@ export default function LoginPage() {
         if (event === 'SIGNED_IN' && session?.user) {
           const user = session.user
 
+          console.log('GOOGLE USER DETECTADO:', user.email) // ← DEBUG
+
           const { error } = await supabase
             .from('profiles')
             .upsert(
@@ -73,9 +75,10 @@ export default function LoginPage() {
             )
 
           if (error) {
-            console.error('Erro ao criar perfil:', error)
+            console.error('ERRO NO UPSERT:', error)
             toast.error('Erro ao salvar perfil')
           } else {
+            console.log('PERFIL CRIADO COM SUCESSO!')
             toast.success('Login com Google concluído!')
             navigate('/')
           }
