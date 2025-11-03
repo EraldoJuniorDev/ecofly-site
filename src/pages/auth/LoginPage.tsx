@@ -55,7 +55,7 @@ export default function LoginPage() {
         if (event === 'SIGNED_IN' && session?.user) {
           const user = session.user
 
-          console.log('GOOGLE USER DETECTADO:', user.email) // ← DEBUG
+          console.log('GOOGLE USER:', user.email)
 
           const { error } = await supabase
             .from('profiles')
@@ -68,7 +68,9 @@ export default function LoginPage() {
                   user.user_metadata.name ||
                   user.email!.split('@')[0],
                 avatar_url: user.user_metadata.picture || null,
+                phone: user.user_metadata.phone || null,
                 role: 'user',
+                birth_date: null,
                 updated_at: new Date().toISOString(),
               },
               { onConflict: 'id', ignoreDuplicates: false }
@@ -76,9 +78,9 @@ export default function LoginPage() {
 
           if (error) {
             console.error('ERRO NO UPSERT:', error)
-            toast.error('Erro ao salvar perfil')
+            toast.error('Erro ao criar perfil')
           } else {
-            console.log('PERFIL CRIADO COM SUCESSO!')
+            console.log('PERFIL CRIADO!')
             toast.success('Login com Google concluído!')
             navigate('/')
           }
