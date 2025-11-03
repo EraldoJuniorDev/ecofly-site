@@ -53,7 +53,32 @@ export default function LoginPage() {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          await createOrUpdateProfile(session.user)
+          const user = session.user
+
+          const { error } = await supabase
+            .from('profiles')
+            .upsert(
+              {
+                id: user.id,
+                email: user.email!,
+                display_name:
+                  user.user_metadata.full_name ||
+                  user.user_metadata.name ||
+                  user.email!.split('@')[0],
+                avatar_url: user.user_metadata.picture || null,
+                role: 'user',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'id', ignoreDuplicates: false }
+            )
+
+          if (error) {
+            console.error('Erro ao criar perfil:', error)
+            toast.error('Erro ao salvar perfil')
+          } else {
+            toast.success('Login com Google concluído!')
+            navigate('/')
+          }
         }
       }
     )

@@ -11,11 +11,11 @@ import { toast } from 'sonner'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({ 
-    email: '', 
-    password: '', 
-    confirmPassword: '', 
-    username: '' 
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    username: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -46,7 +46,7 @@ export default function RegisterPage() {
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        options: { 
+        options: {
           data: { display_name: formData.username },
           // Desativa login automático para evitar recursão
           // Mas como confirmação está OFF, ele loga mesmo assim
@@ -55,26 +55,42 @@ export default function RegisterPage() {
 
       if (error) throw error
 
-      if (data.user) {
-        // CRIE O PERFIL AQUI, ANTES DO LOGIN AUTOMÁTICO
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            email: formData.email,
-            display_name: formData.username,
-            role: 'user',
-            updated_at: new Date().toISOString(),
-          }, { 
-            onConflict: 'id', 
-            ignoreDuplicates: false 
-          })
+      useEffect(() => {
+        const { data: listener } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+              const user = session.user
 
-        if (profileError) throw profileError
+              const { error } = await supabase
+                .from('profiles')
+                .upsert(
+                  {
+                    id: user.id,
+                    email: user.email!,
+                    display_name:
+                      user.user_metadata.full_name ||
+                      user.user_metadata.name ||
+                      user.email!.split('@')[0],
+                    avatar_url: user.user_metadata.picture || null,
+                    role: 'user',
+                    updated_at: new Date().toISOString(),
+                  },
+                  { onConflict: 'id', ignoreDuplicates: false }
+                )
 
-        toast.success('Cadastro realizado com sucesso!')
-        navigate('/') // vai direto pra home (já logado)
-      }
+              if (error) {
+                console.error('Erro ao criar perfil:', error)
+                toast.error('Erro ao salvar perfil')
+              } else {
+                toast.success('Login com Google concluído!')
+                navigate('/')
+              }
+            }
+          }
+        )
+
+        return () => listener.subscription.unsubscribe()
+      }, [navigate])
     } catch (error: any) {
       toast.error(error.message || 'Falha no registro')
     } finally {
