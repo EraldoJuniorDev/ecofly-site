@@ -24,8 +24,13 @@ import {
 import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 
-const TAB_KEY = "user_active_tab";
-type Tab = "profile" | "cart" | "orders" | "address";
+// ========== TIPOS ==========
+interface Profile {
+  avatar_url?: string | null;
+  display_name?: string | null;
+  phone?: string | null;
+  birth_date?: string | null;
+}
 
 interface Address {
   id: string;
@@ -33,12 +38,22 @@ interface Address {
   recipient_name: string;
   street: string;
   number: string;
-  complement?: string;
+  complement?: string | null;
   neighborhood: string;
   city: string;
   state: string;
   zip_code: string;
   is_default: boolean;
+}
+
+interface CartItem {
+  id: string;
+  quantity: number;
+  items: {
+    name: string;
+    price: number;
+    images?: { url: string }[];
+  };
 }
 
 interface Order {
@@ -47,8 +62,11 @@ interface Order {
   created_at: string;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   total: number;
-  items: any[];
+  items?: any[];
 }
+
+const TAB_KEY = "user_active_tab";
+type Tab = "profile" | "cart" | "orders" | "address";
 
 export default function UserPage() {
   const navigate = useNavigate();
@@ -62,18 +80,13 @@ export default function UserPage() {
 
   // Perfil
   const [editUser, setEditUser] = useState({ name: "", email: "", phone: "", birthDate: "" });
-  const [showEditProfile, setShowEditProfile] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [pass, setPass] = useState({
-    current: "",
-    password: "",
-    confirm: ""
-  });
+  const [pass, setPass] = useState({ current: "", password: "", confirm: "" });
   const [seePwd, setSeePwd] = useState(false);
   const [seeConfirm, setSeeConfirm] = useState(false);
 
   // Carrinho
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [showDeleteItem, setShowDeleteItem] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState("");
 
@@ -95,53 +108,71 @@ export default function UserPage() {
 
   // ========== CARREGAMENTO ==========
   useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        sonnerToast.error("Faça login!");
-        navigate("/login");
-        return;
+    const initializeUser = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session?.user) {
+          sonnerToast.error("Faça login para acessar esta página.");
+          navigate("/login");
+          return;
+        }
+
+        const user = session.user;
+        setUserId(user.id);
+
+        // Dados básicos do auth
+        const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "Usuário";
+        const email = user.email || "";
+        const phone = user.phone?.replace("+55", "") || "";
+        setUserPhone(phone);
+        setEditUser({ name, email, phone, birthDate: "" });
+        setFormAddr(prev => ({ ...prev, recipient_name: name }));
+
+        // Perfil do banco
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("avatar_url, display_name, phone, birth_date")
+          .eq("id", user.id)
+          .single<Profile>();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Erro ao carregar perfil:", profileError);
+        }
+
+        const safeProfile = profile ?? {};
+
+        setEditUser(prev => ({
+          name: safeProfile.display_name || name,
+          email,
+          phone: safeProfile.phone?.replace("+55", "") || phone,
+          birthDate: safeProfile.birth_date || "",
+        }));
+
+        if (safeProfile.avatar_url) {
+          const { data } = supabase.storage.from("profile_pics").getPublicUrl(safeProfile.avatar_url);
+          setProfilePic(`${data.publicUrl}?t=${Date.now()}`);
+        }
+
+        // Dados paralelos
+        const [cartRes, addrRes, ordRes] = await Promise.all([
+          supabase.from("cart").select("*, items(name, images, price)").eq("user_id", user.id),
+          supabase.from("user_addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false }),
+          supabase.from("user_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+        ]);
+
+        setCart(cartRes.data || []);
+        setAddresses(addrRes.data || []);
+        setOrders(ordRes.data || []);
+
+        setLoading(false);
+      } catch (err: any) {
+        console.error("Erro crítico:", err);
+        sonnerToast.error("Erro ao carregar página do usuário.");
+        setLoading(false);
       }
+    };
 
-      setUserId(user.id);
-      const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "Usuário";
-      const email = user.email || "";
-      const phone = user.phone?.replace("+55", "") || user.user_metadata?.phone || "";
-      setUserPhone(phone);
-      setEditUser({ name, email, phone, birthDate: "" });
-      setFormAddr(prev => ({ ...prev, recipient_name: name }));
-
-      // Foto de perfil
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("avatar_url, display_name, phone, birth_date")
-        .eq("id", user.id)
-        .single();
-
-      setEditUser({
-        name: profile?.display_name || name,
-        email,
-        phone: profile?.phone?.replace("+55", "") || phone,
-        birthDate: profile?.birth_date || "",
-      });
-
-      if (profile?.avatar_url) {
-        const { data } = supabase.storage.from("profile_pics").getPublicUrl(profile.avatar_url);
-        setProfilePic(data.publicUrl + `?t=${Date.now()}`);
-      }
-
-      const [cartRes, addrRes, ordRes] = await Promise.all([
-        supabase.from("cart").select("*, items(name, images, price)").eq("user_id", user.id),
-        supabase.from("user_addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false }),
-        supabase.from("user_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
-      ]);
-
-      setCart(cartRes.data || []);
-      setAddresses(addrRes.data || []);
-      setOrders(ordRes.data || []);
-
-      setLoading(false);
-    })();
+    initializeUser();
   }, [navigate]);
 
   useEffect(() => localStorage.setItem(TAB_KEY, tab), [tab]);
@@ -152,7 +183,7 @@ export default function UserPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) return sonnerToast.error("Apenas imagens!");
-    if (file.size > 5 * 1024 * 1024) return sonnerToast.error("Máx. 5MB");
+    if (file.size > 5 * 1024 * 1024) return sonnerToast.error("Máximo 5MB");
 
     setSaving(true);
     const fileExt = file.name.split(".").pop();
@@ -167,36 +198,35 @@ export default function UserPage() {
 
       const { data } = supabase.storage.from("profile_pics").getPublicUrl(filePath);
 
-      await supabase.from("profiles").upsert({
-        id: userId,
-        avatar_url: filePath
-      });
+      await supabase.from("profiles").upsert({ id: userId, avatar_url: filePath });
 
-      setProfilePic(data.publicUrl + `?t=${Date.now()}`);
+      setProfilePic(`${data.publicUrl}?t=${Date.now()}`);
       sonnerToast.success("Foto atualizada!");
     } catch (err: any) {
-      sonnerToast.error(err.message || "Erro ao enviar");
+      sonnerToast.error(err.message || "Erro ao enviar imagem");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const removeProfilePic = async () => {
     setSaving(true);
     try {
-      await supabase.storage.from("profile_pics").remove([`${userId}/${userId}.jpg`, `${userId}/${userId}.png`, `${userId}/${userId}.jpeg`, `${userId}/${userId}.webp`]);
+      await supabase.storage.from("profile_pics").remove([`${userId}/${userId}.*`]);
       await supabase.from("profiles").update({ avatar_url: null }).eq("id", userId);
       setProfilePic(null);
       sonnerToast.success("Foto removida");
     } catch {
-      sonnerToast.error("Erro ao remover");
+      sonnerToast.error("Erro ao remover foto");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   // ========== PERFIL ==========
   const saveProfile = async () => {
     const phoneRaw = editUser.phone.replace(/\D/g, "");
-    if (!phoneRaw.match(/^\d{10,11}$/)) return sonnerToast.error("Celular inválido");
+    if (!phoneRaw.match(/^\d{10,11}$/)) return sonnerToast.error("Celular inválido (10 ou 11 dígitos)");
 
     setSaving(true);
     try {
@@ -208,11 +238,11 @@ export default function UserPage() {
         birth_date: editUser.birthDate || null,
       });
       sonnerToast.success("Perfil atualizado com sucesso!");
-    } catch (err) {
-      console.error(err);
-      sonnerToast.error("Erro ao salvar perfil");
+    } catch (err: any) {
+      sonnerToast.error(err.message || "Erro ao salvar perfil");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const changePassword = async () => {
@@ -232,11 +262,7 @@ export default function UserPage() {
         email: user.email,
         password: pass.current,
       });
-      if (signInError) {
-        sonnerToast.error("Senha atual incorreta.");
-        setSaving(false);
-        return;
-      }
+      if (signInError) throw new Error("Senha atual incorreta.");
 
       const { error } = await supabase.auth.updateUser({ password: pass.password });
       if (error) throw error;
@@ -245,7 +271,6 @@ export default function UserPage() {
       setPass({ current: "", password: "", confirm: "" });
       setShowPass(false);
     } catch (err: any) {
-      console.error(err);
       sonnerToast.error(err.message || "Erro ao alterar a senha.");
     } finally {
       setSaving(false);
@@ -255,15 +280,17 @@ export default function UserPage() {
   // ========== CARRINHO ==========
   const changeQty = async (id: string, qty: number) => {
     if (qty < 1) return;
-    await supabase.from("cart").update({ quantity: qty }).eq("id", id);
+    const { error } = await supabase.from("cart").update({ quantity: qty }).eq("id", id);
+    if (error) return sonnerToast.error("Erro ao atualizar quantidade");
     setCart(c => c.map(i => i.id === id ? { ...i, quantity: qty } : i));
   };
 
   const removeItem = async () => {
-    await supabase.from("cart").delete().eq("id", deleteItemId);
+    const { error } = await supabase.from("cart").delete().eq("id", deleteItemId);
+    if (error) return sonnerToast.error("Erro ao remover item");
     setCart(c => c.filter(i => i.id !== deleteItemId));
     setShowDeleteItem(false);
-    sonnerToast.success("Item removido!");
+    sonnerToast.success("Item removido do carrinho!");
   };
 
   // ========== ENDEREÇOS ==========
@@ -283,11 +310,14 @@ export default function UserPage() {
           state: data.uf || ""
         }));
         sonnerToast.success("CEP encontrado!");
-      } else sonnerToast.error("CEP inválido");
+      } else {
+        sonnerToast.error("CEP inválido");
+      }
     } catch {
-      sonnerToast.error("Erro na busca");
+      sonnerToast.error("Erro na busca do CEP");
+    } finally {
+      setTimeout(() => setCepProgress(0), 600);
     }
-    setTimeout(() => setCepProgress(0), 600);
   };
 
   const saveAddress = async () => {
@@ -298,12 +328,14 @@ export default function UserPage() {
         await supabase.from("user_addresses").update({ is_default: false }).eq("user_id", userId);
       }
 
-      const { data } = await supabase.from("user_addresses").upsert({
+      const { data, error } = await supabase.from("user_addresses").upsert({
         ...(addrToEdit ? { id: addrToEdit.id } : {}),
         user_id: userId,
         ...formAddr,
         recipient_name: formAddr.recipient_name || editUser.name
-      }).select().single();
+      }).select().single<Address>();
+
+      if (error) throw error;
 
       setAddresses(prev => addrToEdit
         ? prev.map(a => a.id === data.id ? data : a)
@@ -312,13 +344,14 @@ export default function UserPage() {
 
       closeAddr();
       sonnerToast.success(addrToEdit ? "Endereço atualizado!" : "Endereço salvo!");
-    } catch {
-      sonnerToast.error("Erro ao salvar");
+    } catch (err: any) {
+      sonnerToast.error(err.message || "Erro ao salvar endereço");
     }
   };
 
   const deleteAddress = async () => {
-    await supabase.from("user_addresses").delete().eq("id", addrToDelete);
+    const { error } = await supabase.from("user_addresses").delete().eq("id", addrToDelete);
+    if (error) return sonnerToast.error("Erro ao excluir");
     setAddresses(a => a.filter(x => x.id !== addrToDelete));
     setShowDeleteAddr(false);
     sonnerToast.success("Endereço excluído!");
@@ -326,9 +359,10 @@ export default function UserPage() {
 
   const setDefault = async (id: string) => {
     await supabase.from("user_addresses").update({ is_default: false }).eq("user_id", userId);
-    await supabase.from("user_addresses").update({ is_default: true }).eq("id", id);
+    const { error } = await supabase.from("user_addresses").update({ is_default: true }).eq("id", id);
+    if (error) return sonnerToast.error("Erro ao definir padrão");
     setAddresses(a => a.map(x => ({ ...x, is_default: x.id === id })));
-    sonnerToast.success("Padrão alterado!");
+    sonnerToast.success("Endereço padrão alterado!");
   };
 
   const openAdd = () => {
@@ -372,7 +406,7 @@ export default function UserPage() {
       delivered: { icon: CheckCircle, color: "bg-green-500", text: "Entregue" },
       cancelled: { icon: XCircle, color: "bg-destructive", text: "Cancelado" }
     };
-    const { icon: Icon, color, text } = map[s];
+    const { icon: Icon, color, text } = map[s] || { icon: Clock, color: "bg-gray-500", text: "Desconhecido" };
     return <Badge className={`${color} text-white`}><Icon className="w-3 h-3 mr-1" />{text}</Badge>;
   };
 
@@ -410,10 +444,11 @@ export default function UserPage() {
                   return (
                     <motion.button key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={() => setTab(item.id as Tab)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active
-                        ? `bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm`
-                        : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-900/20"
-                        }`}>
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                        active
+                          ? `bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm`
+                          : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-900/20"
+                      }`}>
                       <Icon className="h-5 w-5" />
                       <span className="font-medium">{item.label}</span>
                     </motion.button>
@@ -430,134 +465,78 @@ export default function UserPage() {
                 {/* PERFIL */}
                 {tab === "profile" && (
                   <Card className="rounded-2xl border shadow-sm">
-                    <CardContent className="block p-8 sm:flex sm:flex-row sm:justify-around">
-                      {/* Cabeçalho do perfil */}
-                      <div className="flex flex-col items-center text-center mb-8">
-                        <div className="relative group">
-                          <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-emerald-100 dark:ring-emerald-900/50 shadow-lg">
-                            {profilePic ? (
-                              <img
-                                src={profilePic}
-                                alt="Perfil"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-5xl font-bold">
-                                {editUser.name.charAt(0).toUpperCase()}
-                              </div>
+                    <CardContent className="p-8">
+                      <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
+                        {/* Foto */}
+                        <div className="flex flex-col items-center">
+                          <div className="relative group">
+                            <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-emerald-100 dark:ring-emerald-900/50 shadow-lg">
+                              {profilePic ? (
+                                <img src={profilePic} alt="Perfil" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-5xl font-bold">
+                                  {editUser.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => fileInputRef.current?.click()}
+                              className="absolute bottom-1 right-1 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                            >
+                              <Camera className="h-4 w-4" />
+                            </button>
+                            {profilePic && (
+                              <button
+                                onClick={removeProfilePic}
+                                className="absolute top-1 right-1 p-2 rounded-full bg-destructive text-white hover:bg-red-700 transition"
+                              >
+                                <XIcon className="h-4 w-4" />
+                              </button>
                             )}
                           </div>
-
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute bottom-1 right-1 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition"
-                          >
-                            <Camera className="h-4 w-4" />
-                          </button>
-
-                          {profilePic && (
-                            <button
-                              type="button"
-                              onClick={removeProfilePic}
-                              className="absolute top-1 right-1 p-2 rounded-full bg-destructive text-white hover:bg-red-700 transition"
-                            >
-                              <XIcon className="h-4 w-4" />
-                            </button>
-                          )}
+                          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                          <h2 className="text-2xl font-bold mt-4">{editUser.name}</h2>
+                          <p className="text-sm text-muted-foreground">{editUser.email}</p>
                         </div>
 
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                        />
-
-                        <h2 className="text-2xl font-bold mt-4">{editUser.name}</h2>
-                        <p className="text-sm text-muted-foreground">{editUser.email}</p>
-                      </div>
-
-                      {loading ? (
-                        <p className="text-center py-8">Carregando...</p>
-                      ) : (
-                        <form
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            saveProfile();
-                          }}
-                          className="space-y-6"
-                        >
-                          <div>
-                            <Label htmlFor="name">Nome Completo*</Label>
-                            <Input
-                              id="name"
-                              value={editUser.name || ""}
-                              onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
-                              placeholder="Digite seu nome completo"
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="phone">Telefone*</Label>
-                            <Input
-                              id="phone"
-                              value={editUser.phone || ""}
-                              onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
-                              placeholder="(00) 00000-0000"
-                            />
-                          </div>
-
-                          <div className="relative">
-                            <Label htmlFor="birthDate">Data de Nascimento</Label>
-                            <DatePicker
-                              selected={editUser.birthDate ? new Date(editUser.birthDate) : null}
-                              onChange={(date: Date | null) => {
-                                const formatted = date ? date.toISOString().split("T")[0] : "";
-                                setEditUser({ ...editUser, birthDate: formatted });
-                              }}
-                              dateFormat="dd/MM/yyyy"
-                              placeholderText="Selecione sua data"
-                              className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-background  dark:border-gray-600 dark:text-white"
-                              wrapperClassName="w-full"
-                              showPopperArrow={false}
-                              locale="pt-BR"
-                              maxDate={new Date()}
-                            />
-                            <Calendar className="absolute right-3 top-9 h-4 w-4 text-muted-foreground pointer-events-none" />
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
-                            <Button
-                              type="submit"
-                              disabled={saving}
-                              className="w-full sm:w-auto eco-gradient text-white font-semibold"
-                            >
-                              {saving ? "Salvando..." : "Salvar Alterações"}
-                            </Button>
-
-                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full sm:w-auto border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                                onClick={() => setShowPass(true)}
-                              >
+                        {/* Formulário */}
+                        {loading ? (
+                          <p className="text-center py-8">Carregando...</p>
+                        ) : (
+                          <form onSubmit={(e) => { e.preventDefault(); saveProfile(); }} className="flex-1 space-y-6">
+                            <div>
+                              <Label>Nome Completo *</Label>
+                              <Input value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} placeholder="Seu nome" />
+                            </div>
+                            <div>
+                              <Label>Telefone *</Label>
+                              <Input value={editUser.phone} onChange={e => setEditUser({ ...editUser, phone: e.target.value })} placeholder="(00) 00000-0000" />
+                            </div>
+                            <div className="relative">
+                              <Label>Data de Nascimento</Label>
+                              <DatePicker
+                                selected={editUser.birthDate ? new Date(editUser.birthDate) : null}
+                                onChange={(date: Date | null) => setEditUser({ ...editUser, birthDate: date ? date.toISOString().split("T")[0] : "" })}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Selecione"
+                                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500"
+                                wrapperClassName="w-full"
+                                locale="pt-BR"
+                                maxDate={new Date()}
+                              />
+                              <Calendar className="absolute right-3 top-9 h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Button type="submit" disabled={saving} className="eco-gradient text-white">
+                                {saving ? "Salvando..." : "Salvar Alterações"}
+                              </Button>
+                              <Button type="button" variant="outline" onClick={() => setShowPass(true)} className="border-emerald-500 text-emerald-600">
                                 Alterar Senha
                               </Button>
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                className="w-full sm:w-auto"
-                                onClick={() => sonnerToast("Funcionalidade de apagar conta em breve.")}
-                              >
-                                Apagar Conta
-                              </Button>
                             </div>
-                          </div>
-                        </form>
-                      )}
+                          </form>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -575,16 +554,16 @@ export default function UserPage() {
                       ) : (
                         <div className="space-y-6">
                           {cart.map(item => (
-                            <div key={item.id} className="flex gap-4 p-4 border rounded-xl">
+                            <div key={item.id} className="flex gap-4 p-4 border rounded-xl items-center">
                               <img src={item.items?.images?.[0]?.url || "https://via.placeholder.com/80"} alt={item.items.name} className="w-20 h-20 rounded-lg object-cover" />
                               <div className="flex-1">
                                 <h3 className="font-semibold">{item.items.name}</h3>
                                 <p className="text-sm text-muted-foreground">R$ {item.items.price.toFixed(2)}</p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity - 1)} className="hover:text-muted dark:hover:text-muted-foreground"><Minus /></Button>
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity - 1)}><Minus /></Button>
                                 <span className="w-8 text-center font-medium">{item.quantity}</span>
-                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity + 1)} className="hover:text-muted dark:hover:text-muted-foreground"><Plus /></Button>
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity + 1)}><Plus /></Button>
                               </div>
                               <Button size="icon" variant="destructive" onClick={() => { setDeleteItemId(item.id); setShowDeleteItem(true); }}>
                                 <Trash2 className="h-5 w-5" />
@@ -667,7 +646,7 @@ export default function UserPage() {
                                   <p className="text-sm">{a.neighborhood} • {a.city}/{a.state} • CEP {a.zip_code.replace(/(\d{5})(\d{3})/, "$1-$2")}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                  {!a.is_default && <Button size="sm" variant="outline" onClick={() => setDefault(a.id)}>Definir como Padrão</Button>}
+                                  {!a.is_default && <Button size="sm" variant="outline" onClick={() => setDefault(a.id)}>Padrão</Button>}
                                   <Button size="icon" variant="ghost" onClick={() => openEdit(a)}><Edit className="h-4 w-4" /></Button>
                                   <Button size="icon" variant="destructive" onClick={() => { setAddrToDelete(a.id); setShowDeleteAddr(true); }}>
                                     <Trash2 className="h-4 w-4" />
@@ -687,69 +666,33 @@ export default function UserPage() {
         </div>
       </div>
 
-      {/* ========== MODAIS ========== */}
-      {/* Alterar Senha */}
+      {/* MODAIS */}
       <Dialog open={showPass} onOpenChange={setShowPass}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              Alterar Senha
-            </DialogTitle>
-          </DialogHeader>
-
+          <DialogHeader><DialogTitle>Alterar Senha</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="current">Senha Atual*</Label>
-              <Input
-                id="current"
-                type={seePwd ? "text" : "password"}
-                placeholder="Digite sua senha atual"
-                value={pass.current || ""}
-                onChange={(e) => setPass({ ...pass, current: e.target.value })}
-                className="mt-1"
-              />
+              <Label>Senha Atual *</Label>
+              <Input type={seePwd ? "text" : "password"} value={pass.current} onChange={e => setPass({ ...pass, current: e.target.value })} />
             </div>
-
             <div>
-              <Label htmlFor="new">Nova Senha*</Label>
-              <Input
-                id="new"
-                type={seePwd ? "text" : "password"}
-                placeholder="Nova senha"
-                value={pass.password}
-                onChange={(e) => setPass({ ...pass, password: e.target.value })}
-                className="mt-1"
-              />
+              <Label>Nova Senha *</Label>
+              <Input type={seePwd ? "text" : "password"} value={pass.password} onChange={e => setPass({ ...pass, password: e.target.value })} />
             </div>
-
             <div>
-              <Label htmlFor="confirm">Confirmar Nova Senha*</Label>
-              <Input
-                id="confirm"
-                type={seeConfirm ? "text" : "password"}
-                placeholder="Confirme a nova senha"
-                value={pass.confirm}
-                onChange={(e) => setPass({ ...pass, confirm: e.target.value })}
-                className="mt-1"
-              />
+              <Label>Confirmar Nova Senha *</Label>
+              <Input type={seeConfirm ? "text" : "password"} value={pass.confirm} onChange={e => setPass({ ...pass, confirm: e.target.value })} />
             </div>
           </div>
-
-          <DialogFooter className="flex justify-end gap-3">
-            <Button variant="destructive" onClick={() => setShowPass(false)} className="hover:text-muted dark:hover:text-muted-foreground">
-              Cancelar
-            </Button>
-            <Button onClick={changePassword} className="eco-gradient text-white">
-              {saving ? "Salvando..." : "Salvar Senha"}
-            </Button>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowPass(false)}>Cancelar</Button>
+            <Button onClick={changePassword} className="eco-gradient text-white">Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Remover Item */}
       <Dialog open={showDeleteItem} onOpenChange={setShowDeleteItem}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Remover item?</DialogTitle></DialogHeader>
+        <DialogContent><DialogHeader><DialogTitle>Remover item?</DialogTitle></DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowDeleteItem(false)}>Cancelar</Button>
             <Button onClick={removeItem} className="bg-destructive text-white">Remover</Button>
@@ -757,7 +700,6 @@ export default function UserPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Endereço */}
       <Dialog open={showAddr || showEditAddr} onOpenChange={closeAddr}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{showEditAddr ? "Editar" : "Novo"} Endereço</DialogTitle></DialogHeader>
@@ -771,24 +713,17 @@ export default function UserPage() {
               }} />
               {cepProgress > 0 && (
                 <div className="mt-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                  <motion.div
-                    className="bg-emerald-500 h-2 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${cepProgress}%` }}
-                  />
+                  <motion.div className="bg-emerald-500 h-2 rounded-full" initial={{ width: 0 }} animate={{ width: `${cepProgress}%` }} />
                 </div>
               )}
             </div>
             <div><Label>Apelido</Label><Input value={formAddr.label || ""} onChange={e => setFormAddr({ ...formAddr, label: e.target.value })} /></div>
-
             <div className="col-span-2"><Label>Rua</Label><Input value={formAddr.street || ""} onChange={e => setFormAddr({ ...formAddr, street: e.target.value })} /></div>
             <div><Label>Número</Label><Input value={formAddr.number || ""} onChange={e => setFormAddr({ ...formAddr, number: e.target.value })} /></div>
             <div><Label>Complemento</Label><Input value={formAddr.complement || ""} onChange={e => setFormAddr({ ...formAddr, complement: e.target.value })} /></div>
-
             <div className="col-span-2"><Label>Bairro</Label><Input value={formAddr.neighborhood || ""} onChange={e => setFormAddr({ ...formAddr, neighborhood: e.target.value })} /></div>
             <div><Label>Cidade</Label><Input value={formAddr.city || ""} onChange={e => setFormAddr({ ...formAddr, city: e.target.value })} /></div>
             <div><Label>Estado</Label><Input value={formAddr.state || ""} onChange={e => setFormAddr({ ...formAddr, state: e.target.value })} maxLength={2} /></div>
-
             <div className="col-span-2"><Label>Destinatário</Label><Input value={formAddr.recipient_name || ""} onChange={e => setFormAddr({ ...formAddr, recipient_name: e.target.value })} /></div>
             <div className="col-span-2 flex items-center gap-3">
               <Switch checked={!!formAddr.is_default} onCheckedChange={v => setFormAddr({ ...formAddr, is_default: v })} />
@@ -798,16 +733,14 @@ export default function UserPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={closeAddr}>Cancelar</Button>
             <Button onClick={saveAddress} className="eco-gradient text-white">
-              {showEditAddr ? "Salvar Alterações" : "Adicionar"}
+              {showEditAddr ? "Salvar" : "Adicionar"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Excluir Endereço */}
       <Dialog open={showDeleteAddr} onOpenChange={setShowDeleteAddr}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Excluir endereço?</DialogTitle></DialogHeader>
+        <DialogContent><DialogHeader><DialogTitle>Excluir endereço?</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Esta ação não pode ser desfeita.</p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowDeleteAddr(false)}>Cancelar</Button>
