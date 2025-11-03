@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, UserPlus, Chrome } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
@@ -14,8 +14,44 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  const handleSubmit = async (e) => {
+  // Escuta registro OAuth e sincroniza perfil
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await syncProfileWithGoogle(session.user)
+          toast.success('Registro com Google realizado com sucesso!')
+          navigate('/')
+        }
+      }
+    )
+
+    return () => listener.subscription.unsubscribe()
+  }, [navigate])
+
+  const syncProfileWithGoogle = async (user: any) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+          role: 'user'
+        }, { onConflict: 'id' })
+
+      if (error && error.code !== '23505') {
+        console.error('Erro ao sincronizar perfil:', error)
+      }
+    } catch (err) {
+      console.error('Erro ao sincronizar perfil:', err)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || !formData.username.trim()) {
       toast.error('Por favor, preencha todos os campos.')
@@ -40,31 +76,27 @@ export default function RegisterPage() {
 
     setIsSubmitting(true)
     try {
-      // Sign up the user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          data: {
-            display_name: formData.username // Store username as display_name in auth metadata
-          }
+          data: { display_name: formData.username }
         }
       })
 
       if (authError) throw authError
 
-      // Insert user data into the Users table
       if (authData.user) {
         const { error: dbError } = await supabase
-          .from('Users')
-          .insert({
-            UID: authData.user.id, // Use the auth user ID
-            'Display name': formData.username, // Match column name exactly
-            Email: formData.email
-          })
+          .from('profiles')
+          .upsert({
+            id: authData.user.id,
+            email: formData.email,
+            display_name: formData.username,
+            role: 'user'
+          }, { onConflict: 'id' })
 
         if (dbError) {
-          // Optionally roll back the auth signup if the DB insert fails
           await supabase.auth.admin.deleteUser(authData.user.id)
           throw dbError
         }
@@ -72,10 +104,30 @@ export default function RegisterPage() {
 
       toast.success('Registro realizado com sucesso! Verifique seu email para confirmar.')
       navigate('/login')
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.message)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleGoogleRegister = async () => {
+    setIsGoogleLoading(true)
+    try {
+      const origin = window.location.origin
+      const redirectTo = `${origin}/auth/callback`
+
+      console.log('OAuth redirectTo:', redirectTo)
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      })
+      if (error) throw error
+    } catch (error: any) {
+      console.error('Erro no Google OAuth:', error)
+      toast.error(error.message || 'Falha ao registrar com Google')
+      setIsGoogleLoading(false)
     }
   }
 
@@ -83,9 +135,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
-      {/* Register Card */}
       <div className="w-full max-w-md relative z-10 animate-fade-in">
-        {/* Top Bar: Voltar */}
         <div className="flex justify-between items-center mb-4">
           <Button
             variant="ghost"
@@ -102,7 +152,6 @@ export default function RegisterPage() {
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse-glow">
               <UserPlus className="h-8 w-8 text-white" />
             </div>
-
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent pb-1">
               Registrar
             </h1>
@@ -113,7 +162,6 @@ export default function RegisterPage() {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Username Field */}
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
                   <User className="h-4 w-4 text-emerald-500" />
@@ -130,7 +178,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
                   <Mail className="h-4 w-4 text-emerald-500" />
@@ -147,7 +194,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
                   <Lock className="h-4 w-4 text-emerald-500" />
@@ -175,7 +221,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Confirm Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
                   <Lock className="h-4 w-4 text-emerald-500" />
@@ -203,7 +248,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Register Button */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
@@ -218,6 +262,35 @@ export default function RegisterPage() {
                     <UserPlus className="h-5 w-5" />
                     <span>Registrar</span>
                   </div>
+                )}
+              </Button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-white/20"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-white dark:bg-background px-2 text-gray-500 dark:text-slate-400">ou</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGoogleRegister}
+                disabled={isGoogleLoading}
+                className="w-full h-12 text-base font-medium border border-gray-300 dark:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-300 flex items-center justify-center space-x-2"
+              >
+                {isGoogleLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Carregando...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Chrome className="h-5 w-5" />
+                    <span>Registrar com Google</span>
+                  </>
                 )}
               </Button>
             </form>
