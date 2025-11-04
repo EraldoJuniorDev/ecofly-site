@@ -1,4 +1,3 @@
-// src/components/ProductCard.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
@@ -44,61 +43,49 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const { addToCart, removeFromCart } = useCart();
   const navigate = useNavigate();
 
-  // Buscar dados do usuário, preço, avaliações e status do carrinho
   useEffect(() => {
-    if (!slug) return;
-
     const fetchData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user;
+        setUser(currentUser);
 
-        // Verifica se está no carrinho
-        if (user) {
+        if (currentUser) {
           const { data: cartItem } = await supabase
             .from('cart')
             .select('id')
-            .eq('user_id', user.id)
+            .eq('user_id', currentUser.id)
             .eq('item_id', id)
-            .maybeSingle(); // ← CORRETO: não dá erro se não existir
-
+            .maybeSingle();
           setIsInCart(!!cartItem);
         }
 
-        // Preço
         const { data: item } = await supabase
           .from('items')
           .select('price, original_price')
           .eq('id', id)
           .single();
-
         if (item) {
           setPrice(item.price);
           setOriginalPrice(item.original_price ?? item.price);
         }
 
-        // Avaliações
         const { data: reviews } = await supabase
           .from('reviews')
           .select('rating')
           .eq('item_id', id);
-
         if (reviews && reviews.length > 0) {
           const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
           setAverageRating(total / reviews.length);
           setReviewCount(reviews.length);
-        } else {
-          setAverageRating(null);
-          setReviewCount(0);
         }
       } catch (error) {
         console.error('Erro ao carregar dados do produto:', error);
-        toast.error('Erro ao carregar informações do item.');
       }
     };
 
     fetchData();
-  }, [id, slug]);
+  }, [id]);
 
   const nextImage = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -121,7 +108,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
       if (!user) {
         toast.error('Você precisa estar logado para adicionar itens ao carrinho.');
-        navigate('/login');
         return;
       }
 
@@ -140,12 +126,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
         toast.error('Erro ao atualizar o carrinho.');
       }
     },
-    [id, name, isInCart, addToCart, removeFromCart, user, navigate]
+    [id, name, isInCart, addToCart, removeFromCart, user]
   );
 
   if (!slug) return null;
 
-  const hasDiscount = originalPrice !== null && price !== null && originalPrice > price;
+  const hasDiscount =
+    originalPrice !== null && price !== null && originalPrice > price;
   const discountPercent = hasDiscount
     ? Math.round(((originalPrice! - price!) / originalPrice!) * 100)
     : 0;
@@ -197,9 +184,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {[1, 2, 3, 4, 5].map((i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${
-                    i <= Math.round(averageRating) ? 'fill-current' : 'opacity-30'
-                  }`}
+                  className={`w-4 h-4 ${i <= Math.round(averageRating) ? 'fill-current' : 'opacity-30'
+                    }`}
                 />
               ))}
               <span className="text-muted-foreground text-xs ml-1">
@@ -266,11 +252,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
             onClick={handleCartToggle}
             variant="outline"
             size="sm"
-            className={`transition-all duration-200 ${
-              isInCart
-                ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                : 'text-muted-foreground hover:text-emerald-500 hover:bg-emerald-50'
-            }`}
+            className={`transition-all duration-200 ${isInCart
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+              : 'text-muted-foreground hover:text-emerald-500 hover:bg-emerald-50'
+              }`}
           >
             <ShoppingCart
               className={`w-4 h-4 ${isInCart ? 'fill-current' : ''}`}
