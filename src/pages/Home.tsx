@@ -193,7 +193,7 @@ const Home = () => {
             <div className="relative animate-fade-in-right">
               <div className="aspect-square rounded-2xl overflow-hidden glass-subtle hover-subtle relative group">
                 <img
-                  src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/logo_transparent.png"
+                  src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/site-images/logo_transparent.png"
                   alt="ECOFLY Logo"
                   className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105 parallax bg-green-400"
                 />

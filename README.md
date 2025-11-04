@@ -1,6 +1,6 @@
 🛍️ ECOFLY - Loja de EcoBags Personalizadas
 
-<img alt="Ecofly Banner" src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/logo_transparent.png">
+<img alt="Ecofly Banner" src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/site-images/logo_transparent.png">
 
 🌱 Sobre o Projeto
 

@@ -1,7 +1,7 @@
 // src/pages/RegisterPage.tsx
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, UserPlus, Chrome } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
@@ -20,10 +20,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-
-  // REMOVA O onAuthStateChange DO REGISTERPAGE
-  // O upsert será feito DIRETAMENTE no signUp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,71 +42,32 @@ export default function RegisterPage() {
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        options: {
-          data: { display_name: formData.username },
-          // Desativa login automático para evitar recursão
-          // Mas como confirmação está OFF, ele loga mesmo assim
-        }
+        options: { data: { display_name: formData.username } }
       })
 
       if (error) throw error
 
-      useEffect(() => {
-        const { data: listener } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-              const user = session.user
+      if (data.user) {
+        // CRIA PERFIL IMEDIATAMENTE
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email: formData.email,
+            display_name: formData.username,
+            role: 'user',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id', ignoreDuplicates: false })
 
-              const { error } = await supabase
-                .from('profiles')
-                .upsert(
-                  {
-                    id: user.id,
-                    email: user.email!,
-                    display_name:
-                      user.user_metadata.full_name ||
-                      user.user_metadata.name ||
-                      user.email!.split('@')[0],
-                    avatar_url: user.user_metadata.picture || null,
-                    role: 'user',
-                    updated_at: new Date().toISOString(),
-                  },
-                  { onConflict: 'id', ignoreDuplicates: false }
-                )
+        if (profileError) throw profileError
+      }
 
-              if (error) {
-                console.error('Erro ao criar perfil:', error)
-                toast.error('Erro ao salvar perfil')
-              } else {
-                toast.success('Login com Google concluído!')
-                navigate('/')
-              }
-            }
-          }
-        )
-
-        return () => listener.subscription.unsubscribe()
-      }, [navigate])
+      toast.success('Cadastro realizado com sucesso!')
+      navigate('/')
     } catch (error: any) {
       toast.error(error.message || 'Falha no registro')
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleGoogleRegister = async () => {
-    setIsGoogleLoading(true)
-    try {
-      const redirectTo = `${import.meta.env.PROD ? import.meta.env.VITE_APP_URL : location.origin}/auth/callback`
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo }
-      })
-      if (error) throw error
-    } catch (error: any) {
-      toast.error(error.message || 'Falha ao registrar com Google')
-      setIsGoogleLoading(false)
     }
   }
 
@@ -162,6 +119,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     required
@@ -183,6 +141,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     required
@@ -202,35 +161,9 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-white h-12"
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white h-12"
               >
                 {isSubmitting ? 'Registrando...' : 'Registrar'}
-              </Button>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">ou</span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGoogleRegister}
-                disabled={isGoogleLoading}
-                className="w-full h-12"
-              >
-                {isGoogleLoading ? (
-                  <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    <Chrome className="h-5 w-5 mr-2" />
-                    Registrar com Google
-                  </>
-                )}
               </Button>
             </form>
           </CardContent>

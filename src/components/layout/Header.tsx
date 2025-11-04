@@ -228,7 +228,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition">
             <img
-              src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/item-images/images/logo/favicon.ico"
+              src="https://euxlnqarxvbyaaqofyqh.supabase.co/storage/v1/object/public/site-images/favicon.ico"
               alt="Logo"
               className="w-14"
             />
