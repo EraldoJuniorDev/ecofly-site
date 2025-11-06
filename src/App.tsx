@@ -14,6 +14,7 @@ import LoginPage from './pages/auth/LoginPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import UserPage from './pages/auth/user/UserPage';
 import ProductDetail from './components/ProductDetail';
+import AuthCallback from './pages/auth/callback/AuthCallback.tsx'; // ← NOVA ROTA
 import { Toaster } from './components/ui/sonner';
 import { CartProvider } from './context/CartContext';
 import { supabase } from './lib/supabaseClient';
@@ -25,27 +26,43 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: JSX.Elem
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session?.user);
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-      if (requireAdmin && session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        setIsAdmin(profile?.role === 'admin');
+        if (userError || !user) {
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+          return;
+        }
+
+        setIsAuthenticated(true);
+
+        if (requireAdmin) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          setIsAdmin(profile?.role === 'admin');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setIsAuthenticated(false);
+        setIsAdmin(false);
       }
     };
 
     checkAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session?.user);
-      setIsAdmin(false);
+      if (event === 'SIGNED_OUT') {
+        setIsAdmin(false);
+      }
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => authListener.subscription.unsubscribe();
   }, [requireAdmin]);
 
   if (isAuthenticated === null || (requireAdmin && isAdmin === null)) {
@@ -83,6 +100,10 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                {/* ROTA DE CALLBACK DO GOOGLE */}
+                <Route path="/auth/callback" element={<AuthCallback />} />
+
                 <Route
                   path="/admin"
                   element={
