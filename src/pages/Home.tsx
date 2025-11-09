@@ -170,7 +170,7 @@ const Home = () => {
               </h1>
 
               <p className="text-xl text-white/90 max-w-lg animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-                Transforme sua rotina com produtos sustentáveis únicos. 
+                Transforme sua rotina com produtos sustentáveis únicos.
                 EcoBags, cinzeiros artesanais, chaveiros e mini telas criativas.
               </p>
 
@@ -267,7 +267,10 @@ const Home = () => {
           )}
 
           <div className="text-center animate-scale-in">
-            <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 hover:scale-[1.02] transform transition-all duration-300 text-white btn-smooth">
+            <Button
+              variant='submit'
+              asChild size="lg"
+              className="hover:scale-[1.02] transform transition-all duration-300 text-white btn-smooth">
               <Link to="/catalogo">
                 Ver Todos os Produtos
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -286,7 +289,7 @@ const Home = () => {
                 Sustentabilidade em Cada Detalhe
               </h2>
               <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-                Na ECOFLY, cada produto é pensado para minimizar o impacto ambiental. 
+                Na ECOFLY, cada produto é pensado para minimizar o impacto ambiental.
                 Usamos materiais sustentáveis e processos artesanais que respeitam o planeta.
               </p>
               <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">

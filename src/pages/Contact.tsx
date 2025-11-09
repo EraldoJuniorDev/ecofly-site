@@ -206,7 +206,10 @@ const Contact = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 hover:scale-[1.02] transform transition-all duration-300 text-white">
+                <Button
+                  variant='submit'
+                  type="submit"
+                  className="w-full hover:scale-[1.02] transform transition-all duration-300 text-white">
                   <Send className="w-4 h-4 mr-2" />
                   Enviar Mensagem
                 </Button>

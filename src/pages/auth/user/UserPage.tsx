@@ -1,4 +1,3 @@
-// src/pages/auth/user/UserPage.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,15 +22,10 @@ import {
 } from "@/components/ui/dialog";
 import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
+import { ptBR } from 'date-fns/locale';
 
-// ========== TIPOS ==========
-interface Profile {
-  avatar_url?: string | null;
-  display_name?: string | null;
-  phone?: string | null;
-  birth_date?: string | null;
-  role?: string | null;
-}
+const TAB_KEY = "user_active_tab";
+type Tab = "profile" | "cart" | "orders" | "address";
 
 interface Address {
   id: string;
@@ -39,22 +33,12 @@ interface Address {
   recipient_name: string;
   street: string;
   number: string;
-  complement?: string | null;
+  complement?: string;
   neighborhood: string;
   city: string;
   state: string;
   zip_code: string;
   is_default: boolean;
-}
-
-interface CartItem {
-  id: string;
-  quantity: number;
-  items: {
-    name: string;
-    price: number;
-    images?: { url: string }[];
-  };
 }
 
 interface Order {
@@ -63,18 +47,7 @@ interface Order {
   created_at: string;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   total: number;
-  items?: any[];
-}
-
-const TAB_KEY = "user_active_tab";
-type Tab = "profile" | "cart" | "orders" | "address";
-
-// Variáveis globais definidas no main.tsx
-declare global {
-  interface Window {
-    currentSession: any;
-    authInitialized: boolean;
-  }
+  items: any[];
 }
 
 export default function UserPage() {
@@ -87,19 +60,21 @@ export default function UserPage() {
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Perfil
   const [editUser, setEditUser] = useState({ name: "", email: "", phone: "", birthDate: "" });
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [pass, setPass] = useState({ current: "", password: "", confirm: "" });
+  const [pass, setPass] = useState({
+    current: "",
+    password: "",
+    confirm: ""
+  });
   const [seePwd, setSeePwd] = useState(false);
   const [seeConfirm, setSeeConfirm] = useState(false);
 
-  // Carrinho
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<any[]>([]);
   const [showDeleteItem, setShowDeleteItem] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState("");
 
-  // Endereços
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [showAddr, setShowAddr] = useState(false);
   const [showEditAddr, setShowEditAddr] = useState(false);
@@ -112,199 +87,170 @@ export default function UserPage() {
   });
   const [cepProgress, setCepProgress] = useState(0);
 
-  // Pedidos
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // ========== CARREGAMENTO COM LISTENER GLOBAL ==========
   useEffect(() => {
-    const initialize = async () => {
-      // Espera o main.tsx inicializar o auth
-      if (!window.authInitialized) {
-        await new Promise<void>((resolve) => {
-          const handler = () => {
-            window.removeEventListener('supabase-auth-change', handler);
-            resolve();
-          };
-          window.addEventListener('supabase-auth-change', handler);
-        });
-      }
+    let mounted = true;
 
-      if (!window.currentSession?.user) {
-        sonnerToast.error("Faça login para acessar esta página.");
-        navigate("/login");
+    const loadUserData = async () => {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session?.user) {
+        if (mounted) {
+          sonnerToast.error("Faça login para acessar esta página!");
+          navigate("/login");
+        }
         return;
       }
 
-      const user = window.currentSession.user;
+      const user = session.user;
+      if (!mounted) return;
+
       setUserId(user.id);
 
-      // Dados básicos do auth
-      const name = user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário";
+      const name = user.user_metadata?.display_name || user.email?.split("@")[0] || "Usuário";
       const email = user.email || "";
-      const phone = user.phone?.replace("+55", "") || "";
+      const phone = user.phone?.replace("+55", "") || user.user_metadata?.phone || "";
       setUserPhone(phone);
       setEditUser({ name, email, phone, birthDate: "" });
       setFormAddr(prev => ({ ...prev, recipient_name: name }));
 
       try {
-        // Carregar perfil
         const { data: profile } = await supabase
           .from("profiles")
-          .select("avatar_url, display_name, phone, birth_date, role")
+          .select("avatar_url, display_name, phone, birth_date")
           .eq("id", user.id)
-          .maybeSingle<Profile>();
-
-        const safeProfile = profile ?? {
-          display_name: name,
-          phone: phone,
-          birth_date: null,
-          avatar_url: null,
-          role: 'user'
-        };
+          .single();
 
         setEditUser(prev => ({
-          name: safeProfile.display_name || name,
-          email,
-          phone: safeProfile.phone?.replace("+55", "") || phone,
-          birthDate: safeProfile.birth_date || "",
+          ...prev,
+          name: profile?.display_name || name,
+          phone: profile?.phone?.replace("+55", "") || phone,
+          birthDate: profile?.birth_date || "",
         }));
 
-        // Carregar foto com signed URL
-        if (safeProfile.avatar_url) {
-          const { data: signedData } = await supabase.storage
-            .from("profile_pics")
-            .createSignedUrl(safeProfile.avatar_url, 60 * 60 * 24 * 7);
-          if (signedData) setProfilePic(signedData.signedUrl);
+        if (profile?.avatar_url) {
+          const { data } = supabase.storage.from("profile_pics").getPublicUrl(profile.avatar_url);
+          setProfilePic(data.publicUrl + `?t=${Date.now()}`);
         }
 
-        // Dados paralelos
         const [cartRes, addrRes, ordRes] = await Promise.all([
-          supabase.from("cart").select("*, items(name, images, price)").eq("user_id", user.id),
-          supabase.from("user_addresses").select("*").eq("user_id", user.id).order("is_default", { ascending: false }),
-          supabase.from("user_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+          supabase
+            .from("cart")
+            .select("id, item_id, quantity, items(name, images, price)")
+            .eq("user_id", user.id),
+          supabase
+            .from("user_addresses")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("is_default", { ascending: false }),
+          supabase
+            .from("user_orders")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
         ]);
 
-        setCart(cartRes.data || []);
-        setAddresses(addrRes.data || []);
-        setOrders(ordRes.data || []);
-
-        setLoading(false);
-      } catch (err: any) {
-        console.error("Erro ao carregar dados:", err);
-        sonnerToast.error("Erro ao carregar página do usuário.");
-        setLoading(false);
+        if (mounted) {
+          setCart(cartRes.data || []);
+          setAddresses(addrRes.data || []);
+          setOrders(ordRes.data || []);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados do usuário:", err);
+        if (mounted) sonnerToast.error("Erro ao carregar seus dados.");
       }
     };
 
-    initialize();
+    loadUserData();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT") {
+        navigate("/login");
+      } else if (event === "SIGNED_IN" && mounted) {
+        await loadUserData();
+      }
+    });
+
+    return () => {
+      mounted = false;
+      listener?.subscription.unsubscribe();
+    };
   }, [navigate]);
 
   useEffect(() => localStorage.setItem(TAB_KEY, tab), [tab]);
 
-  // ========== FOTO DE PERFIL ==========
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) return sonnerToast.error("Apenas imagens!");
-    if (file.size > 5 * 1024 * 1024) return sonnerToast.error("Máximo 5MB");
-
-    const user = window.currentSession?.user;
-    if (!user) {
-      sonnerToast.error("Sessão expirada. Faça login novamente.");
-      navigate("/login");
-      return;
-    }
+    if (file.size > 5 * 1024 * 1024) return sonnerToast.error("Máx. 5MB");
 
     setSaving(true);
-
-    const fileExt = file.type === 'image/png' ? 'png' : 'jpg';
-    const fileName = `${user.id}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${userId}/${userId}.${fileExt}`;
 
     try {
-      const { error: uploadError } = await supabase.storage
+      const { error } = await supabase.storage
         .from("profile_pics")
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (error) throw error;
 
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from("profile_pics")
-        .createSignedUrl(filePath, 60 * 60 * 24 * 30);
+      const { data } = supabase.storage.from("profile_pics").getPublicUrl(filePath);
 
-      if (signedError) throw signedError;
+      await supabase.from("profiles").upsert({
+        id: userId,
+        avatar_url: filePath
+      });
 
-      const { error: dbError } = await supabase
-        .from("profiles")
-        .update({
-          avatar_url: filePath,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", user.id);
-
-      if (dbError) throw dbError;
-
-      setProfilePic(signedData.signedUrl);
+      setProfilePic(data.publicUrl + `?t=${Date.now()}`);
       sonnerToast.success("Foto atualizada!");
     } catch (err: any) {
-      console.error("Erro no upload:", err);
-      sonnerToast.error(err.message || "Erro ao enviar imagem");
-    } finally {
-      setSaving(false);
+      sonnerToast.error(err.message || "Erro ao enviar");
     }
+    setSaving(false);
   };
 
   const removeProfilePic = async () => {
     setSaving(true);
     try {
-      const user = window.currentSession?.user;
-      if (!user) throw new Error("Usuário não autenticado");
-
-      const { data: files } = await supabase.storage.from("profile_pics").list(user.id);
-      if (files?.length) {
-        const paths = files.map(f => `${user.id}/${f.name}`);
-        await supabase.storage.from("profile_pics").remove(paths);
-      }
-
-      await supabase
-        .from("profiles")
-        .update({ avatar_url: null, updated_at: new Date().toISOString() })
-        .eq("id", user.id);
-
+      await supabase.storage.from("profile_pics").remove([`${userId}/${userId}.*`]);
+      await supabase.from("profiles").update({ avatar_url: null }).eq("id", userId);
       setProfilePic(null);
       sonnerToast.success("Foto removida");
-    } catch (err: any) {
-      sonnerToast.error(err.message || "Erro ao remover foto");
-    } finally {
-      setSaving(false);
+    } catch {
+      sonnerToast.error("Erro ao remover");
     }
+    setSaving(false);
   };
 
-  // ========== PERFIL ==========
   const saveProfile = async () => {
     const phoneRaw = editUser.phone.replace(/\D/g, "");
-    if (!phoneRaw.match(/^\d{10,11}$/)) return sonnerToast.error("Celular inválido (10 ou 11 dígitos)");
+    if (!phoneRaw.match(/^\d{10,11}$/)) return sonnerToast.error("Celular inválido");
 
     setSaving(true);
     try {
-      await supabase.auth.updateUser({ phone: `+55${phoneRaw}` });
+      // REMOVE esta linha → NÃO use updateUser para phone
+      // await supabase.auth.updateUser({ phone: `+55${phoneRaw}` });
 
+      // Atualiza SOMENTE na tabela profiles
       const { error } = await supabase
         .from("profiles")
-        .update({
-          display_name: editUser.name,
-          phone: `+55${phoneRaw}`,
+        .upsert({
+          id: userId,
+          display_name: editUser.name.trim(),
+          phone: phoneRaw ? `+55${phoneRaw}` : null,
           birth_date: editUser.birthDate || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
+        });
 
       if (error) throw error;
 
-      sonnerToast.success("Perfil atualizado com sucesso!");
+      sonnerToast.success("Perfil atualizado!");
     } catch (err: any) {
-      sonnerToast.error(err.message || "Erro ao salvar perfil");
+      sonnerToast.error(err.message || "Erro ao salvar");
     } finally {
       setSaving(false);
     }
@@ -320,14 +266,18 @@ export default function UserPage() {
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) throw new Error("Usuário não autenticado.");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.email) throw new Error("Usuário não autenticado.");
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
+        email: session.user.email,
         password: pass.current,
       });
-      if (signInError) throw new Error("Senha atual incorreta.");
+      if (signInError) {
+        sonnerToast.error("Senha atual incorreta.");
+        setSaving(false);
+        return;
+      }
 
       const { error } = await supabase.auth.updateUser({ password: pass.password });
       if (error) throw error;
@@ -336,29 +286,26 @@ export default function UserPage() {
       setPass({ current: "", password: "", confirm: "" });
       setShowPass(false);
     } catch (err: any) {
+      console.error(err);
       sonnerToast.error(err.message || "Erro ao alterar a senha.");
     } finally {
       setSaving(false);
     }
   };
 
-  // ========== CARRINHO ==========
-  const changeQty = async (id: string, qty: number) => {
+  const changeQty = async (cartId: string, qty: number) => {
     if (qty < 1) return;
-    const { error } = await supabase.from("cart").update({ quantity: qty }).eq("id", id);
-    if (error) return sonnerToast.error("Erro ao atualizar quantidade");
-    setCart(c => c.map(i => i.id === id ? { ...i, quantity: qty } : i));
+    await supabase.from("cart").update({ quantity: qty }).eq("id", cartId);
+    setCart(c => c.map(i => i.id === cartId ? { ...i, quantity: qty } : i));
   };
 
   const removeItem = async () => {
-    const { error } = await supabase.from("cart").delete().eq("id", deleteItemId);
-    if (error) return sonnerToast.error("Erro ao remover item");
+    await supabase.from("cart").delete().eq("id", deleteItemId);
     setCart(c => c.filter(i => i.id !== deleteItemId));
     setShowDeleteItem(false);
-    sonnerToast.success("Item removido do carrinho!");
+    sonnerToast.success("Item removido!");
   };
 
-  // ========== ENDEREÇOS ==========
   const searchCEP = async (cep: string) => {
     if (cep.length !== 8) return;
     setCepProgress(30);
@@ -375,14 +322,11 @@ export default function UserPage() {
           state: data.uf || ""
         }));
         sonnerToast.success("CEP encontrado!");
-      } else {
-        sonnerToast.error("CEP inválido");
-      }
+      } else sonnerToast.error("CEP inválido");
     } catch {
-      sonnerToast.error("Erro na busca do CEP");
-    } finally {
-      setTimeout(() => setCepProgress(0), 600);
+      sonnerToast.error("Erro na busca");
     }
+    setTimeout(() => setCepProgress(0), 600);
   };
 
   const saveAddress = async () => {
@@ -393,14 +337,12 @@ export default function UserPage() {
         await supabase.from("user_addresses").update({ is_default: false }).eq("user_id", userId);
       }
 
-      const { data, error } = await supabase.from("user_addresses").upsert({
+      const { data } = await supabase.from("user_addresses").upsert({
         ...(addrToEdit ? { id: addrToEdit.id } : {}),
         user_id: userId,
         ...formAddr,
         recipient_name: formAddr.recipient_name || editUser.name
-      }).select().single<Address>();
-
-      if (error) throw error;
+      }).select().single();
 
       setAddresses(prev => addrToEdit
         ? prev.map(a => a.id === data.id ? data : a)
@@ -409,14 +351,13 @@ export default function UserPage() {
 
       closeAddr();
       sonnerToast.success(addrToEdit ? "Endereço atualizado!" : "Endereço salvo!");
-    } catch (err: any) {
-      sonnerToast.error(err.message || "Erro ao salvar endereço");
+    } catch {
+      sonnerToast.error("Erro ao salvar");
     }
   };
 
   const deleteAddress = async () => {
-    const { error } = await supabase.from("user_addresses").delete().eq("id", addrToDelete);
-    if (error) return sonnerToast.error("Erro ao excluir");
+    await supabase.from("user_addresses").delete().eq("id", addrToDelete);
     setAddresses(a => a.filter(x => x.id !== addrToDelete));
     setShowDeleteAddr(false);
     sonnerToast.success("Endereço excluído!");
@@ -424,10 +365,9 @@ export default function UserPage() {
 
   const setDefault = async (id: string) => {
     await supabase.from("user_addresses").update({ is_default: false }).eq("user_id", userId);
-    const { error } = await supabase.from("user_addresses").update({ is_default: true }).eq("id", id);
-    if (error) return sonnerToast.error("Erro ao definir padrão");
+    await supabase.from("user_addresses").update({ is_default: true }).eq("id", id);
     setAddresses(a => a.map(x => ({ ...x, is_default: x.id === id })));
-    sonnerToast.success("Endereço padrão alterado!");
+    sonnerToast.success("Padrão alterado!");
   };
 
   const openAdd = () => {
@@ -455,7 +395,6 @@ export default function UserPage() {
     setFormAddr({ label: "Casa", recipient_name: editUser.name, is_default: true });
   };
 
-  // ========== UI ==========
   const nav = [
     { id: "profile", label: "Perfil", icon: User },
     { id: "cart", label: "Carrinho", icon: ShoppingCart },
@@ -471,13 +410,12 @@ export default function UserPage() {
       delivered: { icon: CheckCircle, color: "bg-green-500", text: "Entregue" },
       cancelled: { icon: XCircle, color: "bg-destructive", text: "Cancelado" }
     };
-    const { icon: Icon, color, text } = map[s] || { icon: Clock, color: "bg-gray-500", text: "Desconhecido" };
+    const { icon: Icon, color, text } = map[s];
     return <Badge className={`${color} text-white`}><Icon className="w-3 h-3 mr-1" />{text}</Badge>;
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-background backdrop-blur-sm border-b">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -495,7 +433,6 @@ export default function UserPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
-          {/* SIDEBAR */}
           <aside>
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
               className="bg-card rounded-2xl border p-6 shadow-sm">
@@ -510,8 +447,8 @@ export default function UserPage() {
                     <motion.button key={item.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={() => setTab(item.id as Tab)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active
-                          ? `bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm`
-                          : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-900/20"
+                        ? `bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shadow-sm`
+                        : "text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-emerald-900/20"
                         }`}>
                       <Icon className="h-5 w-5" />
                       <span className="font-medium">{item.label}</span>
@@ -522,90 +459,143 @@ export default function UserPage() {
             </motion.div>
           </aside>
 
-          {/* CONTEÚDO */}
           <main className="lg:col-span-3">
             <AnimatePresence mode="wait">
               <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                {/* PERFIL */}
                 {tab === "profile" && (
                   <Card className="rounded-2xl border shadow-sm">
-                    <CardContent className="p-8">
-                      <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
-                        {/* Foto */}
-                        <div className="flex flex-col items-center">
-                          <div className="relative group">
-                            <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-emerald-100 dark:ring-emerald-900/50 shadow-lg">
-                              {profilePic ? (
-                                <img src={profilePic} alt="Perfil" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-5xl font-bold">
-                                  {editUser.name.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => fileInputRef.current?.click()}
-                              className="absolute bottom-1 right-1 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition"
-                            >
-                              <Camera className="h-4 w-4" />
-                            </button>
-                            {profilePic && (
-                              <button
-                                onClick={removeProfilePic}
-                                className="absolute top-1 right-1 p-2 rounded-full bg-destructive text-white hover:bg-red-700 transition"
-                              >
-                                <XIcon className="h-4 w-4" />
-                              </button>
+                    <CardContent className="block p-8 sm:flex sm:flex-row sm:justify-around">
+                      <div className="flex flex-col items-center text-center mb-8">
+                        <div className="relative group">
+                          <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-emerald-100 dark:ring-emerald-900/50 shadow-lg">
+                            {profilePic ? (
+                              <img
+                                src={profilePic}
+                                alt="Perfil"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-5xl font-bold">
+                                {editUser.name.charAt(0).toUpperCase()}
+                              </div>
                             )}
                           </div>
-                          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                          <h2 className="text-2xl font-bold mt-4">{editUser.name}</h2>
-                          <p className="text-sm text-muted-foreground">{editUser.email}</p>
+
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute bottom-1 right-1 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                          >
+                            <Camera className="h-4 w-4" />
+                          </button>
+
+                          {profilePic && (
+                            <button
+                              type="button"
+                              onClick={removeProfilePic}
+                              className="absolute top-1 right-1 p-2 rounded-full bg-destructive text-white hover:bg-red-700 transition"
+                            >
+                              <XIcon className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
 
-                        {/* Formulário */}
-                        {loading ? (
-                          <p className="text-center py-8">Carregando...</p>
-                        ) : (
-                          <form onSubmit={(e) => { e.preventDefault(); saveProfile(); }} className="flex-1 space-y-6">
-                            <div>
-                              <Label>Nome Completo *</Label>
-                              <Input value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} placeholder="Seu nome" />
-                            </div>
-                            <div>
-                              <Label>Telefone *</Label>
-                              <Input value={editUser.phone} onChange={e => setEditUser({ ...editUser, phone: e.target.value })} placeholder="(00) 00000-0000" />
-                            </div>
-                            <div className="relative">
-                              <Label>Data de Nascimento</Label>
-                              <DatePicker
-                                selected={editUser.birthDate ? new Date(editUser.birthDate) : null}
-                                onChange={(date: Date | null) => setEditUser({ ...editUser, birthDate: date ? date.toISOString().split("T")[0] : "" })}
-                                dateFormat="dd/MM/yyyy"
-                                placeholderText="Selecione"
-                                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500"
-                                wrapperClassName="w-full"
-                                locale="pt-BR"
-                                maxDate={new Date()}
-                              />
-                              <Calendar className="absolute right-3 top-9 h-4 w-4 text-muted-foreground" />
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <Button type="submit" disabled={saving} className="eco-gradient text-white">
-                                {saving ? "Salvando..." : "Salvar Alterações"}
-                              </Button>
-                              <Button type="button" variant="outline" onClick={() => setShowPass(true)} className="border-emerald-500 text-emerald-600">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                        />
+
+                        <h2 className="text-2xl font-bold mt-4">{editUser.name}</h2>
+                        <p className="text-sm text-muted-foreground">{editUser.email}</p>
+                      </div>
+
+                      {loading ? (
+                        <p className="text-center py-8">Carregando...</p>
+                      ) : (
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            saveProfile();
+                          }}
+                          className="space-y-6"
+                        >
+                          <div>
+                            <Label htmlFor="name">Nome Completo*</Label>
+                            <Input
+                              id="name"
+                              value={editUser.name || ""}
+                              onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
+                              placeholder="Digite seu nome completo"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="phone">Telefone*</Label>
+                            <Input
+                              id="phone"
+                              value={editUser.phone || ""}
+                              onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
+                              placeholder="(00) 00000-0000"
+                            />
+                          </div>
+
+                          <div className="relative">
+                            <Label htmlFor="birthDate">Data de Nascimento</Label>
+                            <DatePicker
+                              selected={editUser.birthDate ? new Date(editUser.birthDate) : null}
+                              onChange={(date: Date | null) => {
+                                const formatted = date ? date.toISOString().split("T")[0] : "";
+                                setEditUser({ ...editUser, birthDate: formatted });
+                              }}
+                              dateFormat="dd/MM/yyyy"
+                              placeholderText="Selecione sua data"
+                              className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-background dark:border-gray-600 dark:text-white"
+                              wrapperClassName="w-full"
+                              showPopperArrow={false}
+                              locale={ptBR}
+                              maxDate={new Date()}
+                            />
+                            <Calendar className="absolute right-3 top-9 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+                            <Button
+                              variant="submit"
+                              type="submit"
+                              disabled={saving}
+                              className="w-full sm:w-auto font-semibold"
+                            >
+                              {saving ? "Salvando..." : "Salvar Alterações"}
+                            </Button>
+
+                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full sm:w-auto border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                                onClick={() => setShowPass(true)}
+                              >
                                 Alterar Senha
                               </Button>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                className="w-full sm:w-auto"
+                                onClick={() => sonnerToast("Funcionalidade de apagar conta em breve.")}
+                              >
+                                Apagar Conta
+                              </Button>
                             </div>
-                          </form>
-                        )}
-                      </div>
+                          </div>
+                        </form>
+                      )}
                     </CardContent>
                   </Card>
                 )}
 
-                {/* OUTRAS TABS (cart, orders, address) - MANTIDAS IGUAIS */}
                 {tab === "cart" && (
                   <Card className="rounded-2xl border shadow-sm">
                     <CardContent className="p-8">
@@ -618,16 +608,16 @@ export default function UserPage() {
                       ) : (
                         <div className="space-y-6">
                           {cart.map(item => (
-                            <div key={item.id} className="flex gap-4 p-4 border rounded-xl items-center">
+                            <div key={item.id} className="flex gap-4 p-4 border rounded-xl">
                               <img src={item.items?.images?.[0]?.url || "https://via.placeholder.com/80"} alt={item.items.name} className="w-20 h-20 rounded-lg object-cover" />
                               <div className="flex-1">
                                 <h3 className="font-semibold">{item.items.name}</h3>
                                 <p className="text-sm text-muted-foreground">R$ {item.items.price.toFixed(2)}</p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity - 1)}><Minus /></Button>
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity - 1)} className="hover:text-muted dark:hover:text-muted-foreground"><Minus /></Button>
                                 <span className="w-8 text-center font-medium">{item.quantity}</span>
-                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity + 1)}><Plus /></Button>
+                                <Button size="icon" variant="outline" onClick={() => changeQty(item.id, item.quantity + 1)} className="hover:text-muted dark:hover:text-muted-foreground"><Plus /></Button>
                               </div>
                               <Button size="icon" variant="destructive" onClick={() => { setDeleteItemId(item.id); setShowDeleteItem(true); }}>
                                 <Trash2 className="h-5 w-5" />
@@ -641,7 +631,9 @@ export default function UserPage() {
                                 R$ {cart.reduce((s, i) => s + i.items.price * i.quantity, 0).toFixed(2)}
                               </span>
                             </div>
-                            <Button className="w-full eco-gradient text-white font-semibold text-lg py-6">
+                            <Button
+                              variant="submit"
+                              className="w-fullfont-semibold text-lg py-6">
                               Finalizar Compra
                             </Button>
                           </div>
@@ -687,7 +679,9 @@ export default function UserPage() {
                     <CardContent className="p-8">
                       <div className="flex justify-between items-center mb-8">
                         <h2 className="text-2xl font-bold">Endereços</h2>
-                        <Button onClick={openAdd} className="eco-gradient text-white">
+                        <Button
+                        variant="submit"
+                        onClick={openAdd}>
                           <Plus className="h-4 w-4 mr-2" /> Novo
                         </Button>
                       </div>
@@ -701,15 +695,15 @@ export default function UserPage() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
                                     <h3 className="font-bold">{a.label}</h3>
-                                    {a.is_default && <Badge className="bg-emerald-500 text-white"><Star className="h-3 w-3 mr-1" /> Padrão</Badge>}
+                                    {a.is_default && <Badge className="bg-green-500 hover:bg-green-600 text-white"><Star className="h-3 w-3 mr-1" /> Padrão</Badge>}
                                   </div>
                                   <p className="text-sm text-muted-foreground">{a.recipient_name}</p>
                                   <p className="text-sm">{a.street}, {a.number}{a.complement && ` - ${a.complement}`}</p>
                                   <p className="text-sm">{a.neighborhood} • {a.city}/{a.state} • CEP {a.zip_code.replace(/(\d{5})(\d{3})/, "$1-$2")}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                  {!a.is_default && <Button size="sm" variant="outline" onClick={() => setDefault(a.id)}>Padrão</Button>}
-                                  <Button size="icon" variant="ghost" onClick={() => openEdit(a)}><Edit className="h-4 w-4" /></Button>
+                                  {!a.is_default && <Button size="sm" variant="outline" onClick={() => setDefault(a.id)}>Definir como Padrão</Button>}
+                                  <Button size="icon" variant="submit" onClick={() => openEdit(a)}><Edit className="h-4 w-4" /></Button>
                                   <Button size="icon" variant="destructive" onClick={() => { setAddrToDelete(a.id); setShowDeleteAddr(true); }}>
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
@@ -728,8 +722,132 @@ export default function UserPage() {
         </div>
       </div>
 
-      {/* MODAIS - MANTIDOS IGUAIS */}
-      {/* ... (senha, carrinho, endereço) ... */}
+      {/* Dialogs */}
+      <Dialog open={showPass} onOpenChange={setShowPass}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              Alterar Senha
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="current">Senha Atual*</Label>
+              <Input
+                id="current"
+                type={seePwd ? "text" : "password"}
+                placeholder="Digite sua senha atual"
+                value={pass.current || ""}
+                onChange={(e) => setPass({ ...pass, current: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="new">Nova Senha*</Label>
+              <Input
+                id="new"
+                type={seePwd ? "text" : "password"}
+                placeholder="Nova senha"
+                value={pass.password}
+                onChange={(e) => setPass({ ...pass, password: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="confirm">Confirmar Nova Senha*</Label>
+              <Input
+                id="confirm"
+                type={seeConfirm ? "text" : "password"}
+                placeholder="Confirme a nova senha"
+                value={pass.confirm}
+                onChange={(e) => setPass({ ...pass, confirm: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex justify-end gap-3">
+            <Button variant="destructive" onClick={() => setShowPass(false)} className="hover:text-muted dark:hover:text-muted-foreground">
+              Cancelar
+            </Button>
+            <Button onClick={changePassword} className="eco-gradient text-white">
+              {saving ? "Salvando..." : "Salvar Senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteItem} onOpenChange={setShowDeleteItem}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Remover item?</DialogTitle></DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowDeleteItem(false)}>Cancelar</Button>
+            <Button onClick={removeItem} className="bg-destructive text-white">Remover</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddr || showEditAddr} onOpenChange={closeAddr}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{showEditAddr ? "Editar" : "Novo"} Endereço</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>CEP *</Label>
+              <Input placeholder="00000000" value={formAddr.zip_code || ""} onChange={e => {
+                const cep = e.target.value.replace(/\D/g, "").slice(0, 8);
+                setFormAddr({ ...formAddr, zip_code: cep });
+                searchCEP(cep);
+              }} />
+              {cepProgress > 0 && (
+                <div className="mt-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                  <motion.div
+                    className="bg-emerald-500 h-2 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cepProgress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+            <div><Label>Apelido</Label><Input value={formAddr.label || ""} onChange={e => setFormAddr({ ...formAddr, label: e.target.value })} /></div>
+
+            <div className="col-span-2"><Label>Rua</Label><Input value={formAddr.street || ""} onChange={e => setFormAddr({ ...formAddr, street: e.target.value })} /></div>
+            <div><Label>Número</Label><Input value={formAddr.number || ""} onChange={e => setFormAddr({ ...formAddr, number: e.target.value })} /></div>
+            <div><Label>Complemento</Label><Input value={formAddr.complement || ""} onChange={e => setFormAddr({ ...formAddr, complement: e.target.value })} /></div>
+
+            <div className="col-span-2"><Label>Bairro</Label><Input value={formAddr.neighborhood || ""} onChange={e => setFormAddr({ ...formAddr, neighborhood: e.target.value })} /></div>
+            <div><Label>Cidade</Label><Input value={formAddr.city || ""} onChange={e => setFormAddr({ ...formAddr, city: e.target.value })} /></div>
+            <div><Label>Estado</Label><Input value={formAddr.state || ""} onChange={e => setFormAddr({ ...formAddr, state: e.target.value })} maxLength={2} /></div>
+
+            <div className="col-span-2"><Label>Destinatário</Label><Input value={formAddr.recipient_name || ""} onChange={e => setFormAddr({ ...formAddr, recipient_name: e.target.value })} /></div>
+            <div className="col-span-2 flex items-center gap-3">
+              <Switch checked={!!formAddr.is_default} onCheckedChange={v => setFormAddr({ ...formAddr, is_default: v })} />
+              <Label className="cursor-pointer">Endereço padrão</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="destructive" onClick={closeAddr}>Cancelar</Button>
+            <Button
+            variant="submit"
+            onClick={saveAddress} >
+              {showEditAddr ? "Salvar Alterações" : "Adicionar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteAddr} onOpenChange={setShowDeleteAddr}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir endereço?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Esta ação não pode ser desfeita.</p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowDeleteAddr(false)}>Cancelar</Button>
+            <Button onClick={deleteAddress} className="bg-destructive text-white">Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// src/components/ProductCard.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
@@ -44,7 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const { addToCart, removeFromCart } = useCart();
   const navigate = useNavigate();
 
-  // Buscar dados do usuário, preço, avaliações e status do carrinho
+  // 🔹 Buscar dados do usuário, item, preço e avaliações
   useEffect(() => {
     if (!slug) return;
 
@@ -53,15 +52,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
 
-        // Verifica se está no carrinho
         if (user) {
+          // Verifica se o item já está no carrinho
           const { data: cartItem } = await supabase
             .from('cart')
             .select('id')
             .eq('user_id', user.id)
             .eq('item_id', id)
-            .maybeSingle(); // ← CORRETO: não dá erro se não existir
-
+            .single();
           setIsInCart(!!cartItem);
         }
 
@@ -71,7 +69,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
           .select('price, original_price')
           .eq('id', id)
           .single();
-
         if (item) {
           setPrice(item.price);
           setOriginalPrice(item.original_price ?? item.price);
@@ -82,7 +79,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
           .from('reviews')
           .select('rating')
           .eq('item_id', id);
-
         if (reviews && reviews.length > 0) {
           const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
           setAverageRating(total / reviews.length);
@@ -115,13 +111,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
     if (onWhatsAppClick) onWhatsAppClick(name);
   }, [name, onWhatsAppClick]);
 
+  // 🔹 Impedir adicionar ao carrinho sem login
   const handleCartToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
 
       if (!user) {
         toast.error('Você precisa estar logado para adicionar itens ao carrinho.');
-        navigate('/login');
         return;
       }
 
@@ -145,7 +141,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   if (!slug) return null;
 
-  const hasDiscount = originalPrice !== null && price !== null && originalPrice > price;
+  const hasDiscount =
+    originalPrice !== null && price !== null && originalPrice > price;
   const discountPercent = hasDiscount
     ? Math.round(((originalPrice! - price!) / originalPrice!) * 100)
     : 0;
@@ -253,7 +250,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex items-center gap-1">
           {onWhatsAppClick && (
             <Button
-              variant="outline"
+              variant="submit"
               size="sm"
               onClick={handleWhatsAppClick}
               className="w-full hover:text-white"
@@ -268,8 +265,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
             size="sm"
             className={`transition-all duration-200 ${
               isInCart
-                ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                : 'text-muted-foreground hover:text-emerald-500 hover:bg-emerald-50'
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'text-muted-foreground hover:text-green-500 hover:bg-emerald-50'
             }`}
           >
             <ShoppingCart

@@ -460,15 +460,14 @@ const AdminPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <Button
+                variant="ghost"
                 onClick={handleGoBack}
-                className="flex items-center gap-2 text-slate-600 dark:text-slate-200 hover:text-emerald-600 transition-colors duration-300 group"
+                className="flex items-center gap-2 text-slate-600 dark:text-slate-200 hover:text-muted transition-colors duration-300 group"
               >
                 <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
                 <span className="font-medium">Voltar</span>
-              </motion.button>
+              </Button>
 
               <div className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
 
@@ -622,7 +621,7 @@ const AdminPage: React.FC = () => {
                     >
                       <div className="p-4 sm:p-8">
                         <div className="flex items-center gap-3 mb-8">
-                          <div className="p-3 eco-gradient rounded-xl">
+                          <div className="p-3 bg-green-500 rounded-xl">
                             <Plus className="h-6 w-6 text-white" />
                           </div>
                           <div>
@@ -709,10 +708,10 @@ const AdminPage: React.FC = () => {
                                   ))}
                                 </div>
                               )}
-                              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/10 transition-all duration-300 cursor-pointer group">
+                              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-green-500 hover:bg-emerald-50/10 transition-all duration-300 cursor-pointer group">
                                 <label htmlFor="images" className="cursor-pointer block">
                                   <div className="space-y-4">
-                                    <div className="mx-auto w-16 h-16 eco-gradient rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                                    <div className="mx-auto w-16 h-16 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
                                       <Upload className="h-8 w-8 text-white" />
                                     </div>
 
@@ -760,12 +759,11 @@ const AdminPage: React.FC = () => {
                         </div>
 
                         <div className="flex justify-end mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                          <Button
+                            variant="submit"
                             onClick={() => setShowAddDialog(true)}
                             disabled={isSubmitting}
-                            className="px-8 py-3 eco-gradient text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-8 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                           >
                             {isSubmitting ? (
                               <>
@@ -778,7 +776,7 @@ const AdminPage: React.FC = () => {
                                 Adicionar Produto
                               </>
                             )}
-                          </motion.button>
+                          </Button>
                         </div>
 
                         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
@@ -798,7 +796,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 onClick={handleAddProduct}
                                 disabled={isSubmitting}
-                                className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                                className="w-full sm:w-auto bg-green-500 text-white font-semibold"
                               >
                                 {isSubmitting ? "Adicionando..." : "Confirmar"}
                               </Button>
@@ -820,7 +818,7 @@ const AdminPage: React.FC = () => {
                     >
                       <div className="p-4 sm:p-8">
                         <div className="flex items-center gap-3 mb-8">
-                          <div className="p-3 eco-gradient rounded-xl">
+                          <div className="p-3 bg-blue-500 rounded-xl">
                             <Pencil className="h-6 w-6 text-white" />
                           </div>
                           <div>
@@ -850,8 +848,8 @@ const AdminPage: React.FC = () => {
                                   <span>{product.name}</span>
                                 </div>
                                 <Button
+                                  variant="submit"
                                   onClick={() => handleStartEdit(product)}
-                                  className="eco-gradient text-white"
                                 >
                                   Editar
                                 </Button>
@@ -1002,7 +1000,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 onClick={() => setShowEditConfirmDialog(true)}
                                 disabled={isSubmitting}
-                                className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                                className="w-full sm:w-auto bg-green-500 text-white font-semibold"
                               >
                                 {isSubmitting ? "Atualizando..." : "Confirmar"}
                               </Button>
@@ -1031,7 +1029,7 @@ const AdminPage: React.FC = () => {
                           <Button
                             onClick={handleEditSubmit}
                             disabled={isSubmitting}
-                            className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                            className="w-full sm:w-auto bg-green-500 text-white font-semibold"
                           >
                             {isSubmitting ? "Salvando..." : "Confirmar"}
                           </Button>
@@ -1050,7 +1048,7 @@ const AdminPage: React.FC = () => {
                       className="bg-card dark:bg-background rounded-2xl border border-slate-200/60 dark:border-slate-700/40 shadow-sm p-4 sm:p-6"
                     >
                       <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 rounded-xl eco-gradient">
+                        <div className="p-3 rounded-xl bg-red-500">
                           <Trash2 className="h-6 w-6 text-white" />
                         </div>
                         <div>
@@ -1212,15 +1210,14 @@ const AdminPage: React.FC = () => {
                                   <div className="flex items-center gap-5">
                                     <Button
                                       className="border"
-                                      variant="ghost"
+                                      variant="submit"
                                       onClick={() => openQuickEditFor(product)}
                                     >
                                       <Pencil className="h-4 w-4" />
                                       <span className="ml-2 sm:inline">Editar</span>
                                     </Button>
                                     <Button
-                                      className="border hover:bg-destructive"
-                                      variant="ghost"
+                                      variant="destructive"
                                       onClick={() => {
                                         if (!product || !product.id) {
                                           console.error("Invalid product for deletion (grid):", product);
@@ -1286,7 +1283,7 @@ const AdminPage: React.FC = () => {
                                   <div className="flex gap-2">
                                     <Button
                                       onClick={() => openQuickEditFor(product)}
-                                      className="eco-gradient text-white"
+                                      className="bg-green-500 text-white"
                                     >
                                       <Pencil className="h-4 w-4" />
                                     </Button>
@@ -1401,7 +1398,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 onClick={() => setShowQuickEditConfirmDialog(true)}
                                 disabled={isSubmitting}
-                                className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                                className="w-full sm:w-auto bg-green-500 text-white font-semibold"
                               >
                                 {isSubmitting ? "Salvando..." : "Confirmar"}
                               </Button>
@@ -1430,7 +1427,7 @@ const AdminPage: React.FC = () => {
                           <Button
                             onClick={handleQuickEditSubmit}
                             disabled={isSubmitting}
-                            className="w-full sm:w-auto eco-gradient text-white font-semibold"
+                            className="w-full sm:w-auto bg-green-500 text-white font-semibold"
                           >
                             {isSubmitting ? "Salvando..." : "Confirmar"}
                           </Button>
@@ -1468,7 +1465,7 @@ const AdminPage: React.FC = () => {
             <Button
               onClick={handleConfirmDelete}
               disabled={isSubmitting}
-              className="w-full sm:w-auto eco-gradient text-white font-semibold"
+              className="w-full sm:w-auto bg-green-500 text-white font-semibold"
             >
               {isSubmitting ? "Excluindo..." : "Confirmar"}
             </Button>

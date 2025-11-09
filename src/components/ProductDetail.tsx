@@ -1177,7 +1177,7 @@ const SuggestionProductCard: React.FC<SuggestionProductCardProps> = ({
             size="sm"
             className={`hover:bg-emerald-400 transition-all duration-200 ${
               isInCart
-                ? 'bg-emerald-500 text-white hover:text-emerald-600'
+                ? 'bg-green-500 text-white hover:text-emerald-600'
                 : 'text-muted-foreground hover:text-emerald-500'
             }`}
           >

@@ -33,8 +33,8 @@ const ThemeToggle = () => {
             <DropdownMenuItem
               key={themeOption.value}
               onClick={() => setTheme(themeOption.value as any)}
-              className={`flex items-center gap-2 cursor-pointer hover:text-blue-700 dark:text-white ${
-                theme === themeOption.value ? 'bg-green-700 text-white hover:text-white' : ''
+              className={`flex dark:hover:bg-green-600 items-center gap-2 cursor-pointer dark:text-white ${
+                theme === themeOption.value ? 'bg-green-500 text-white hover:text-white' : ''
               }`}
             >
               <Icon className="h-4 w-4" />

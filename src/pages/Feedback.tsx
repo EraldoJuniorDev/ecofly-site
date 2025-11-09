@@ -44,9 +44,9 @@ const Feedback = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
+
     console.log('Feedback submitted:', { ...formData, rating })
-    
+
     if (!formData.name || !formData.message || rating < 1 || rating > 5) {
       toast.error('Por favor, preencha pelo menos seu nome, mensagem e uma avaliação entre 1 e 5.')
       setLoading(false)
@@ -72,15 +72,15 @@ const Feedback = () => {
       toast.error('Erro ao enviar feedback: ' + error.message)
     } else {
       toast.success('Obrigado pelo seu feedback! Sua opinião é muito importante para nós.')
-      
+
       setFormData({ name: '', email: '', product: '', message: '' })
       setRating(0)
-      
+
       const { data: refreshedData, error: refreshError } = await supabase
         .from('feedbacks')
         .select('*')
         .order('created_at', { ascending: false })
-      
+
       if (!refreshError) {
         setTestimonials(refreshedData || [])
       }
@@ -137,11 +137,10 @@ const Feedback = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`h-8 w-8 cursor-pointer transition-colors ${
-                        star <= (hoveredRating || rating)
+                      className={`h-8 w-8 cursor-pointer transition-colors ${star <= (hoveredRating || rating)
                           ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-300'
-                      }`}
+                        }`}
                       onMouseEnter={() => setHoveredRating(star)}
                       onMouseLeave={() => setHoveredRating(0)}
                       onClick={() => setRating(star)}
@@ -206,8 +205,9 @@ const Feedback = () => {
               </div>
 
               <Button
+                variant='submit'
                 type="submit"
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 hover:scale-[1.02] transform transition-all duration-300 text-white"
+                className="w-full hover:scale-[1.02] transform transition-all duration-300 text-white"
                 disabled={loading}
               >
                 <Send className="w-4 h-4 mr-2" />
@@ -219,7 +219,7 @@ const Feedback = () => {
 
         <div className="space-y-6">
           <h2 className="text-2xl font-bold mb-6">O que nossos clientes dizem</h2>
-          
+
           <div className="max-h-[600px] overflow-y-auto space-y-6 pr-4">
             {testimonials.length === 0 ? (
               <p className="text-muted-foreground">Nenhum depoimento ainda. Seja o primeiro!</p>
@@ -239,13 +239,13 @@ const Feedback = () => {
                         {testimonial.product || 'Geral'}
                       </span>
                     </div>
-                    
+
                     <div className="flex gap-1 mb-2">
                       {[...Array(testimonial.rating)].map((_, i) => (
                         <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
-                    
+
                     <p className="text-sm leading-relaxed break-words max-w-full"> "{testimonial.message}"</p>
                   </CardContent>
                 </Card>

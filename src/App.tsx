@@ -14,7 +14,6 @@ import LoginPage from './pages/auth/LoginPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import UserPage from './pages/auth/user/UserPage';
 import ProductDetail from './components/ProductDetail';
-import AuthCallback from './pages/auth/callback/AuthCallback.tsx'; // ← NOVA ROTA
 import { Toaster } from './components/ui/sonner';
 import { CartProvider } from './context/CartContext';
 import { supabase } from './lib/supabaseClient';
@@ -42,7 +41,11 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: JSX.Elem
             .from('profiles')
             .select('role')
             .eq('id', user.id)
-            .single();
+            .single()
+            .then(({ data, error }) => {
+              if (error) return { data: null };
+              return { data };
+            });
 
           setIsAdmin(profile?.role === 'admin');
         }
@@ -100,10 +103,6 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-                {/* ROTA DE CALLBACK DO GOOGLE */}
-                <Route path="/auth/callback" element={<AuthCallback />} />
-
                 <Route
                   path="/admin"
                   element={

@@ -1,100 +1,28 @@
-// src/pages/auth/LoginPage.tsx
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Chrome } from 'lucide-react'
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { supabase } from '../../lib/supabaseClient'
 import { toast } from 'sonner'
+import ThemeToggle from '../../components/layout/ThemeToggle'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // FUNÇÃO PARA CRIAR/ATUALIZAR PERFIL (USADA NO GOOGLE)
-  const createOrUpdateProfile = async (user: any) => {
-    const displayName =
-      user.user_metadata.full_name ||
-      user.user_metadata.name ||
-      user.email?.split('@')[0] ||
-      'Usuário'
-
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(
-        {
-          id: user.id,
-          email: user.email!,
-          display_name: displayName,
-          avatar_url: user.user_metadata.picture || user.user_metadata.avatar_url || null,
-          phone: user.user_metadata.phone || null,
-          role: 'user',
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id', ignoreDuplicates: false }
-      )
-
-    if (error) {
-      console.error('Erro ao criar/atualizar perfil:', error)
-      toast.error('Erro ao salvar perfil')
-    } else {
-      toast.success('Login com Google concluído!')
-      navigate('/')
-    }
-  }
-
-  // DETECTA LOGIN COM GOOGLE E CRIA PERFIL
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const user = session.user
-
-          console.log('GOOGLE USER:', user.email)
-
-          const { error } = await supabase
-            .from('profiles')
-            .upsert(
-              {
-                id: user.id,
-                email: user.email!,
-                display_name:
-                  user.user_metadata.full_name ||
-                  user.user_metadata.name ||
-                  user.email!.split('@')[0],
-                avatar_url: user.user_metadata.picture || null,
-                phone: user.user_metadata.phone || null,
-                role: 'user',
-                birth_date: null,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'id', ignoreDuplicates: false }
-            )
-
-          if (error) {
-            console.error('ERRO NO UPSERT:', error)
-            toast.error('Erro ao criar perfil')
-          } else {
-            console.log('PERFIL CRIADO!')
-            toast.success('Login com Google concluído!')
-            navigate('/')
-          }
-        }
-      }
-    )
-
-    return () => listener.subscription.unsubscribe()
-  }, [navigate])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.email.trim() || !formData.password.trim()) {
-      toast.error('Preencha todos os campos.')
+      toast.error('Por favor, preencha todos os campos.')
+      return
+    }
+    if (!formData.email.includes('@')) {
+      toast.error('Por favor, insira um email válido.')
       return
     }
 
@@ -107,26 +35,10 @@ export default function LoginPage() {
       if (error) throw error
       toast.success('Login realizado com sucesso!')
       navigate('/')
-    } catch (error: any) {
-      toast.error(error.message || 'Falha no login')
+    } catch (error) {
+      toast.error(error.message)
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true)
-    try {
-      const redirectTo = `${import.meta.env.PROD ? import.meta.env.VITE_APP_URL : location.origin}/auth/callback`
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo }
-      })
-      if (error) throw error
-    } catch (error: any) {
-      toast.error(error.message || 'Falha ao conectar com Google')
-      setIsGoogleLoading(false)
     }
   }
 
@@ -134,45 +46,68 @@ export default function LoginPage() {
   const handleRegister = () => navigate('/register')
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gray-100 dark:bg-background flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-500">
+      {/* Login Card */}
+      <div className="w-full max-w-md relative z-10 animate-fade-in">
+        {/* Top Bar: Voltar + Tema */}
         <div className="flex justify-between items-center mb-4">
-          <Button variant="ghost" onClick={handleGoBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+          <Button
+            variant="ghost"
+            onClick={handleGoBack}
+            className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-700/30 transition-all duration-300"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
           </Button>
         </div>
 
-        <Card className="shadow-2xl">
+        <Card className="bg-white dark:bg-background border border-gray-200 dark:border-white/10 shadow-2xl animate-slide-up transition-colors duration-500">
           <CardHeader className="text-center pb-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse-glow">
               <LogIn className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
+
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent pb-1">
               Login
             </h1>
+            <p className="text-gray-700 dark:text-slate-200 mt-2 transition-colors duration-500">
+              Entre com suas credenciais para acessar o sistema
+            </p>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Email Field */}
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label htmlFor="email" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
+                  <Mail className="h-4 w-4 text-emerald-500" />
+                  <span>Email</span>
+                </Label>
                 <Input
+                  id="email"
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder="Digite seu email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                   required
                 />
               </div>
 
+              {/* Password Field */}
               <div className="space-y-2">
-                <Label>Senha</Label>
+                <Label htmlFor="password" className="text-gray-700 dark:text-slate-200 font-medium flex items-center space-x-2 transition-colors duration-500">
+                  <Lock className="h-4 w-4 text-emerald-500" />
+                  <span>Senha</span>
+                </Label>
                 <div className="relative">
                   <Input
+                    id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder="Digite sua senha"
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                     required
                   />
                   <Button
@@ -180,53 +115,42 @@ export default function LoginPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-gray-500 dark:text-slate-300 hover:text-gray-700 dark:hover:text-slate-100 hover:bg-gray-200 dark:hover:bg-slate-700/50 transition-colors duration-500"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
+              {/* Login Button */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white h-12"
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none h-12 text-base font-medium"
               >
-                {isSubmitting ? 'Entrando...' : 'Entrar'}
-              </Button>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">ou</span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGoogleLogin}
-                disabled={isGoogleLoading}
-                className="w-full h-12"
-              >
-                {isGoogleLoading ? (
-                  <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Entrando...</span>
+                  </div>
                 ) : (
-                  <>
-                    <Chrome className="h-5 w-5 mr-2" />
-                    Continuar com Google
-                  </>
+                  <div className="flex items-center justify-center space-x-2">
+                    <LogIn className="h-5 w-5" />
+                    <span>Entrar</span>
+                  </div>
                 )}
               </Button>
 
-              <div className="text-center mt-6">
-                <p className="text-sm">Não tem conta?</p>
-                <Button variant="link" onClick={handleRegister} className="text-emerald-500">
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  Crie uma agora
-                </Button>
+              {/* Register Link */}
+              <div className="flex flex-col justify-center text-center text-sm mt-4 space-y-2">
+                  <p>Não tem uma conta?</p>
+                  <Button
+                    variant="link"
+                    onClick={handleRegister}
+                    className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 pl-2 transition-colors duration-300"
+                  >
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Crie uma agora
+                  </Button>
               </div>
             </form>
           </CardContent>
